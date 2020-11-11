@@ -1,0 +1,4 @@
+rclone filter=lfs diff=lfs merge=lfs -text
+rclone.exe filter=lfs diff=lfs merge=lfs -text
+restic filter=lfs diff=lfs merge=lfs -text
+restic.exe filter=lfs diff=lfs merge=lfs -text

@@ -17,9 +17,7 @@
 		"strict": false,
 		"target": "es2015"
 	},
-	"exclude": [
-		"node_modules"
-	],
+	"exclude": [],
 	"include": [
 		"src"
 	]

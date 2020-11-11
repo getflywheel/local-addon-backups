@@ -23,18 +23,26 @@
   "scripts": {
     "build": "tsc",
     "prepare": "tsc",
-    "watch": "tsc --watch"
+    "watch": "yarn run build --watch",
+    "clean": "rm -rf lib node_modules",
+    "test": "yarn jest src/**/*.test.ts",
+    "test:watch": "yarn test --watch"
   },
   "devDependencies": {
-    "@getflywheel/eslint-config-local": "1.0.4",
-    "@getflywheel/local": "^5.0.0",
-    "@types/classnames": "^2.2.9",
+    "@getflywheel/local": "5.9.0",
+    "@types/classnames": "^2.2.11",
     "@types/dateformat": "^3.0.1",
-    "@types/node": "^12.7.12",
-    "eslint": "^5.0.0",
-    "eslint-plugin-import": "^2.14.0",
-    "eslint-plugin-react": "^7.11.1",
-    "typescript": "^3.6.4"
+    "@types/jest": "^26.0.15",
+    "@types/node": "^12.19.4",
+    "@types/react": "^16.9.0",
+    "@types/react-dom": "^16.9.0",
+    "@types/react-redux": "^7.1.9",
+    "babel-loader": "^8.2.1",
+    "jest": "^26.6.3",
+    "jest-extended": "^0.11.5",
+    "ts-jest": "^26.4.4",
+    "ts-loader": "^8.0.11",
+    "typescript": "^4.0.2"
   },
   "peerDependencies": {
     "react": ">= 16.4.0",
@@ -42,22 +50,22 @@
     "react-router-dom": "^4.3.1"
   },
   "dependencies": {
-    "@getflywheel/local-components": "^14.0.0",
+    "@getflywheel/local-components": "^15.0.0",
     "classnames": "^2.2.6",
     "dateformat": "^3.0.3",
     "fs-extra": "^9.0.1",
     "prop-types": "^15.6.2",
-    "react": "^16.10.2",
-    "react-dom": "^16.10.2",
+    "react": "^16.14.0",
+    "react-dom": "^16.14.0",
     "react-router-dom": "^5.1.2"
   },
   "bundledDependencies": [
+    "@getflywheel/local-components",
     "classnames",
     "dateformat",
-    "@getflywheel/local-components",
     "prop-types"
   ],
   "engines": {
-    "local-by-flywheel": "^5.0.0"
+    "local-by-flywheel": "^5.9.1"
   }
 }
