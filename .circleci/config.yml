@@ -12,13 +12,13 @@ anchors:
     restore_cache:
       name: Restore Yarn Package Cache
       keys:
-        - yarn-packages-v2-{{ arch }}-{{ checksum "yarn.lock" }}-{{ checksum "app/yarn.lock" }}
+        - yarn-packages-v2-{{ arch }}-{{ checksum "yarn.lock" }}
         - yarn-packages-v2-{{ arch }}
 
   save_yarn_cache: &save_yarn_cache
     save_cache:
       name: Save Yarn Package Cache
-      key: yarn-packages-v2-{{ arch }}-{{ checksum "yarn.lock" }}-{{ checksum "app/yarn.lock" }}
+      key: yarn-packages-v2-{{ arch }}-{{ checksum "yarn.lock" }}
       paths:
         - ./node_modules
 
