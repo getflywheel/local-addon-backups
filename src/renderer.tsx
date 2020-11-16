@@ -1,41 +1,25 @@
-import * as LocalMain from '@getflywheel/local/main';
 import React from 'react';
-import fs from 'fs-extra';
-import path from 'path';
 import { TextButton, TableListRow } from '@getflywheel/local-components';
 import { ipcRenderer } from 'electron';
 
-const { localLogger } = LocalMain.getServiceContainer().cradle;
-const packageJSON = fs.readJsonSync(path.join(__dirname, '../../package.json'));
-
-const logger = localLogger.child({
-	thread: 'main',
-	class: 'AddonImageOptimizer',
-	addonName: packageJSON.name,
-	addonVersion: packageJSON.version,
-});
-
-export default function (context) {
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export default function (context): void {
 	const { hooks } = context;
 
-	hooks.addContent('siteInfoUtilities', (site) => {
-		logger.info('site', site);
+	hooks.addContent('siteInfoUtilities', (site) => (
+		<TableListRow key="addon-backups" label="Backup">
+			<TextButton
+				style={{ paddingLeft: 0 }}
+				onClick={() => {
+					ipcRenderer.send('start-site-backup', site.id);
+				}}
+			>
+				Create Snapshot Now
+			</TextButton>
 
-		return (
-			<TableListRow key="addon-backups" label="Backup">
-				<TextButton
-					style={{ paddingLeft: 0 }}
-					onClick={(event) => {
-						ipcRenderer.send('start-site-backup', site.id);
-					}}
-				>
-					Create Snapshot Now
-				</TextButton>
-
-				<p>
-					<small>Take a snapshot of the current project and upload it to the cloud.</small>
-				</p>
-			</TableListRow>
-		);
-	});
+			<p>
+				<small>Take a snapshot of the current project and upload it to the cloud.</small>
+			</p>
+		</TableListRow>
+	));
 }

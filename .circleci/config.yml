@@ -27,6 +27,12 @@ anchors:
       name: Build Add-On
       command: yarn build
 
+  lint: &lint
+    run:
+      name: ESLint
+      command: |
+        yarn lint
+
   tests: &tests
     run:
       name: Integration/Unit Tests
@@ -43,4 +49,5 @@ jobs:
       - *install_yarn_deps
       - *save_yarn_cache
       - *build
+      - *lint
       - *tests

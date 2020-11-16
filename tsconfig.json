@@ -17,7 +17,9 @@
 		"strict": false,
 		"target": "es2015"
 	},
-	"exclude": [],
+	"exclude": [
+		"src/**/*.test.ts",
+	],
 	"include": [
 		"src"
 	]
