@@ -1,4 +1,5 @@
 const { execSync, exec } = require('child_process');
+const path = require('path');
 
 
 /**
@@ -16,13 +17,36 @@ const { execSync, exec } = require('child_process');
  *
  * You can also recursive traverse the objects in a remote with the --recursive flag
  *
+ * Use the --fast-list flag if possible as it batches request bodies and is significantly faster than without
  *
+ *
+ * Variable shit to track
+ *
+ * --------------------------------------
+ * site
+ * --------------------------------------
+ * - connected providers
+ * - repo for each connected provider
+ * - snapshots for each repo
+ * - use rclone to check that repo actually exists on the current provider (in case Hub is out of sync)
+ * - init restic repo with rclone for a provider and site/repo
+ * -
  */
 
+const listObject = () => {
+	const repoName = 'new';
+	const result = execSync(
+		`rclone lsjson nested:${repoName} --use-json-log --fast-list`,
+	);
+
+	console.log(result.toString());
+};
+
+// listObject();
 
 const listAllObjects = () => {
 	const result = execSync(
-		'rclone lsjson nested: --use-json-log',
+		'rclone lsjson nested: --use-json-log --fast-list',
 	);
 
 	console.log(result.toString());
@@ -61,7 +85,7 @@ const initResticRepo = () => {
 	const pw = 'admin';
 
 	const proc = exec(
-		`restic --repo rclone:nested:new/b init --json --password-command "echo \'${pw}\'"`,
+		`restic --repo rclone:nested:site1 init --json --password-command "echo \'${pw}\'"`,
 		(error, stdout, stderr) => {
 			console.log('error output', error);
 			console.log('stdout', stdout);
@@ -78,4 +102,36 @@ const initResticRepo = () => {
 	});
 };
 
-initResticRepo();
+// initResticRepo();
+
+const verifyRepo = () => {
+	const flags = [
+		'--drive-token "{\"access_token\":\"ya29.a0AfH6SMBPtUjGCPTO_wKEMJEwFJ8BfvhaDfo1NyaLKjOeYlRFKDEOsRyIHyj0KARkxHWHmAva-2lIBHxARtgIRXMkjECH4RCqOzPR8IvWhdPUaPIkGfDCSjjckQr9MVL31r3Ij_HmYPhVN_ceIXjTQlh1XuS_Qm9IaLYTaz4Se5QM\",\"token_type\":\"Bearer\",\"refresh_token\":null,\"expiry\":\"2021-01-26T18:03:05.000000Z\"}"',
+
+	];
+
+	const bin = path.join(__dirname, '..', '..', 'vendor', 'darwin', 'rclone');
+
+	console.log(execSync(
+		`${bin} ${flags.join(' ')}`,
+	).toString());
+};
+
+
+/**
+ * - Create an rclone config (or use the equivalent in flags) for each remote provider. An example might look like:
+ *
+ * {
+ *   "localbackups": {
+ *       "client_id": <string>,
+ *       "client_secret": <string>,
+ *       "scope": "drive",
+ *       "token": "{\"access_token\":\fake-token",\"token_type\":\"Bearer\",\"refresh_token\":\"fake-refresh-token\"",\"expiry\":\"2021-01-22T16:06:54.026253-06:00\"}",
+ *       "type": "drive"
+ *   }
+ * }
+ *
+ * - Get the client_id and client_secret from Hub
+ * - We'll also need to get root_folder_id for drive or alternatively just use the known folder hierchary that
+ * we chose to build out commands to list only things in those locations
+ */
