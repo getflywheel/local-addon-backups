@@ -1,27 +1,13 @@
 import path from 'path';
 import { exec } from 'child_process';
 import fs from 'fs-extra';
-import gql from 'graphql-tag';
 import { isString } from 'lodash';
 import type { Site } from '@getflywheel/local';
-import { getServiceContainer, SiteData, formatHomePath } from '@getflywheel/local/main';
+import { SiteData, formatHomePath } from '@getflywheel/local/main';
 import getOSBins from './getOSBins';
 import { Providers } from '../types';
+import { getBackupCredentials, getBackupSite, createBackupSite } from './hubQueries';
 
-interface BackupSite {
-	uuid: string;
-	password: string;
-}
-
-interface RcloneConfig {
-	type: string;
-	clientID: string;
-	token: string;
-}
-
-const serviceContainer = getServiceContainer().cradle;
-/* @ts-ignore */
-const { localHubAPI } = serviceContainer;
 
 const bins = getOSBins();
 
@@ -87,69 +73,6 @@ export async function verifyRepo (provider: Providers): Promise<void> {
 		`${bins.rclone} lsjson ${repoName}: ${flags.join(' ')}`,
 		provider,
 	);
-}
-
-/**
- * @todo get this from hub
- */
-const fakePassword = 'password';
-
-async function getBackupCredentials (provider: Providers): Promise<RcloneConfig> {
-	const { data } = await localHubAPI.client.mutate({
-		mutation: gql`
-			mutation getBackupCredentials($providerID: String!) {
-			  getBackupCredentials(provider_id: $providerID) {
-			    config
-			  }
-			}
-		`,
-		variables: {
-			providerID: provider,
-		},
-	});
-
-	return {
-		...data?.getBackupCredentials?.config,
-		clientID: data?.getBackupCredentials.config.client_id,
-	};
-}
-
-
-async function getBackupSite (localBackupRepoID): Promise<BackupSite> {
-	const { data } = await localHubAPI.client.query({
-		query: gql`
-			query getBackupSite ($repoID: String) {
-				backupSites(uuid: $repoID) {
-					uuid
-					password
-				}
-			}
-		`,
-		variables: {
-			repoID: localBackupRepoID,
-		},
-	});
-
-	return data?.backupSites?.[0];
-}
-
-async function createBackupSite (site: Site): Promise<BackupSite> {
-	const { data } = await localHubAPI.client.mutate({
-		mutation: gql`
-			mutation createBackupSite($siteName: String!, $siteUrl: String!) {
-				createBackupSite(name: $siteName, url: $siteUrl) {
-					uuid
-					password
-			  }
-			}
-		`,
-		variables: {
-			siteName: site.name,
-			siteUrl: site.url,
-		},
-	});
-
-	return data?.createBackupSite;
 }
 
 /**
