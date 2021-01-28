@@ -1,10 +1,8 @@
 import path from 'path';
 import { exec } from 'child_process';
-import { EOL } from 'os';
 import fs from 'fs-extra';
 import gql from 'graphql-tag';
 import { isString } from 'lodash';
-import tmp from 'tmp';
 import type { Site } from '@getflywheel/local';
 import { getServiceContainer, SiteData, formatHomePath } from '@getflywheel/local/main';
 import getOSBins from './getOSBins';
@@ -15,11 +13,11 @@ interface BackupSite {
 	password: string;
 }
 
-/**
- * Ensure that any temp files we write get removed on process exit
- * @reference https://github.com/raszi/node-tmp#graceful-cleanup
- */
-tmp.setGracefulCleanup();
+interface RcloneConfig {
+	type: string;
+	clientID: string;
+	token: string;
+}
 
 const serviceContainer = getServiceContainer().cradle;
 /* @ts-ignore */
@@ -28,24 +26,6 @@ const { localHubAPI } = serviceContainer;
 const bins = getOSBins();
 
 const localBackupsIgnoreFileName = '.localbackupaddonignore';
-
-/**
- * Convert a config object from Local Hub into the TOML format that rclone expects its config file to be in
- *
- * @todo use a TOML parsing lib instead
- *
- * @param config
- * @param providerID
- */
-function configObjectToToml (config: { [key: string ]: string }, providerID: Providers): string {
-	const contents = `[${providerID}]${EOL}`;
-
-	return Object.entries(config).reduce((contents, [key, value]) => {
-		contents += `${key} = ${value}${EOL}`;
-
-		return contents;
-	}, contents);
-}
 
 /**
  * Helper to promisify executing shell commands. The point behind using this over child_process.execSync is
@@ -76,48 +56,19 @@ async function execPromise (cmd: string, env: { [key: string]: string } = {}): P
 }
 
 /**
- * Get an rclone config for a provider and save it to disk in a temp file.
+ * Execute a command in a shell with rclone configuration options set for a given provider
  *
- * Returns the path to the temp file
- *
- * @param providerID
+ * @param cmd
+ * @param provider
  */
-async function setupTempRcloneConfig (provider: Providers): Promise<string> {
-	try {
-		const { data } = await localHubAPI.client.mutate({
-			mutation: gql`
-				mutation getBackupCredentials($providerID: String!) {
-				  getBackupCredentials(provider_id: $providerID) {
-				    provider_id
-				    config
-				  }
-				}
-			`,
-			variables: {
-				providerID: provider,
-			},
-		});
-
-		const tmpFile = tmp.fileSync({ postfix: '.conf' });
-
-		const rcloneConfig = { ...data?.getBackupCredentials?.config };
-
-		// fs.writeFileSync(
-		// 	tmpFile.name,
-		// 	configObjectToToml(rcloneConfig, provider),
-		// );
-
-		return tmpFile.name;
-	} catch (err) {
-		console.error(err);
-		return '';
-	}
-}
-
 async function execPromiseWithRcloneContext (cmd: string, provider: Providers): Promise<string> {
-	const rcloneConfigFile = await setupTempRcloneConfig(provider);
+	const { type, clientID, token } = await getBackupCredentials(provider);
 
-	return execPromise(cmd, { 'RCLONE_CONFIG': rcloneConfigFile });
+	return execPromise(cmd, {
+		[`RCLONE_CONFIG_${provider.toUpperCase()}_TYPE`]: type,
+		[`RCLONE_CONFIG_${provider.toUpperCase()}_CLIENT_ID`]: clientID,
+		[`RCLONE_CONFIG_${provider.toUpperCase()}_TOKEN`]: token,
+	});
 }
 
 /**
@@ -142,6 +93,26 @@ export async function verifyRepo (provider: Providers): Promise<void> {
  * @todo get this from hub
  */
 const fakePassword = 'password';
+
+async function getBackupCredentials (provider: Providers): Promise<RcloneConfig> {
+	const { data } = await localHubAPI.client.mutate({
+		mutation: gql`
+			mutation getBackupCredentials($providerID: String!) {
+			  getBackupCredentials(provider_id: $providerID) {
+			    config
+			  }
+			}
+		`,
+		variables: {
+			providerID: provider,
+		},
+	});
+
+	return {
+		...data?.getBackupCredentials?.config,
+		clientID: data?.getBackupCredentials.config.client_id,
+	};
+}
 
 
 async function getBackupSite (localBackupRepoID): Promise<BackupSite> {
