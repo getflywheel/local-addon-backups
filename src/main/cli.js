@@ -46,7 +46,8 @@ const listObject = () => {
 
 const listAllObjects = () => {
 	const result = execSync(
-		'rclone lsjson nested: --use-json-log --fast-list',
+		'rclone lsjson test0: --use-json-log --fast-list',
+
 	);
 
 	console.log(result.toString());

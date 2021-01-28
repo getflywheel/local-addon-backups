@@ -66,6 +66,7 @@
     "fs-extra": "^9.0.1",
     "graphql": "^15.5.0",
     "graphql-tag": "^2.11.0",
+    "lodash": "^4.17.20",
     "prop-types": "^15.6.2",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",

@@ -35,6 +35,7 @@ module.exports = {
 		'no-use-before-define': 'off',
 		'@typescript-eslint/no-use-before-define': [1],
 		'func-style': 'off',
+		'valid-jsdoc': 'off',
 	},
 	settings: {
 		'import/resolver': {
