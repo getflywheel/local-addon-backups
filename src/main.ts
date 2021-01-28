@@ -1,6 +1,7 @@
 import * as Local from '@getflywheel/local';
 import * as LocalMain from '@getflywheel/local/main';
 import { initRepo } from './main/cli';
+import { Providers } from './types';
 
 const serviceContainer = LocalMain.getServiceContainer().cradle;
 /* @ts-ignore */
@@ -14,7 +15,7 @@ export default function (context): void {
 	electron.ipcMain.on('start-site-backup', async (event, siteId: Local.Site['id']) => {
 		const site = LocalMain.SiteData.getSite(siteId);
 
-		initRepo(site);
+		initRepo(site, Providers.Google);
 
 		notifier.notify({
 			title: 'Test',
