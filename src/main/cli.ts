@@ -6,9 +6,14 @@ import gql from 'graphql-tag';
 import { isString } from 'lodash';
 import tmp from 'tmp';
 import type { Site } from '@getflywheel/local';
-import * as LocalMain from '@getflywheel/local/main';
+import { getServiceContainer, SiteData, formatHomePath } from '@getflywheel/local/main';
 import getOSBins from './getOSBins';
 import { Providers } from '../types';
+
+interface BackupSite {
+	uuid: string;
+	password: string;
+}
 
 /**
  * Ensure that any temp files we write get removed on process exit
@@ -16,11 +21,31 @@ import { Providers } from '../types';
  */
 tmp.setGracefulCleanup();
 
-const serviceContainer = LocalMain.getServiceContainer().cradle;
+const serviceContainer = getServiceContainer().cradle;
 /* @ts-ignore */
 const { localHubAPI } = serviceContainer;
 
 const bins = getOSBins();
+
+const localBackupsIgnoreFileName = '.localbackupaddonignore';
+
+/**
+ * Convert a config object from Local Hub into the TOML format that rclone expects its config file to be in
+ *
+ * @todo use a TOML parsing lib instead
+ *
+ * @param config
+ * @param providerID
+ */
+function configObjectToToml (config: { [key: string ]: string }, providerID: Providers): string {
+	const contents = `[${providerID}]${EOL}`;
+
+	return Object.entries(config).reduce((contents, [key, value]) => {
+		contents += `${key} = ${value}${EOL}`;
+
+		return contents;
+	}, contents);
+}
 
 /**
  * Helper to promisify executing shell commands. The point behind using this over child_process.execSync is
@@ -29,7 +54,7 @@ const bins = getOSBins();
  * @param cmd
  * @param env
  */
-async function execPromise (cmd: string, env: { [key: string]: string } = {}): Promise<Error | string> {
+async function execPromise (cmd: string, env: { [key: string]: string } = {}): Promise<string> {
 	return new Promise((resolve, reject) => {
 		exec(
 			`${cmd}`,
@@ -48,24 +73,6 @@ async function execPromise (cmd: string, env: { [key: string]: string } = {}): P
 			},
 		);
 	});
-}
-
-/**
- * Convert a config object from Local Hub into the TOML format that rclone expects its config file to be in
- *
- * @todo use a TOML parsing lib instead
- *
- * @param config
- * @param providerID
- */
-function configObjectToToml (config: { [key: string ]: string }, providerID: Providers): string {
-	const contents = `[${providerID}]${EOL}`;
-
-	return Object.entries(config).reduce((contents, [key, value]) => {
-		contents += `${key} = ${value}${EOL}`;
-
-		return contents;
-	}, contents);
 }
 
 /**
@@ -95,10 +102,10 @@ async function setupTempRcloneConfig (provider: Providers): Promise<string> {
 
 		const rcloneConfig = { ...data?.getBackupCredentials?.config };
 
-		fs.writeFileSync(
-			tmpFile.name,
-			configObjectToToml(rcloneConfig, provider),
-		);
+		// fs.writeFileSync(
+		// 	tmpFile.name,
+		// 	configObjectToToml(rcloneConfig, provider),
+		// );
 
 		return tmpFile.name;
 	} catch (err) {
@@ -107,9 +114,8 @@ async function setupTempRcloneConfig (provider: Providers): Promise<string> {
 	}
 }
 
-async function execPromiseWithRcloneContext (cmd: string, provider: Providers): Promise<Error | string> {
+async function execPromiseWithRcloneContext (cmd: string, provider: Providers): Promise<string> {
 	const rcloneConfigFile = await setupTempRcloneConfig(provider);
-	console.log('config path.......', rcloneConfigFile);
 
 	return execPromise(cmd, { 'RCLONE_CONFIG': rcloneConfigFile });
 }
@@ -137,10 +143,43 @@ export async function verifyRepo (provider: Providers): Promise<void> {
  */
 const fakePassword = 'password';
 
-/**
- *
- * @todo figure out how we are naming repos
- */
+
+async function getBackupSite (localBackupRepoID): Promise<BackupSite> {
+	const { data } = await localHubAPI.client.query({
+		query: gql`
+			query getBackupSite ($repoID: String) {
+				backupSites(uuid: $repoID) {
+					uuid
+					password
+				}
+			}
+		`,
+		variables: {
+			repoID: localBackupRepoID,
+		},
+	});
+
+	return data?.backupSites?.[0];
+}
+
+async function createBackupSite (site: Site): Promise<BackupSite> {
+	const { data } = await localHubAPI.client.mutate({
+		mutation: gql`
+			mutation createBackupSite($siteName: String!, $siteUrl: String!) {
+				createBackupSite(name: $siteName, url: $siteUrl) {
+					uuid
+					password
+			  }
+			}
+		`,
+		variables: {
+			siteName: site.name,
+			siteUrl: site.url,
+		},
+	});
+
+	return data?.createBackupSite;
+}
 
 /**
  * Intitialize a restic repository on a given provider
@@ -149,26 +188,19 @@ const fakePassword = 'password';
  */
 export async function initRepo (site: Site, provider: Providers): Promise<void> {
 	try {
-		const { data } = localHubAPI.client.mutate({
-			mutation: gql`
-				mutation createBackupSite($siteName: String!, $siteUrl: String!) {
-					createBackupSite(name: $siteName, url: $siteUrl) {
-				    	uuid
-						password
-				  }
-				}
-			`,
-			variables: {
-				siteName: site.name,
-				siteUrl: site.url,
-			},
-		});
+		/* @ts-ignore */
+		const { localBackupRepoID } = SiteData.getSite(site.id);
 
-		const { password: encryptionPassword, uuid: repoName } = data.createBackupSite;
+		let localBackupRepoIDGetter = () => getBackupSite(localBackupRepoID);
 
-		/**
-		 * @todo Store the uuid on disk with the appropriate site in sites.json
-		 */
+		if (!localBackupRepoID) {
+			localBackupRepoIDGetter = () => createBackupSite(site);
+		}
+
+		const { password: encryptionPassword, uuid } = await localBackupRepoIDGetter();
+
+		/* @ts-ignore */
+		SiteData.updateSite(site.id, { localBackupRepoID: uuid });
 
 		const flags = [
 			'--json',
@@ -179,7 +211,7 @@ export async function initRepo (site: Site, provider: Providers): Promise<void> 
 			/**
 			 * @todo use the sites uuid provided by Hub instead of site.id
 			 */
-			`${bins.restic} --repo rclone:${provider}:${repoName} init ${flags.join(' ')}`,
+			`${bins.restic} --repo rclone:${provider}:${uuid} init ${flags.join(' ')}`,
 			provider,
 		);
 	} catch (err) {
@@ -195,42 +227,53 @@ export async function initRepo (site: Site, provider: Providers): Promise<void> 
 	}
 }
 
+/**
+ * List all repos in a given provider
+ *
+ * @todo Do we need this?
+ *
+ * @param provider
+ */
+export async function listRepos (provider: Providers): Promise<string> {
+	const json = await execPromiseWithRcloneContext(
+		`${bins.rclone} lsjson ${provider}: --fast-list --use-json-log`,
+		provider,
+	);
+
+	const repos = JSON.parse(json);
+
+	return repos;
+}
+
 export async function backupSite (site: Site, provider: Providers): Promise<void> {
-	try {
-		const { data } = localHubAPI.client.query({
-			query: gql`
-				query getBackupSite ($repoID: String) {
-				  backupSites(uuid: $repoID) {
-				    id
-				    name
-				    url
-				    uuid
-				    created_at
-				    updated_at
-				  }
-				}
-			`,
-			variables: {
-				/**
-				 * @todo pass the uuid that was stored to disk after the createBackuSite call during repo initialization
-				 */
-			},
-		});
+	/* @ts-ignore */
+	const { localBackupRepoID } = SiteData.getSite(site.id);
 
-		const flags = [
-			'--json',
-			`--password-command "echo \'${fakePassword}`,
-			`--exclude-file ${path.join(site.path, '.localbackupsignore')}`,
-		];
+	const { password } = await getBackupSite(localBackupRepoID);
 
-		execPromiseWithRcloneContext(
-			/**
-			 * @todo use the sites uuid provided by Hub instead of site.id
-			 */
-			`${bins.restic} --repo rclone:${provider}:${site.id} backup ${flags.join(' ')} ${site.path}`,
-			provider,
-		);
-	} catch (err) {
-		console.error(err);
+	if (!localBackupRepoID) {
+		/**
+		 * @todo Tell the UI that no backup id was found
+		 */
+		throw new Error(`No backup repo id found for ${site.name}`);
 	}
+
+	const flags = [
+		'--json',
+		`--password-command "echo \'${password}\'"`,
+	];
+
+	const ignoreFilePath = path.join(site.path, localBackupsIgnoreFileName);
+
+	if (fs.existsSync(ignoreFilePath)) {
+		flags.push(`--exclude-file \'${ignoreFilePath}\'`);
+	}
+
+	execPromiseWithRcloneContext(
+		/**
+		 * @todo use the sites uuid provided by Hub instead of site.id
+		 */
+		`${bins.restic} --repo rclone:${provider}:${localBackupRepoID} backup ${flags.join(' ')} \'${formatHomePath(site.path)}\'`,
+		provider,
+	);
 }
