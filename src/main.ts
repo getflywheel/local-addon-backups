@@ -14,9 +14,9 @@ export default function (context): void {
 	electron.ipcMain.on('start-site-backup', async (event, siteId: Local.Site['id']) => {
 		const site = LocalMain.SiteData.getSite(siteId);
 
-		// console.log(await listRepos(Providers.Google));
+		console.log(await listRepos(Providers.Google));
 		// await initRepo(site, Providers.Google);
-		await backupSite(site, Providers.Google);
+		// await backupSite(site, Providers.Google);
 
 		notifier.notify({
 			title: 'Test',
