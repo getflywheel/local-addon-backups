@@ -22,7 +22,8 @@ export async function getBackupCredentials (provider: Providers): Promise<Rclone
 
 	return {
 		...data?.getBackupCredentials?.config,
-		clientID: data?.getBackupCredentials.config.client_id,
+		clientID: data?.getBackupCredentials?.config?.client_id,
+		appKey: data?.getBackupCredentials?.config?.app_key,
 	};
 }
 
@@ -116,9 +117,11 @@ export async function getBackupReposByProviderID (provider: Providers): Promise<
 		},
 	});
 
-	return {
+	return [
 		...data?.backupRepos,
-		providerID: data?.backupRepos?.provider_id,
-		siteID: data?.backupRepos?.site_id,
-	};
+	].map((backupRepo) => ({
+		...backupRepo,
+		providerID: backupRepo.provider_id,
+		siteID: backupRepo.site_id,
+	}));
 }

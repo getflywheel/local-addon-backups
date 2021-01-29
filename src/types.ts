@@ -20,4 +20,5 @@ export interface RcloneConfig {
 	type: string;
 	clientID: string;
 	token: string;
+	appKey: string;
 }
