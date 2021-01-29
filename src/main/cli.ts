@@ -6,7 +6,13 @@ import type { Site } from '@getflywheel/local';
 import { SiteData, formatHomePath } from '@getflywheel/local/main';
 import getOSBins from './getOSBins';
 import { Providers } from '../types';
-import { getBackupCredentials, getBackupSite, createBackupSite } from './hubQueries';
+import {
+	getBackupCredentials,
+	getBackupSite,
+	createBackupSite,
+	getBackupReposByProviderID,
+	createBackupRepo,
+} from './hubQueries';
 
 
 const bins = getOSBins();
@@ -83,18 +89,35 @@ export async function verifyRepo (provider: Providers): Promise<void> {
 export async function initRepo (site: Site, provider: Providers): Promise<void> {
 	try {
 		/* @ts-ignore */
-		const { localBackupRepoID } = SiteData.getSite(site.id);
+		let { localBackupRepoID } = SiteData.getSite(site.id);
+		let encryptionPassword;
+		let backupSiteID;
 
-		let localBackupRepoIDGetter = () => getBackupSite(localBackupRepoID);
+		if (localBackupRepoID) {
+			const { uuid, password, id } = await getBackupSite(localBackupRepoID);
 
-		if (!localBackupRepoID) {
-			localBackupRepoIDGetter = () => createBackupSite(site);
+			localBackupRepoID = uuid;
+			encryptionPassword = password;
+			backupSiteID = id;
+		} else {
+			const { uuid, password, id } = await createBackupSite(localBackupRepoID);
+
+			localBackupRepoID = uuid;
+			encryptionPassword = password;
+			backupSiteID = id;
 		}
 
-		const { password: encryptionPassword, uuid } = await localBackupRepoIDGetter();
+		/**
+		 * @todo figure out how to query for repos by uuid of the site backup objects
+		 */
+		const backupRepo = (await getBackupReposByProviderID(provider)).filter(({ hash }) => hash === localBackupRepoID);
+
+		if (!backupRepo) {
+			await createBackupRepo(site, provider);
+		}
 
 		/* @ts-ignore */
-		SiteData.updateSite(site.id, { localBackupRepoID: uuid });
+		SiteData.updateSite(site.id, { localBackupRepoID });
 
 		const flags = [
 			'--json',
@@ -105,7 +128,7 @@ export async function initRepo (site: Site, provider: Providers): Promise<void> 
 			/**
 			 * @todo use the sites uuid provided by Hub instead of site.id
 			 */
-			`${bins.restic} --repo rclone:${provider}:${uuid} init ${flags.join(' ')}`,
+			`${bins.restic} --repo rclone:${provider}:${localBackupRepoID} init ${flags.join(' ')}`,
 			provider,
 		);
 	} catch (err) {
