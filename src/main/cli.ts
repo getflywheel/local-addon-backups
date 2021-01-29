@@ -54,12 +54,13 @@ async function execPromise (cmd: string, env: { [key: string]: string } = {}): P
  * @param provider
  */
 async function execPromiseWithRcloneContext (cmd: string, provider: Providers): Promise<string> {
-	const { type, clientID, token } = await getBackupCredentials(provider);
+	const { type, clientID, token, appKey } = await getBackupCredentials(provider);
 
 	return execPromise(cmd, {
 		[`RCLONE_CONFIG_${provider.toUpperCase()}_TYPE`]: type,
 		[`RCLONE_CONFIG_${provider.toUpperCase()}_CLIENT_ID`]: clientID,
 		[`RCLONE_CONFIG_${provider.toUpperCase()}_TOKEN`]: token,
+		[`RCLONE_CONFIG_${provider.toUpperCase()}_APP_KEY`]: appKey,
 	});
 }
 
