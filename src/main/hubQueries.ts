@@ -4,10 +4,10 @@ import { getServiceContainer } from '@getflywheel/local/main';
 import type { Providers, RcloneConfig, BackupSite } from '../types';
 
 /* @ts-ignore */
-const { localHubAPI } = getServiceContainer().cradle;
+const { localHubClient } = getServiceContainer().cradle;
 
 export async function getBackupCredentials (provider: Providers): Promise<RcloneConfig> {
-	const { data } = await localHubAPI.client.mutate({
+	const { data } = await localHubClient.mutate({
 		mutation: gql`
 			mutation getBackupCredentials($providerID: String!) {
 			  getBackupCredentials(provider_id: $providerID) {
@@ -28,7 +28,7 @@ export async function getBackupCredentials (provider: Providers): Promise<Rclone
 
 
 export async function getBackupSite (localBackupRepoID: string): Promise<BackupSite> {
-	const { data } = await localHubAPI.client.query({
+	const { data } = await localHubClient.query({
 		query: gql`
 			query getBackupSite ($repoID: String) {
 				backupSites(uuid: $repoID) {
@@ -46,7 +46,7 @@ export async function getBackupSite (localBackupRepoID: string): Promise<BackupS
 }
 
 export async function createBackupSite (site: Site): Promise<BackupSite> {
-	const { data } = await localHubAPI.client.mutate({
+	const { data } = await localHubClient.mutate({
 		mutation: gql`
 			mutation createBackupSite($siteName: String!, $siteUrl: String!) {
 				createBackupSite(name: $siteName, url: $siteUrl) {
