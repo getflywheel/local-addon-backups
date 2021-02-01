@@ -69,14 +69,14 @@ async function execPromiseWithRcloneContext (cmd: string, provider: Providers): 
  *
  * @param provider
  */
-export async function verifyRepo (provider: Providers): Promise<void> {
+export async function verifyRepo (provider: Providers): Promise<string> {
 	const repoName = 'Local Backups';
 
 	const flags = [
 		'--fast-json',
 	];
 
-	await execPromiseWithRcloneContext(
+	return execPromiseWithRcloneContext(
 		`${bins.rclone} lsjson ${repoName}: ${flags.join(' ')}`,
 		provider,
 	);
@@ -87,7 +87,7 @@ export async function verifyRepo (provider: Providers): Promise<void> {
  *
  * @param site
  */
-export async function initRepo (site: Site, provider: Providers): Promise<void> {
+export async function initRepo (site: Site, provider: Providers): Promise<string | void> {
 	try {
 		/* @ts-ignore */
 		let { localBackupRepoID } = SiteData.getSite(site.id);
@@ -125,7 +125,7 @@ export async function initRepo (site: Site, provider: Providers): Promise<void> 
 			`--password-command \"echo \'${encryptionPassword}\'\"`,
 		];
 
-		await execPromiseWithRcloneContext(
+		return execPromiseWithRcloneContext(
 			/**
 			 * @todo use the sites uuid provided by Hub instead of site.id
 			 */
@@ -163,7 +163,7 @@ export async function listRepos (provider: Providers): Promise<string> {
 	return repos;
 }
 
-export async function backupSite (site: Site, provider: Providers): Promise<void> {
+export async function backupSite (site: Site, provider: Providers): Promise<string> {
 	/* @ts-ignore */
 	const { localBackupRepoID } = SiteData.getSite(site.id);
 
@@ -187,7 +187,7 @@ export async function backupSite (site: Site, provider: Providers): Promise<void
 		flags.push(`--exclude-file \'${ignoreFilePath}\'`);
 	}
 
-	execPromiseWithRcloneContext(
+	return execPromiseWithRcloneContext(
 		/**
 		 * @todo use the sites uuid provided by Hub instead of site.id
 		 */
