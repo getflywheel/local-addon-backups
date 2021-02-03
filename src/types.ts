@@ -1,3 +1,9 @@
+import type { Site as SiteBase } from '@getflywheel/local';
+
+export interface Site extends SiteBase {
+	localBackupRepoID?: string;
+}
+
 export enum Providers {
 	Google = 'google',
 	Dropbox = 'dropbox',

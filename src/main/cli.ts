@@ -2,10 +2,10 @@ import path from 'path';
 import { exec } from 'child_process';
 import fs from 'fs-extra';
 import { isString } from 'lodash';
-import type { Site } from '@getflywheel/local';
 import { SiteData, formatHomePath } from '@getflywheel/local/main';
 import getOSBins from './getOSBins';
 import { Providers } from '../types';
+import type { Site } from '../types';
 import {
 	getBackupCredentials,
 	getBackupSite,
@@ -14,6 +14,22 @@ import {
 	createBackupRepo,
 } from './hubQueries';
 
+/**
+ * The Site type exported from @getflywheel/local does not have all of the fields on it that this needs
+ * This provides an easy place to get a site and typecast it correctly
+ *
+ * @param id
+ */
+const getSiteByID = (id: Site['id']) => SiteData.getSite(id) as Site;
+
+/**
+ * The Site type exported from @getflywheel/local does not have all of the fields on it that this needs
+ * This provides an easy place to typecast and update that site object while still satisfying the TS compiler
+ *
+ * @param id
+ * @param sitePartial
+ */
+const updateSite = (id: Site['id'], sitePartial: Partial<Site>) => SiteData.updateSite(id, sitePartial);
 
 const bins = getOSBins();
 
@@ -57,7 +73,7 @@ async function execPromiseWithRcloneContext (cmd: string, provider: Providers): 
 	const { type, clientID, token, appKey } = await getBackupCredentials(provider);
 
 	return execPromise(cmd, {
-		[`RCLONE_CONFIG_${provider.toUpperCase()}_TYPE`]: type,
+		[`RCLONE_CONFIGupdateSite_${provider.toUpperCase()}_TYPE`]: type,
 		[`RCLONE_CONFIG_${provider.toUpperCase()}_CLIENT_ID`]: clientID,
 		[`RCLONE_CONFIG_${provider.toUpperCase()}_TOKEN`]: token,
 		[`RCLONE_CONFIG_${provider.toUpperCase()}_APP_KEY`]: appKey,
@@ -69,28 +85,30 @@ async function execPromiseWithRcloneContext (cmd: string, provider: Providers): 
  *
  * @param provider
  */
-export async function verifyRepo (provider: Providers): Promise<string> {
-	const repoName = 'Local Backups';
+export async function listSnapshots (site: Site, provider: Providers): Promise<string> {
+	const { localBackupRepoID } = site;
+
+	if (!localBackupRepoID) {
+		throw new Error('Could not list snapshots since to repo was found on the given provider');
+	}
 
 	const flags = [
 		'--fast-json',
 	];
 
 	return execPromiseWithRcloneContext(
-		`${bins.rclone} lsjson ${repoName}: ${flags.join(' ')}`,
+		`${bins.rclone} lsjson ${provider}:${localBackupRepoID} ${flags.join(' ')}`,
 		provider,
 	);
 }
-
 /**
- * Intitialize a restic repository on a given provider
- *
+ * Initialize a restic repository on a given provider
  * @param site
  */
 export async function initRepo (site: Site, provider: Providers): Promise<string | void> {
 	try {
-		/* @ts-ignore */
-		let { localBackupRepoID } = SiteData.getSite(site.id);
+		let { localBackupRepoID } = getSiteByID(site.id);
+
 		let encryptionPassword;
 		let backupSiteID;
 
@@ -101,7 +119,7 @@ export async function initRepo (site: Site, provider: Providers): Promise<string
 			encryptionPassword = password;
 			backupSiteID = id;
 		} else {
-			const { uuid, password, id } = await createBackupSite(localBackupRepoID);
+			const { uuid, password, id } = await createBackupSite(site);
 
 			localBackupRepoID = uuid;
 			encryptionPassword = password;
@@ -113,12 +131,14 @@ export async function initRepo (site: Site, provider: Providers): Promise<string
 		 */
 		const backupRepo = (await getBackupReposByProviderID(provider)).filter(({ hash }) => hash === localBackupRepoID);
 
+		/**
+		 * If no backuprepo is found, than we probably haven't created on on the hub side for the given provider
+		 */
 		if (!backupRepo) {
 			await createBackupRepo(site, provider);
 		}
 
-		/* @ts-ignore */
-		SiteData.updateSite(site.id, { localBackupRepoID });
+		updateSite(site.id, { localBackupRepoID });
 
 		const flags = [
 			'--json',
@@ -164,15 +184,14 @@ export async function listRepos (provider: Providers): Promise<string> {
 }
 
 export async function backupSite (site: Site, provider: Providers): Promise<string> {
-	/* @ts-ignore */
-	const { localBackupRepoID } = SiteData.getSite(site.id);
+	const { localBackupRepoID } = getSiteByID(site.id);
 
 	const { password } = await getBackupSite(localBackupRepoID);
 
 	if (!localBackupRepoID) {
 		/**
 		 * @todo Tell the UI that no backup id was found
-		 */
+		*/
 		throw new Error(`No backup repo id found for ${site.name}`);
 	}
 
