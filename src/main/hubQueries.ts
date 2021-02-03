@@ -5,6 +5,7 @@ import type { Providers, RcloneConfig, BackupSite, BackupRepo, Site } from '../t
 /* @ts-ignore */
 const { localHubClient } = getServiceContainer().cradle;
 
+
 export async function getBackupCredentials (provider: Providers): Promise<RcloneConfig> {
 	const { data } = await localHubClient.mutate({
 		mutation: gql`
@@ -65,7 +66,7 @@ export async function createBackupSite (site: Site): Promise<BackupSite> {
 }
 
 export async function createBackupRepo (site: Site, provider: Providers): Promise<BackupRepo> {
-	const { data } = await localHubClient.mutation({
+	const { data } = await localHubClient.mutate({
 		mutation: gql`
 			mutation createBackupRepo(
 				$siteID: Int!,
