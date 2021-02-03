@@ -1,7 +1,6 @@
 import gql from 'graphql-tag';
-import type { Site } from '@getflywheel/local';
 import { getServiceContainer } from '@getflywheel/local/main';
-import type { Providers, RcloneConfig, BackupSite, BackupRepo } from '../types';
+import type { Providers, RcloneConfig, BackupSite, BackupRepo, Site } from '../types';
 
 /* @ts-ignore */
 const { localHubClient } = getServiceContainer().cradle;
@@ -88,7 +87,6 @@ export async function createBackupRepo (site: Site, provider: Providers): Promis
 		variables: {
 			siteID: site.id,
 			providerID: provider,
-			/* @ts-ignore */
 			repoID: site.localBackupRepoID,
 		},
 	});
