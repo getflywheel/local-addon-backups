@@ -1,0 +1,8 @@
+**/.git
+
+**/node_modules
+
+# ignore any directory or file named cache due to a lack of standardization around where WP/plugins might store a cache
+**/cache
+
+logs
