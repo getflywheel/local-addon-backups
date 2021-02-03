@@ -176,16 +176,18 @@ export async function backupSite (site: Site, provider: Providers): Promise<stri
 		throw new Error(`No backup repo id found for ${site.name}`);
 	}
 
+	const ignoreFilePath = path.join(site.path, localBackupsIgnoreFileName);
+	const defaultIgnoreFilePath = path.join(__dirname, 'resources', 'default-ignore-file');
+
+	if (!fs.existsSync(ignoreFilePath)) {
+		fs.copyFileSync(defaultIgnoreFilePath, ignoreFilePath);
+	}
+
 	const flags = [
 		'--json',
 		`--password-command "echo \'${password}\'"`,
+		`--exclude-file \'${ignoreFilePath}\'`,
 	];
-
-	const ignoreFilePath = path.join(site.path, localBackupsIgnoreFileName);
-
-	if (fs.existsSync(ignoreFilePath)) {
-		flags.push(`--exclude-file \'${ignoreFilePath}\'`);
-	}
 
 	return execPromiseWithRcloneContext(
 		/**
