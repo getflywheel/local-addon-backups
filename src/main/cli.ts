@@ -73,7 +73,7 @@ async function execPromiseWithRcloneContext (cmd: string, provider: Providers): 
 	const { type, clientID, token, appKey } = await getBackupCredentials(provider);
 
 	return execPromise(cmd, {
-		[`RCLONE_CONFIGupdateSite_${provider.toUpperCase()}_TYPE`]: type,
+		[`RCLONE_CONFIG_${provider.toUpperCase()}_TYPE`]: type,
 		[`RCLONE_CONFIG_${provider.toUpperCase()}_CLIENT_ID`]: clientID,
 		[`RCLONE_CONFIG_${provider.toUpperCase()}_TOKEN`]: token,
 		[`RCLONE_CONFIG_${provider.toUpperCase()}_APP_KEY`]: appKey,
@@ -129,10 +129,10 @@ export async function initRepo (site: Site, provider: Providers): Promise<string
 		/**
 		 * @todo figure out how to query for repos by uuid of the site backup objects
 		 */
-		const backupRepo = (await getBackupReposByProviderID(provider)).filter(({ hash }) => hash === localBackupRepoID);
+		const backupRepo = (await getBackupReposByProviderID(provider)).find(({ hash }) => hash === localBackupRepoID);
 
 		/**
-		 * If no backuprepo is found, than we probably haven't created on on the hub side for the given provider
+		 * If no backup repo is found, than we probably haven't created on on the hub side for the given provider
 		 */
 		if (!backupRepo) {
 			await createBackupRepo(site, provider);
