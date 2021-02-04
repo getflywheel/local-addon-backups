@@ -2,7 +2,7 @@ import path from 'path';
 import { exec } from 'child_process';
 import fs from 'fs-extra';
 import { isString } from 'lodash';
-import { SiteData, formatHomePath } from '@getflywheel/local/main';
+import { SiteData, formatHomePath, getServiceContainer } from '@getflywheel/local/main';
 import getOSBins from './getOSBins';
 import { Providers } from '../types';
 import type { Site } from '../types';
@@ -12,7 +12,10 @@ import {
 	createBackupSite,
 	getBackupReposByProviderID,
 	createBackupRepo,
+	getBackupRepo,
 } from './hubQueries';
+
+const serviceContainer = getServiceContainer().cradle;
 
 /**
  * The Site type exported from @getflywheel/local does not have all of the fields on it that this needs
@@ -30,6 +33,16 @@ const getSiteByID = (id: Site['id']) => SiteData.getSite(id) as Site;
  * @param sitePartial
  */
 const updateSite = (id: Site['id'], sitePartial: Partial<Site>) => SiteData.updateSite(id, sitePartial);
+
+/**
+ * Helper to read site data from disk
+ *
+ * @param id
+ */
+const getSiteDataFromDisk = (id: Site['id']) => {
+	const sites = serviceContainer.userData.get('sites');
+	return sites[id];
+};
 
 const bins = getOSBins();
 
@@ -104,11 +117,12 @@ export async function listSnapshots (site: Site, provider: Providers): Promise<s
 
 /**
  * Initialize a restic repository on a given provider
+ *
  * @param site
  */
 export async function initRepo (site: Site, provider: Providers): Promise<string | void> {
 	try {
-		let { localBackupRepoID } = getSiteByID(site.id);
+		let { localBackupRepoID } = getSiteDataFromDisk(site.id);
 
 		let encryptionPassword;
 		let backupSiteID;
@@ -127,19 +141,16 @@ export async function initRepo (site: Site, provider: Providers): Promise<string
 			backupSiteID = id;
 		}
 
-		/**
-		 * @todo figure out how to query for repos by uuid of the site backup objects
-		 */
-		const backupRepo = (await getBackupReposByProviderID(provider)).find(({ hash }) => hash === localBackupRepoID);
+		updateSite(site.id, { localBackupRepoID });
+
+		const backupRepo = await getBackupRepo(backupSiteID, provider);
 
 		/**
 		 * If no backup repo is found, than we probably haven't created on on the hub side for the given provider
 		 */
 		if (!backupRepo) {
-			await createBackupRepo(site, provider);
+			await createBackupRepo(backupSiteID, localBackupRepoID, provider);
 		}
-
-		updateSite(site.id, { localBackupRepoID });
 
 		const flags = [
 			'--json',
