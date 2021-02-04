@@ -12,7 +12,6 @@ import {
 	createBackupSite,
 	getBackupReposByProviderID,
 	createBackupRepo,
-	getBackupRepo,
 } from './hubQueries';
 
 const serviceContainer = getServiceContainer().cradle;
@@ -143,13 +142,19 @@ export async function initRepo (site: Site, provider: Providers): Promise<string
 
 		updateSite(site.id, { localBackupRepoID });
 
-		const backupRepo = await getBackupRepo(backupSiteID, provider);
+		/**
+		 * @todo figure out how to query for repos by uuid of the site backup objects
+		 * This should theoretically work, but currently appears to be broken on the Hub side:
+		 *
+		 * const backupRepo = await getBackupRepo(backupSiteID, provider);
+		 */
+		let backupRepo = (await getBackupReposByProviderID(provider)).find(({ hash }) => hash === localBackupRepoID);
 
 		/**
 		 * If no backup repo is found, than we probably haven't created on on the hub side for the given provider
 		 */
 		if (!backupRepo) {
-			await createBackupRepo(backupSiteID, localBackupRepoID, provider);
+			backupRepo = await createBackupRepo(backupSiteID, localBackupRepoID, provider);
 		}
 
 		const flags = [
@@ -195,8 +200,8 @@ export async function listRepos (provider: Providers): Promise<string> {
 	return repos;
 }
 
-export async function backupSite (site: Site, provider: Providers): Promise<string> {
-	const { localBackupRepoID } = getSiteByID(site.id);
+export async function backupSite (site: Site, provider: Providers): Promise<string | void> {
+	const { localBackupRepoID } = getSiteDataFromDisk(site.id);
 
 	const { password } = await getBackupSite(localBackupRepoID);
 
@@ -207,11 +212,17 @@ export async function backupSite (site: Site, provider: Providers): Promise<stri
 		throw new Error(`No backup repo id found for ${site.name}`);
 	}
 
-	const ignoreFilePath = path.join(site.path, localBackupsIgnoreFileName);
-	const defaultIgnoreFilePath = path.join(__dirname, 'resources', 'default-ignore-file');
+	const expandedSitePath = formatHomePath(site.path);
 
-	if (!fs.existsSync(ignoreFilePath)) {
-		fs.copyFileSync(defaultIgnoreFilePath, ignoreFilePath);
+	const ignoreFilePath = path.join(expandedSitePath, localBackupsIgnoreFileName);
+	const defaultIgnoreFilePath = path.join(__dirname, '..', '..', 'resources', 'default-ignore-file');
+
+	try {
+		if (!fs.existsSync(ignoreFilePath)) {
+			fs.copySync(defaultIgnoreFilePath, ignoreFilePath);
+		}
+	} catch(err) {
+		console.error(err)
 	}
 
 	const flags = [
@@ -224,7 +235,7 @@ export async function backupSite (site: Site, provider: Providers): Promise<stri
 		/**
 		 * @todo use the sites uuid provided by Hub instead of site.id
 		 */
-		`${bins.restic} --repo rclone:${provider}:${localBackupRepoID} backup ${flags.join(' ')} \'${formatHomePath(site.path)}\'`,
+		`${bins.restic} --repo rclone:${provider}:${localBackupRepoID} backup ${flags.join(' ')} \'${expandedSitePath}\'`,
 		provider,
 	);
 }
