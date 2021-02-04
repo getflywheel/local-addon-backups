@@ -101,6 +101,7 @@ export async function listSnapshots (site: Site, provider: Providers): Promise<s
 		provider,
 	);
 }
+
 /**
  * Initialize a restic repository on a given provider
  * @param site
