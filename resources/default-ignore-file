@@ -8,4 +8,8 @@
 **/cache
 **/cache.php
 
+wp-content/upgrade
+wp-content/cache
+.yarn
+
 logs
