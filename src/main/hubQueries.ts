@@ -33,6 +33,7 @@ export async function getBackupSite (localBackupRepoID: string): Promise<BackupS
 		query: gql`
 			query getBackupSite ($repoID: String) {
 				backupSites(uuid: $repoID) {
+					id
 					uuid
 					password
 				}
@@ -51,6 +52,7 @@ export async function createBackupSite (site: Site): Promise<BackupSite> {
 		mutation: gql`
 			mutation createBackupSite($siteName: String!, $siteUrl: String!) {
 				createBackupSite(name: $siteName, url: $siteUrl) {
+					id
 					uuid
 					password
 			  }
@@ -65,7 +67,7 @@ export async function createBackupSite (site: Site): Promise<BackupSite> {
 	return data?.createBackupSite;
 }
 
-export async function createBackupRepo (site: Site, provider: Providers): Promise<BackupRepo> {
+export async function createBackupRepo (id: number, localBackupRepoID: string, provider: Providers): Promise<BackupRepo> {
 	const { data } = await localHubClient.mutate({
 		mutation: gql`
 			mutation createBackupRepo(
@@ -86,9 +88,9 @@ export async function createBackupRepo (site: Site, provider: Providers): Promis
 	  		}
 		`,
 		variables: {
-			siteID: site.id,
+			repoID: localBackupRepoID,
+			siteID: id,
 			providerID: provider,
-			repoID: site.localBackupRepoID,
 		},
 	});
 
@@ -123,4 +125,32 @@ export async function getBackupReposByProviderID (provider: Providers): Promise<
 		providerID: backupRepo.provider_id,
 		siteID: backupRepo.site_id,
 	}));
+}
+
+
+export async function getBackupRepo (id: number, provider: Providers): Promise<BackupRepo[]> {
+	const { data } = await localHubClient.query({
+		query: gql`
+			query getBackupRepos($siteID: Int, $providerID: String) {
+  				backupRepos(site_id: $siteID, provider_id: $providerID) {
+    				id
+    				site_id
+    				provider_id
+    				hash
+  				}
+			}
+		`,
+		variables: {
+			siteID: id,
+			providerID: provider,
+		},
+	});
+
+	return [
+		...data?.backupRepos,
+	].map((backupRepo) => ({
+		...backupRepo,
+		providerID: backupRepo.provider_id,
+		siteID: backupRepo.site_id,
+	}))[0];
 }
