@@ -1,5 +1,5 @@
 import path from 'path';
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
 import fs from 'fs-extra';
 import { isString } from 'lodash';
 import { SiteData, formatHomePath, getServiceContainer } from '@getflywheel/local/main';
@@ -65,6 +65,21 @@ async function execPromise (cmd: string, env: { [key: string]: string } = {}): P
 				},
 			},
 			(error, stdout, stderr) => {
+				console.log('callback.....', error, stdout, stderr);
+
+				/**
+				 * @todo parse the error output to handle some potentially common cases (examples below)
+				 *
+				 * Insufficient file permissions (can happen with any executable)
+				 * ------------------------------------------
+				 * /bin/sh: 1: /home/matt/code/local-addon-backups/vendor/linux/restic: Permission denied
+				 *
+				 * No repo has been created (this happens when running restic backup)
+				 * ------------------------------------------
+				 * Fatal: unable to open config file: <config/> does not exist
+				 * Is there a repository at the following location?
+				 * rclone:65d123d5-f245-41db-97v6-db89e16b7789
+				 */
 				if (error) {
 					return reject(error);
 				}
@@ -82,13 +97,27 @@ async function execPromise (cmd: string, env: { [key: string]: string } = {}): P
  * @param provider
  */
 async function execPromiseWithRcloneContext (cmd: string, provider: Providers): Promise<string> {
-	const { type, clientID, token, appKey } = await getBackupCredentials(provider);
+	const { type, clientID, token: baseToken, appKey } = await getBackupCredentials(provider);
 
-	return execPromise(cmd, {
+	const token = `'${baseToken.replace(/"/g, '\\"')}'`;
+
+	console.log('running:', cmd, token);
+
+	return await execPromise(cmd, {
 		[`RCLONE_CONFIG_${provider.toUpperCase()}_TYPE`]: type,
 		[`RCLONE_CONFIG_${provider.toUpperCase()}_CLIENT_ID`]: clientID,
 		[`RCLONE_CONFIG_${provider.toUpperCase()}_TOKEN`]: token,
 		[`RCLONE_CONFIG_${provider.toUpperCase()}_APP_KEY`]: appKey,
+		// -----------------------------------------------------------------------------
+		[`RCLONE_DRIVE_TYPE`]: type,
+		[`RCLONE_DRIVE_CLIENT_ID`]: clientID,
+		[`RCLONE_DRIVE_TOKEN`]: token,
+		[`RCLONE_DRIVE_APP_KEY`]: appKey,
+		// -----------------------------------------------------------------------------
+		[`RCLONE_CONFIG_DRIVE_TYPE`]: type,
+		[`RCLONE_CONFIG_DRIVE_CLIENT_ID`]: clientID,
+		[`RCLONE_CONFIG_DRIVE_TOKEN`]: token,
+		[`RCLONE_CONFIG_DRIVE_APP_KEY`]: appKey,
 	});
 }
 
@@ -105,7 +134,8 @@ export async function listSnapshots (site: Site, provider: Providers): Promise<s
 	}
 
 	const flags = [
-		'--fast-json',
+		'--fast-list',
+		'--use-json-log',
 	];
 
 	return execPromiseWithRcloneContext(
@@ -225,6 +255,7 @@ export async function backupSite (site: Site, provider: Providers): Promise<stri
 		console.error(err)
 	}
 
+
 	const flags = [
 		'--json',
 		`--password-command "echo \'${password}\'"`,
@@ -236,6 +267,15 @@ export async function backupSite (site: Site, provider: Providers): Promise<stri
 		 * @todo use the sites uuid provided by Hub instead of site.id
 		 */
 		`${bins.restic} --repo rclone:${provider}:${localBackupRepoID} backup ${flags.join(' ')} \'${expandedSitePath}\'`,
+		provider,
+	);
+}
+
+
+export async function arbitraryCmd (bin: string, cmd: string, provider: Providers): Promise<any> {
+	console.log('running cmd')
+	return await execPromiseWithRcloneContext(
+		`${bins[bin]} ${cmd}`,
 		provider,
 	);
 }
