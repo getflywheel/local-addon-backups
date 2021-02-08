@@ -31,8 +31,8 @@ const Row = (props: RowProps<void>) => (
 
 const MainComponent = (props: { rows: RowProps<SiteJSON>[], site: SiteJSON }) => {
 	const { rows, site } = props;
-	const [provider, setProvider] = useState(Providers.Google);
-	return (
+	const [provider, setProvider] = useState(Providers.Drive);
+	 return (
 		<TableListRow key="addon-backups" label="Backup">
 			<FlySelect
 				/* @ts-ignore */
@@ -91,7 +91,7 @@ export default function (context): void {
 			onClick: async (site, provider) => {
 				console.log(site)
 				const { localBackupRepoID } = site;
-				const bin = 'restic';
+				const bin = 'rclone';
 				const flags = [
 					// '--fast-list',
 					// '--use-json-log',
@@ -103,7 +103,8 @@ export default function (context): void {
 				 * the double colon is an attempt at using the rclone :backend: syntax to dynamically use a backend without a named
 				 * config in the rclone config. The value of :backend: should be whatever would be set in the type field in the rclone config
 				 */
-				const cmd = `${rcloneArgsForRestic} --repo rclone::drive:${localBackupRepoID} ${flags.join(' ')} init`;
+				// const cmd = `${rcloneArgsForRestic} --repo rclone::drive:${localBackupRepoID} ${flags.join(' ')} init`;
+				const cmd = `lsjson :${provider.toLowerCase()}:${localBackupRepoID}`;
 
 				console.log(
 					await ipcAsync('do-arbitrary-shit', site.id, provider, bin, cmd),
