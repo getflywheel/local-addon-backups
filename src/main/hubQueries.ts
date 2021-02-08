@@ -1,12 +1,11 @@
 import gql from 'graphql-tag';
 import { getServiceContainer } from '@getflywheel/local/main';
-import type { Providers, RcloneConfig, BackupSite, BackupRepo, Site } from '../types';
+import type { HubOAuthProviders, RcloneConfig, BackupSite, BackupRepo, Site } from '../types';
 
 /* @ts-ignore */
 const { localHubClient } = getServiceContainer().cradle;
 
-
-export async function getBackupCredentials (provider: Providers): Promise<RcloneConfig> {
+export async function getBackupCredentials (provider: HubOAuthProviders): Promise<RcloneConfig> {
 	const { data } = await localHubClient.mutate({
 		mutation: gql`
 			mutation getBackupCredentials($providerID: String!) {
@@ -67,7 +66,7 @@ export async function createBackupSite (site: Site): Promise<BackupSite> {
 	return data?.createBackupSite;
 }
 
-export async function createBackupRepo (id: number, localBackupRepoID: string, provider: Providers): Promise<BackupRepo> {
+export async function createBackupRepo (id: number, localBackupRepoID: string, provider: HubOAuthProviders): Promise<BackupRepo> {
 	const { data } = await localHubClient.mutate({
 		mutation: gql`
 			mutation createBackupRepo(
@@ -101,7 +100,7 @@ export async function createBackupRepo (id: number, localBackupRepoID: string, p
 	};
 }
 
-export async function getBackupReposByProviderID (provider: Providers): Promise<BackupRepo[]> {
+export async function getBackupReposByProviderID (provider: HubOAuthProviders): Promise<BackupRepo[]> {
 	const { data } = await localHubClient.query({
 		query: gql`
 			query getBackupReposByProviderID($providerID: String) {
@@ -128,7 +127,7 @@ export async function getBackupReposByProviderID (provider: Providers): Promise<
 }
 
 
-export async function getBackupRepo (id: number, provider: Providers): Promise<BackupRepo[]> {
+export async function getBackupRepo (id: number, provider: HubOAuthProviders): Promise<BackupRepo[]> {
 	const { data } = await localHubClient.query({
 		query: gql`
 			query getBackupRepos($siteID: Int, $providerID: String) {

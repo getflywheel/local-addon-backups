@@ -1,10 +1,10 @@
 import path from 'path';
-import { exec, execSync } from 'child_process';
+import { exec } from 'child_process';
 import fs from 'fs-extra';
 import { isString } from 'lodash';
 import { SiteData, formatHomePath, getServiceContainer } from '@getflywheel/local/main';
 import getOSBins from './getOSBins';
-import { Providers } from '../types';
+import { HubOAuthProviders, Providers } from '../types';
 import type { Site } from '../types';
 import {
 	getBackupCredentials,
@@ -15,14 +15,6 @@ import {
 } from './hubQueries';
 
 const serviceContainer = getServiceContainer().cradle;
-
-/**
- * The Site type exported from @getflywheel/local does not have all of the fields on it that this needs
- * This provides an easy place to get a site and typecast it correctly
- *
- * @param id
- */
-const getSiteByID = (id: Site['id']) => SiteData.getSite(id) as Site;
 
 /**
  * The Site type exported from @getflywheel/local does not have all of the fields on it that this needs
@@ -47,6 +39,17 @@ const bins = getOSBins();
 
 const localBackupsIgnoreFileName = '.localbackupaddonignore';
 
+
+const providerToHubProvider = (provider: Providers) => {
+	switch (provider) {
+		case 'drive':
+			return HubOAuthProviders.Google;
+		default:
+			return HubOAuthProviders.Dropbox;
+	}
+};
+
+
 /**
  * Helper to promisify executing shell commands. The point behind using this over child_process.execSync is
  * that this will help mitigate long thread blocking commands like initializing a repo with restic
@@ -65,20 +68,28 @@ async function execPromise (cmd: string, env: { [key: string]: string } = {}): P
 				},
 			},
 			(error, stdout, stderr) => {
-				console.log('callback.....', error, stdout, stderr);
-
 				/**
 				 * @todo parse the error output to handle some potentially common cases (examples below)
 				 *
+				 * ------------------------------------------
 				 * Insufficient file permissions (can happen with any executable)
 				 * ------------------------------------------
 				 * /bin/sh: 1: /home/matt/code/local-addon-backups/vendor/linux/restic: Permission denied
 				 *
+				 *
+				 * ------------------------------------------
 				 * No repo has been created (this happens when running restic backup)
 				 * ------------------------------------------
 				 * Fatal: unable to open config file: <config/> does not exist
 				 * Is there a repository at the following location?
 				 * rclone:65d123d5-f245-41db-97v6-db89e16b7789
+				 *
+				 *
+				 * ------------------------------------------
+				 * OAuth token is undefined or empty
+				 * ------------------------------------------
+				 * 2021/02/08 15:13:15 Failed to create file system for ":drive:sd430a59-8f7d-4d66-a96b-5210fe031f5e": drive: failed when making oauth client: failed to create oauth client: empty token found - please run "rclone config reconnect :drive:"
+				 *
 				 */
 				if (error) {
 					return reject(error);
@@ -93,31 +104,29 @@ async function execPromise (cmd: string, env: { [key: string]: string } = {}): P
 /**
  * Execute a command in a shell with rclone configuration options set for a given provider
  *
+ * See the docs on configuring on rclone remote entirely via env variables
+ * @reference https://rclone.org/docs/#config-file
+ *
  * @param cmd
  * @param provider
  */
 async function execPromiseWithRcloneContext (cmd: string, provider: Providers): Promise<string> {
-	const { type, clientID, token: baseToken, appKey } = await getBackupCredentials(provider);
+	const { type, clientID, token, appKey } = await getBackupCredentials(providerToHubProvider(provider));
 
-	const token = `'${baseToken.replace(/"/g, '\\"')}'`;
-
-	console.log('running:', cmd, token);
+	const upperCaseProvider = provider.toUpperCase();
 
 	return await execPromise(cmd, {
-		[`RCLONE_CONFIG_${provider.toUpperCase()}_TYPE`]: type,
-		[`RCLONE_CONFIG_${provider.toUpperCase()}_CLIENT_ID`]: clientID,
-		[`RCLONE_CONFIG_${provider.toUpperCase()}_TOKEN`]: token,
-		[`RCLONE_CONFIG_${provider.toUpperCase()}_APP_KEY`]: appKey,
-		// -----------------------------------------------------------------------------
-		[`RCLONE_DRIVE_TYPE`]: type,
-		[`RCLONE_DRIVE_CLIENT_ID`]: clientID,
-		[`RCLONE_DRIVE_TOKEN`]: token,
-		[`RCLONE_DRIVE_APP_KEY`]: appKey,
-		// -----------------------------------------------------------------------------
-		[`RCLONE_CONFIG_DRIVE_TYPE`]: type,
-		[`RCLONE_CONFIG_DRIVE_CLIENT_ID`]: clientID,
-		[`RCLONE_CONFIG_DRIVE_TOKEN`]: token,
-		[`RCLONE_CONFIG_DRIVE_APP_KEY`]: appKey,
+		/**
+		 * This style of env variables is used to configure a specific remote type (ie drive or dropbox) rather than a named remote that
+		 * already exists in an rclone config file. This can then be used with the rclone backend syntax (using a leading colon to define the backend - ie
+		 * the "type" field in an rclone config file entry)
+		 * An example of the backend syntax looks like: `rclone ls :drive:` as opposed to: `rclone ls drive:`
+		 * The former tells rclone to use drive as the backend and the latter tells rclone to use an item in the config file named "drive"
+		 */
+		[`RCLONE_${upperCaseProvider}_TYPE`]: type,
+		[`RCLONE_${upperCaseProvider}_CLIENT_ID`]: clientID,
+		[`RCLONE_${upperCaseProvider}_TOKEN`]: token,
+		[`RCLONE_${upperCaseProvider}_APP_KEY`]: appKey,
 	});
 }
 
@@ -139,7 +148,7 @@ export async function listSnapshots (site: Site, provider: Providers): Promise<s
 	];
 
 	return execPromiseWithRcloneContext(
-		`${bins.rclone} lsjson ${provider}:${localBackupRepoID} ${flags.join(' ')}`,
+		`${bins.rclone} lsjson :${provider}:${localBackupRepoID} ${flags.join(' ')}`,
 		provider,
 	);
 }
@@ -150,6 +159,8 @@ export async function listSnapshots (site: Site, provider: Providers): Promise<s
  * @param site
  */
 export async function initRepo (site: Site, provider: Providers): Promise<string | void> {
+	const hubProvider = providerToHubProvider(provider);
+
 	try {
 		let { localBackupRepoID } = getSiteDataFromDisk(site.id);
 
@@ -178,13 +189,13 @@ export async function initRepo (site: Site, provider: Providers): Promise<string
 		 *
 		 * const backupRepo = await getBackupRepo(backupSiteID, provider);
 		 */
-		let backupRepo = (await getBackupReposByProviderID(provider)).find(({ hash }) => hash === localBackupRepoID);
+		let backupRepo = (await getBackupReposByProviderID(hubProvider)).find(({ hash }) => hash === localBackupRepoID);
 
 		/**
 		 * If no backup repo is found, than we probably haven't created on on the hub side for the given provider
 		 */
 		if (!backupRepo) {
-			backupRepo = await createBackupRepo(backupSiteID, localBackupRepoID, provider);
+			backupRepo = await createBackupRepo(backupSiteID, localBackupRepoID, hubProvider);
 		}
 
 		const flags = [
@@ -196,7 +207,7 @@ export async function initRepo (site: Site, provider: Providers): Promise<string
 			/**
 			 * @todo use the sites uuid provided by Hub instead of site.id
 			 */
-			`${bins.restic} --repo rclone:${provider}:${localBackupRepoID} init ${flags.join(' ')}`,
+			`${bins.restic} --repo rclone::${provider}:${localBackupRepoID} init ${flags.join(' ')}`,
 			provider,
 		);
 	} catch (err) {
@@ -221,7 +232,7 @@ export async function initRepo (site: Site, provider: Providers): Promise<string
  */
 export async function listRepos (provider: Providers): Promise<string> {
 	const json = await execPromiseWithRcloneContext(
-		`${bins.rclone} lsjson ${provider}: --fast-list --use-json-log`,
+		`${bins.rclone} lsjson :${provider}: --fast-list --use-json-log`,
 		provider,
 	);
 
@@ -266,14 +277,13 @@ export async function backupSite (site: Site, provider: Providers): Promise<stri
 		/**
 		 * @todo use the sites uuid provided by Hub instead of site.id
 		 */
-		`${bins.restic} --repo rclone:${provider}:${localBackupRepoID} backup ${flags.join(' ')} \'${expandedSitePath}\'`,
+		`${bins.restic} --repo rclone::${provider}:${localBackupRepoID} backup ${flags.join(' ')} \'${expandedSitePath}\'`,
 		provider,
 	);
 }
 
 
 export async function arbitraryCmd (bin: string, cmd: string, provider: Providers): Promise<any> {
-	console.log('running cmd')
 	return await execPromiseWithRcloneContext(
 		`${bins[bin]} ${cmd}`,
 		provider,
