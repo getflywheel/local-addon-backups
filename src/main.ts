@@ -6,7 +6,6 @@ import { getBackupCredentials } from './main/hubQueries';
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function (context): void {
-	const { notifier, electron } = context;
 	try {
 		LocalMain.addIpcAsyncListener('start-site-backup', async (siteId: Local.Site['id'], provider: Providers) => {
 			const site = LocalMain.SiteData.getSite(siteId);
@@ -40,9 +39,9 @@ export default function (context): void {
 	});
 
 	LocalMain.addIpcAsyncListener('get-hub-credentials', async (provider: Providers) => {
-		const credentials = await getBackupCredentials(provider);
-		console.log('credentials....', credentials);
-		return credentials;
+		// const credentials = await getBackupCredentials(provider);
+		// console.log('credentials....', credentials);
+		// return credentials;
 	});
 
 	LocalMain.addIpcAsyncListener('do-arbitrary-shit', async (siteId: Local.Site['id'], provider: Providers, bin: string, cmd: string) => {
