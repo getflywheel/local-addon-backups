@@ -89,21 +89,8 @@ export default function (context): void {
 		},
 		{
 			onClick: async (site, provider) => {
-				console.log(site)
 				const { localBackupRepoID } = site;
 				const bin = 'rclone';
-				const flags = [
-					// '--fast-list',
-					// '--use-json-log',
-					'--json',
-				];
-				// const cmd = `backup --repo rclone:google:${localBackupRepoID} ${flags.join(' ')} \"${expandTilde(site.path)}\"`;
-				const rcloneArgsForRestic = `-o rclone.args="serve restic --stdio --verbose"`;
-				/**
-				 * the double colon is an attempt at using the rclone :backend: syntax to dynamically use a backend without a named
-				 * config in the rclone config. The value of :backend: should be whatever would be set in the type field in the rclone config
-				 */
-				// const cmd = `${rcloneArgsForRestic} --repo rclone::drive:${localBackupRepoID} ${flags.join(' ')} init`;
 				const cmd = `lsjson :${provider.toLowerCase()}:${localBackupRepoID}`;
 
 				console.log(

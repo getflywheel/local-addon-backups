@@ -115,7 +115,7 @@ async function execPromiseWithRcloneContext (cmd: string, provider: Providers): 
 
 	const upperCaseProvider = provider.toUpperCase();
 
-	return await execPromise(cmd, {
+	return execPromise(cmd, {
 		/**
 		 * This style of env variables is used to configure a specific remote type (ie drive or dropbox) rather than a named remote that
 		 * already exists in an rclone config file. This can then be used with the rclone backend syntax (using a leading colon to define the backend - ie
@@ -131,27 +131,50 @@ async function execPromiseWithRcloneContext (cmd: string, provider: Providers): 
 }
 
 /**
- * Verify that a given repo exists on a remote provider
+ * List all snapshots on a provider for a given site
  *
+ * @param site
  * @param provider
  */
-export async function listSnapshots (site: Site, provider: Providers): Promise<string> {
+export async function listSnapshots (site: Site, provider: Providers): Promise<[]> {
 	const { localBackupRepoID } = site;
 
 	if (!localBackupRepoID) {
 		throw new Error('Could not list snapshots since to repo was found on the given provider');
 	}
 
-	const flags = [
-		'--fast-list',
-		'--use-json-log',
-	];
+	try {
 
-	return execPromiseWithRcloneContext(
-		`${bins.rclone} lsjson :${provider}:${localBackupRepoID} ${flags.join(' ')}`,
-		provider,
-	);
+
+		const json = await execPromiseWithRcloneContext(
+			`${bins.restic} --repo rclone::${provider}::${localBackupRepoID} snapshots --json`,
+			provider,
+		);
+
+		console.log(json)
+
+		return JSON.parse(json);
+	} catch (err) {
+		/**
+		 * ------------------------------------------------------------------------
+		 * Potential failure messages
+		 * ------------------------------------------------------------------------
+		 *
+		 *
+		 * ------------------------------------------------------------------------
+		 * No repos exist
+		 * ------------------------------------------------------------------------
+		 * Error: Command failed: /home/matt/code/local-addon-backups/vendor/linux/restic --repo rclone::drive::<repo-uuid> snapshots --json
+		 * Fatal: unable to open config file: <config/> does not exist
+		 * Is there a repository at the following location?
+		 * rclone::drive::<reop-uuid>
+		 */
+		console.error(err);
+	}
+
+	return [];
 }
+
 
 /**
  * Initialize a restic repository on a given provider
@@ -179,9 +202,8 @@ export async function initRepo (site: Site, provider: Providers): Promise<string
 			localBackupRepoID = uuid;
 			encryptionPassword = password;
 			backupSiteID = id;
+			updateSite(site.id, { localBackupRepoID });
 		}
-
-		updateSite(site.id, { localBackupRepoID });
 
 		/**
 		 * @todo figure out how to query for repos by uuid of the site backup objects
@@ -203,7 +225,7 @@ export async function initRepo (site: Site, provider: Providers): Promise<string
 			`--password-command \"echo \'${encryptionPassword}\'\"`,
 		];
 
-		return execPromiseWithRcloneContext(
+		return await execPromiseWithRcloneContext(
 			/**
 			 * @todo use the sites uuid provided by Hub instead of site.id
 			 */
