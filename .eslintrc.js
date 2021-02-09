@@ -34,6 +34,7 @@ module.exports = {
 		 */
 		'no-use-before-define': 'off',
 		'@typescript-eslint/no-use-before-define': [1],
+		'@typescript-eslint/explicit-module-boundary-types': 'off',
 		'func-style': 'off',
 		'valid-jsdoc': 'off',
 	},
