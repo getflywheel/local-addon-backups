@@ -2,7 +2,7 @@ import * as Local from '@getflywheel/local';
 import * as LocalMain from '@getflywheel/local/main';
 import { Providers } from './types';
 import { backupSite, initRepo, listSnapshots, listRepos, arbitraryCmd } from './main/cli';
-import { getBackupCredentials } from './main/hubQueries';
+
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function (context): void {
@@ -10,13 +10,15 @@ export default function (context): void {
 		LocalMain.addIpcAsyncListener('start-site-backup', async (siteId: Local.Site['id'], provider: Providers) => {
 			const site = LocalMain.SiteData.getSite(siteId);
 
-			// console.log('provider....', provider);
+			const initResult = await initRepo(site, provider);
 
-			await initRepo(site, provider);
+			console.log(initResult);
 
-			console.log('repo initialized........');
+			console.log('repo initialized, backuping up site........');
 
-			// await backupSite(site, provider);
+			const backupResult = await backupSite(site, provider);
+
+			console.log(backupResult);
 		});
 
 		LocalMain.addIpcAsyncListener('list-site-snapshots', async (siteId: Local.Site['id'], provider: Providers) => {
@@ -36,12 +38,6 @@ export default function (context): void {
 		const repos = await listRepos(provider);
 		console.log(repos);
 		return repos;
-	});
-
-	LocalMain.addIpcAsyncListener('get-hub-credentials', async (provider: Providers) => {
-		// const credentials = await getBackupCredentials(provider);
-		// console.log('credentials....', credentials);
-		// return credentials;
 	});
 
 	LocalMain.addIpcAsyncListener('do-arbitrary-shit', async (siteId: Local.Site['id'], provider: Providers, bin: string, cmd: string) => {
