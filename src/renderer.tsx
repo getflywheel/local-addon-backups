@@ -87,20 +87,6 @@ export default function (context): void {
 			buttonText: 'List Repos',
 			description: 'Lists repos for all sites',
 		},
-		{
-			onClick: async (site, provider) => {
-				const { localBackupRepoID } = site;
-				const bin = 'rclone';
-				const cmd = `lsjson :${provider.toLowerCase()}:${localBackupRepoID}`;
-
-				console.log(
-					await ipcAsync('do-arbitrary-shit', site.id, provider, bin, cmd),
-				);
-
-			},
-			buttonText: 'Run the command',
-			description: 'runs whatever command is defined on the front end for my ease',
-		},
 	];
 
 	hooks.addContent('SiteInfoUtilities_TableList', (site) => (

@@ -133,6 +133,8 @@ async function execPromiseWithRcloneContext (cmd: string, provider: Providers): 
 /**
  * List all snapshots on a provider for a given site
  *
+ * @todo Type the objects in the returned array
+ *
  * @param site
  * @param provider
  */
@@ -150,8 +152,6 @@ export async function listSnapshots (site: Site, provider: Providers): Promise<[
 			`${bins.restic} --repo rclone::${provider}::${localBackupRepoID} snapshots --json`,
 			provider,
 		);
-
-		console.log(json)
 
 		return JSON.parse(json);
 	} catch (err) {
@@ -300,14 +300,6 @@ export async function backupSite (site: Site, provider: Providers): Promise<stri
 		 * @todo use the sites uuid provided by Hub instead of site.id
 		 */
 		`${bins.restic} --repo rclone::${provider}:${localBackupRepoID} backup ${flags.join(' ')} \'${expandedSitePath}\'`,
-		provider,
-	);
-}
-
-
-export async function arbitraryCmd (bin: string, cmd: string, provider: Providers): Promise<any> {
-	return await execPromiseWithRcloneContext(
-		`${bins[bin]} ${cmd}`,
 		provider,
 	);
 }
