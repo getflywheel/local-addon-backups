@@ -4,6 +4,7 @@ import { ipcAsync } from '@getflywheel/local/renderer';
 import type { SiteJSON } from '@getflywheel/local';
 import { startCase } from 'lodash';
 import { Providers } from './types';
+import SiteInfoToolsSection from './renderer/SiteInfoToolsSection';
 
 const titlize = (a: string) => startCase(a.toLowerCase());
 
@@ -60,6 +61,18 @@ const expandTilde = (path: string) => path.replace(/^~/, '/home/matt');
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function (context): void {
 	const { hooks } = context;
+
+	hooks.addFilter('siteInfoTools_Item', (items) => {
+		items.push({
+			path: '/localBackups',
+			menuItem: 'Backups',
+			render: () => (
+				<SiteInfoToolsSection />
+			),
+		});
+
+		return items;
+	});
 
 	const rows = [
 		{
