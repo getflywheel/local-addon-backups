@@ -21,7 +21,17 @@ export default function (): Bins {
 			break;
 	}
 
-	const binDirPath = path.join(__dirname, '..', '..', 'vendor', process.platform);
+	let binDirPath = path.join(__dirname, '..', 'vendor', process.platform);
+
+	/**
+	 * This ensures that the vendor dir can be found if the main thread code is compiled with tsc directly
+	 * whereas the previous value is the correct path if the code has been compiled with webpack
+	 *
+	 * @todo find a more elegant way to do this (most likey via a smarter webpack config)
+	 */
+	if (!fs.existsSync(binDirPath)) {
+		binDirPath = path.join(__dirname, '..', '..', 'vendor', process.platform);
+	}
 
 	const bins = {
 		restic: path.join(binDirPath, resticBinName),
