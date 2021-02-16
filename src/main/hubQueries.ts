@@ -1,6 +1,13 @@
 import gql from 'graphql-tag';
 import { getServiceContainer } from '@getflywheel/local/main';
-import type { HubOAuthProviders, RcloneConfig, BackupSite, BackupRepo, Site } from '../types';
+import type {
+	HubOAuthProviders,
+	RcloneConfig,
+	BackupSite,
+	BackupRepo,
+	Site,
+	HubProviderRecord,
+} from '../types';
 
 /* @ts-ignore */
 const { localHubClient } = getServiceContainer().cradle;
@@ -45,7 +52,7 @@ export async function getBackupSite (localBackupRepoID: string): Promise<BackupS
 
 	return data?.backupSites?.[0];
 }
-
+HubProviderRecord
 export async function createBackupSite (site: Site): Promise<BackupSite> {
 	const { data } = await localHubClient.mutate({
 		mutation: gql`
@@ -126,11 +133,10 @@ export async function getBackupReposByProviderID (provider: HubOAuthProviders): 
 	}));
 }
 
-
 export async function getBackupRepo (id: number, provider: HubOAuthProviders): Promise<BackupRepo[]> {
 	const { data } = await localHubClient.query({
 		query: gql`
-			query getBackupRepos($siteID: Int, $providerID: String) {
+			query getBackupRepos($siteID: Int, $providerID: String) HubProviderRecord
   				backupRepos(site_id: $siteID, provider_id: $providerID) {
     				id
     				site_id
@@ -152,4 +158,19 @@ export async function getBackupRepo (id: number, provider: HubOAuthProviders): P
 		providerID: backupRepo.provider_id,
 		siteID: backupRepo.site_id,
 	}))[0];
+}
+
+export async function getEnabledBackupProviders (): Promise<HubProviderRecord[]> {
+	const { data } = await localHubClient.query({
+		query: gql`
+			query backupProviders {
+				backupProviders {
+					id
+					name
+				}
+			}	
+		`,
+	});
+
+	return data?.backupProviders;
 }

@@ -100,6 +100,15 @@ export default function (context): void {
 			buttonText: 'List Repos',
 			description: 'Lists repos for all sites',
 		},
+		{
+			onClick: async () => {
+				console.log(
+					await ipcAsync('enabled-providers'),
+				)
+			},
+			buttonText: 'enabled providers',
+			description: 'get the old enabled providers',
+		},
 	];
 
 	hooks.addContent('SiteInfoUtilities_TableList', (site) => (
