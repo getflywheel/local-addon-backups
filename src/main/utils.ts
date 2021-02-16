@@ -1,5 +1,6 @@
 type GenericObject = { [key: string]: any };
 
+
 /**
  * Converts a snake case string to a camelCase string
  *
@@ -19,7 +20,7 @@ export const snakeToCamelCase = (inputStr: string) => inputStr.split('_').map((s
  *
  * @param obj
  */
-export const convertKeysFromSnakeToCamelCase = (obj: GenericObject) => Object.entries(obj).reduce((acc, [key, value]) => {
+export const convertKeysFromSnakeToCamelCase = <OutPut>(obj: GenericObject) => Object.entries(obj).reduce((acc, [key, value]) => {
 	acc[snakeToCamelCase(key)] = value;
 	return acc;
-}, {});
+}, {} as OutPut);
