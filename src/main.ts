@@ -2,11 +2,24 @@ import * as Local from '@getflywheel/local';
 import * as LocalMain from '@getflywheel/local/main';
 import { Providers } from './types';
 import { backupSite, initRepo, listSnapshots, listRepos } from './main/cli';
+import { getEnabledBackupProviders } from './main/hubQueries';
 
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function (context): void {
+	const listenerConfigs = [
+		{
+			channel: 'enabled-providers',
+			callback: async () => await getEnabledBackupProviders(),
+		},
+	];
+
 	try {
+		listenerConfigs.forEach(({ channel, callback }) => {
+			LocalMain.addIpcAsyncListener(channel, callback);
+		});
+
+
 		LocalMain.addIpcAsyncListener('start-site-backup', async (siteId: Local.Site['id'], provider: Providers) => {
 			const site = LocalMain.SiteData.getSite(siteId);
 			await initRepo(site, provider);

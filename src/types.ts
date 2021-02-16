@@ -6,7 +6,7 @@ export interface Site extends SiteBase {
 
 /**
  * Provider names as used by rclone
- * This is analogous to the options availbe for Storage Provider while manually configuring an rclone remote
+ * This is analogous to the options availabe for a Storage Provider while manually configuring an rclone remote
  */
 export enum Providers {
 	Drive = 'drive',
@@ -15,13 +15,18 @@ export enum Providers {
 
 /**
  * Provider names as used by Hub
- * This are equivalent to the names of the OAuth providers for a given backend
+ * These are equivalent to the names of the OAuth providers for a given backend
  * - "google" is the oauth provider for "drive"
  * - "dropbox" is the oauth provider for "dropbox"
  */
 export enum HubOAuthProviders {
 	Google = 'google',
 	Dropbox = 'dropbox',
+}
+
+export interface HubProviderRecord {
+	id: HubOAuthProviders;
+	name: string;
 }
 
 export interface BackupSite {
