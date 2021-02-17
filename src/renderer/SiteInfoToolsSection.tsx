@@ -1,17 +1,93 @@
-import React from 'react';
-import { EmptyArea, Text } from '@getflywheel/local-components';
+import React, { useEffect, useState } from 'react';
+import { EmptyArea, Text, Divider, Button, TextButton } from '@getflywheel/local-components';
+import { ipcAsync } from '@getflywheel/local/renderer';
+import type { HubProviderRecord, HubOAuthProviders } from '../types';
+
+/**
+ * @todo figure out why the first of these SVG's that gets rendered is what is used for every other icon instance within
+ * the component
+ */
 import GoogleDriveIcon from './assets/google-drive.svg';
+import DropboxIcon from './assets/dropbox.svg';
+
+import styles from './SiteInfoToolsSection.scss';
 
 interface Props {}
 
-const SiteInfoToolsSection = (props: Props) => {
+const getProviderIcon = (provider: HubOAuthProviders) => {
+	if (provider === 'google') {
+		return GoogleDriveIcon;
+	}
 
-    return (
-        <EmptyArea>
-            <GoogleDriveIcon />
-            <Text>No backups created yet</Text>
-        </EmptyArea>
-    );
+	if (provider === 'dropbox') {
+		return DropboxIcon;
+	}
+
+	return null;
+};
+
+const addDivider = (items) => items.reduce((acc, item, i) => {
+	acc.push(item);
+
+	if (i !== items.length - 1) {
+		acc.push(<Divider className={styles.SiteInfoToolsSection_ProviderDivider}/>);
+	}
+
+	return acc;
+}, []);
+
+const SiteInfoToolsSection = (props: Props) => {
+	const [loadingProviders, setLoadingProviders] = useState(false);
+	const [enabledProviders, setEnabledProviders] = useState<HubProviderRecord[]>([]);
+
+	useEffect(() => {
+	    (async () => {
+			setLoadingProviders(true);
+	        setEnabledProviders(await ipcAsync('enabled-providers'));
+			setLoadingProviders(false);
+	    })();
+	}, []);
+
+	/**
+	 * @todo sometimes the query to hub fails (like if the auth token has expired)
+	 * we should handle that more gracefully
+	 */
+	if (loadingProviders) {
+		return (
+			<span>loading...</span>
+		);
+	}
+
+	return (
+		<div className={styles.SiteInfoToolsSection}>
+			<div className={styles.SiteInfoToolsSection_Header}>
+				{/* <GoogleDriveIcon /> */}
+				<Text>
+					Latest backup: N/A
+				</Text>
+				<TextButton>
+					Manage Connections
+				</TextButton>
+			</div>
+			<Divider />
+			{addDivider(enabledProviders.map(({ id, name }) => {
+				const Icon = getProviderIcon(id);
+
+				return (
+					<>
+						<div className={styles.SiteInfoToolsSection_ProviderHeader}>
+							<Icon />
+							<Text privateOptions={{ fontSize: 'm', fontWeight: 'bold' }}>{name}</Text>
+							<Button>Backup Site</Button>
+						</div>
+						<EmptyArea className={styles.SiteInfoToolsSection_EmptyArea}>
+							<Text>No backups created yet</Text>
+						</EmptyArea>
+					</>
+				);
+			}))}
+		</div>
+	);
 };
 
 export default SiteInfoToolsSection;
