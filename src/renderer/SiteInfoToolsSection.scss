@@ -1,0 +1,28 @@
+.SiteInfoToolsSection {
+	padding: 27px;
+}
+
+.SiteInfoToolsSection_Header {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 27px;
+}
+
+.SiteInfoToolsSection_ProviderHeader {
+	display: grid;
+	grid-template-columns: [icon] 50px [provider-name] auto [action-button] 136px;
+	justify-items: left;
+	align-items: center;
+	padding: 30px 0;
+}
+
+.SiteInfoToolsSection_ProviderDivider {
+	/* To account for the 27px container margin, set a negative margin on the left and right */
+	margin: 20px -27px 0 -27px;
+}
+
+.SiteInfoToolsSection_EmptyArea {
+	margin: 0;
+}

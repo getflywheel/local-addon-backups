@@ -56,8 +56,6 @@ const MainComponent = (props: { rows: RowProps<SiteJSON>[], site: SiteJSON }) =>
 	);
 };
 
-const expandTilde = (path: string) => path.replace(/^~/, '/home/matt');
-
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function (context): void {
 	const { hooks } = context;
