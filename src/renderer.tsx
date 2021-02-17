@@ -64,8 +64,8 @@ export default function (context): void {
 		items.push({
 			path: '/localBackups',
 			menuItem: 'Backups',
-			render: () => (
-				<SiteInfoToolsSection />
+			render: ({ site }) => (
+				<SiteInfoToolsSection site={site} />
 			),
 		});
 
