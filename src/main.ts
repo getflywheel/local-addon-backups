@@ -12,6 +12,14 @@ export default function (context): void {
 			channel: 'enabled-providers',
 			callback: async () => await getEnabledBackupProviders(),
 		},
+		{
+			channel: 'backups:backup-site',
+			callback: async (siteId: Local.Site['id'], provider: Providers) => {
+				const site = LocalMain.SiteData.getSite(siteId);
+				await initRepo(site, provider);
+				await backupSite(site, provider);
+			},
+		},
 	];
 
 	try {

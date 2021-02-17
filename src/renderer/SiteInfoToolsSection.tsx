@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { EmptyArea, Text, Divider, Button, TextButton } from '@getflywheel/local-components';
 import { ipcAsync } from '@getflywheel/local/renderer';
-import type { HubProviderRecord, HubOAuthProviders } from '../types';
+import type { Site } from '@getflywheel/local';
+import { URLS } from '../constants';
+import type { HubProviderRecord } from '../types';
+import { HubOAuthProviders, Providers } from '../types';
 
 /**
  * @todo figure out why the first of these SVG's that gets rendered is what is used for every other icon instance within
@@ -12,7 +15,9 @@ import DropboxIcon from './assets/dropbox.svg';
 
 import styles from './SiteInfoToolsSection.scss';
 
-interface Props {}
+interface Props {
+	site: Site;
+}
 
 const getProviderIcon = (provider: HubOAuthProviders) => {
 	if (provider === 'google') {
@@ -36,7 +41,32 @@ const addDivider = (items) => items.reduce((acc, item, i) => {
 	return acc;
 }, []);
 
+const convertHubProviderToRsyncProviderName = (hubProvider: HubOAuthProviders) => {
+	if (hubProvider === HubOAuthProviders.Google) {
+		return Providers.Drive;
+	}
+
+	if (hubProvider === HubOAuthProviders.Dropbox) {
+		return Providers.Dropbox;
+	}
+
+	return null;
+};
+
+const launchBrowser = (url: string) => ipcAsync(
+	'browserService:launch',
+	url,
+);
+
+const backupSite = (site: Site, provider: Providers) => ipcAsync(
+	'backups:backup-site',
+	site.id,
+	provider,
+);
+
 const SiteInfoToolsSection = (props: Props) => {
+	const { site } = props;
+
 	const [loadingProviders, setLoadingProviders] = useState(false);
 	const [enabledProviders, setEnabledProviders] = useState<HubProviderRecord[]>([]);
 
@@ -65,7 +95,7 @@ const SiteInfoToolsSection = (props: Props) => {
 				<Text>
 					Latest backup: N/A
 				</Text>
-				<TextButton>
+				<TextButton onClick={() => launchBrowser(`${URLS.LOCAL_HUB}/addons/backups`)}>
 					Manage Connections
 				</TextButton>
 			</div>
@@ -78,7 +108,11 @@ const SiteInfoToolsSection = (props: Props) => {
 						<div className={styles.SiteInfoToolsSection_ProviderHeader}>
 							<Icon />
 							<Text privateOptions={{ fontSize: 'm', fontWeight: 'bold' }}>{name}</Text>
-							<Button>Backup Site</Button>
+							<Button
+								onClick={() => backupSite(site, convertHubProviderToRsyncProviderName(id))}
+							>
+								Backup Site
+							</Button>
 						</div>
 						<EmptyArea className={styles.SiteInfoToolsSection_EmptyArea}>
 							<Text>No backups created yet</Text>
