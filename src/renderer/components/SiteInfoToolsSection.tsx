@@ -19,6 +19,11 @@ interface Props {
 	site: Site;
 }
 
+/**
+ * Map a Hub provided storage provider id to the appropriate icon
+ *
+ * @param provider
+ */
 const getProviderIcon = (provider: HubOAuthProviders) => {
 	if (provider === 'google') {
 		return GoogleDriveIcon;
@@ -31,6 +36,12 @@ const getProviderIcon = (provider: HubOAuthProviders) => {
 	return null;
 };
 
+/**
+ * Helper to add dividers between each of a list of JSX elements. Does not add ad divider
+ * before the first or after the last element
+ *
+ * @param items
+ */
 const addDivider = (items) => items.reduce((acc, item, i) => {
 	acc.push(item);
 
@@ -41,6 +52,12 @@ const addDivider = (items) => items.reduce((acc, item, i) => {
 	return acc;
 }, []);
 
+/**
+ * Hub/Rsync use slightly different naming conventions for each provider. This maps from the Hub
+ * provided values to those expected by Rsync
+ *
+ * @param hubProvider
+ */
 const convertHubProviderToRsyncProviderName = (hubProvider: HubOAuthProviders) => {
 	if (hubProvider === HubOAuthProviders.Google) {
 		return Providers.Drive;
@@ -53,11 +70,22 @@ const convertHubProviderToRsyncProviderName = (hubProvider: HubOAuthProviders) =
 	return null;
 };
 
+/**
+ * Light convenience wrapper around ipcAsync to launch a web browser in the default browser as configured by Local
+ *
+ * @param url
+ */
 const launchBrowser = (url: string) => ipcAsync(
 	'browserService:launch',
 	url,
 );
 
+/**
+ * Light convenience wrapper around ipcAsync to backup a site
+ *
+ * @param site
+ * @param provider
+ */
 const backupSite = (site: Site, provider: Providers) => ipcAsync(
 	'backups:backup-site',
 	site.id,
