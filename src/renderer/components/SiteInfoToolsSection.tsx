@@ -6,7 +6,7 @@ import { URLS } from '../../constants';
 import useActiveSiteID from './useActiveSiteID';
 import type { HubProviderRecord } from '../../types';
 import { HubOAuthProviders, Providers } from '../../types';
-import { useStoreSelector } from '../store/store';
+import { useStoreSelector, selectors, store, actions } from '../store/store';
 
 /* @ts-ignore */
 import GoogleDriveIcon from '../assets/google-drive.svg';
@@ -69,13 +69,14 @@ const SiteInfoToolsSection = (props: Props) => {
 
 	useActiveSiteID(site.id);
 
+	const enabledProviders = useStoreSelector(selectors.enabledProviders);
+
 	const [loadingProviders, setLoadingProviders] = useState(false);
-	const [enabledProviders, setEnabledProviders] = useState<HubProviderRecord[]>([]);
 
 	useEffect(() => {
 	    (async () => {
 			setLoadingProviders(true);
-	        setEnabledProviders(await ipcAsync('enabled-providers'));
+			store.dispatch(actions.setEnabledProviders(await ipcAsync('enabled-providers')));
 			setLoadingProviders(false);
 	    })();
 	}, []);
