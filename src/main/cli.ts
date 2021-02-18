@@ -190,6 +190,10 @@ export async function initRepo (site: Site, provider: Providers): Promise<string
 		let encryptionPassword;
 		let backupSiteID;
 
+		/**
+		 * A backupSite is a vehicle for managing the uuid (localBackupRepoID) and the encryption password
+		 * for a site. These two values will be used with every provider
+		 */
 		if (localBackupRepoID) {
 			const { uuid, password, id } = await getBackupSite(localBackupRepoID);
 
@@ -210,6 +214,9 @@ export async function initRepo (site: Site, provider: Providers): Promise<string
 		 * This should theoretically work, but currently appears to be broken on the Hub side:
 		 *
 		 * const backupRepo = await getBackupRepo(backupSiteID, provider);
+		 *
+		 * A backupRepo is a vehicle for managing a site repo on a provider. There will be one of these for each provider
+		 * that holds a backup of a particular site
 		 */
 		let backupRepo = (await getBackupReposByProviderID(hubProvider)).find(({ hash }) => hash === localBackupRepoID);
 
@@ -285,7 +292,7 @@ export async function backupSite (site: Site, provider: Providers): Promise<stri
 			fs.copySync(defaultIgnoreFilePath, ignoreFilePath);
 		}
 	} catch(err) {
-		console.error(err)
+		console.error(err);
 	}
 
 

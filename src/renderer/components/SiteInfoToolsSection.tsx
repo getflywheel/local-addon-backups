@@ -4,7 +4,6 @@ import { ipcAsync } from '@getflywheel/local/renderer';
 import type { Site } from '@getflywheel/local';
 import { URLS } from '../../constants';
 import useActiveSiteID from './useActiveSiteID';
-import type { HubProviderRecord } from '../../types';
 import { HubOAuthProviders, Providers } from '../../types';
 import { useStoreSelector, selectors, store, actions } from '../store/store';
 
@@ -58,7 +57,7 @@ const addDivider = (items) => items.reduce((acc, item, i) => {
  *
  * @param hubProvider
  */
-const convertHubProviderToRsyncProviderName = (hubProvider: HubOAuthProviders) => {
+const hubProviderToProvider = (hubProvider: HubOAuthProviders) => {
 	if (hubProvider === HubOAuthProviders.Google) {
 		return Providers.Drive;
 	}
@@ -140,7 +139,7 @@ const SiteInfoToolsSection = (props: Props) => {
 							<Icon />
 							<Text privateOptions={{ fontSize: 'm', fontWeight: 'bold' }}>{name}</Text>
 							<Button
-								onClick={() => backupSite(site, convertHubProviderToRsyncProviderName(id))}
+								onClick={() => backupSite(site, hubProviderToProvider(id))}
 							>
 								Backup Site
 							</Button>
