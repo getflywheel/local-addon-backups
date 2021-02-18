@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { Provider } from 'react-redux';
 import { TextButton, TableListRow, FlySelect } from '@getflywheel/local-components';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import type { SiteJSON } from '@getflywheel/local';
 import { startCase } from 'lodash';
 import { Providers } from './types';
-import SiteInfoToolsSection from './renderer/SiteInfoToolsSection';
+import SiteInfoToolsSection from './renderer/components/SiteInfoToolsSection';
+import { store } from './renderer/store/store';
 
 const titlize = (a: string) => startCase(a.toLowerCase());
 
@@ -13,6 +15,12 @@ interface RowProps<T> {
 	buttonText: string;
 	description?: string;
 }
+
+const withStoreProvider = (Component) => (props) => (
+	<Provider store={store}>
+		<Component {...props} />
+	</Provider>
+);
 
 const Row = (props: RowProps<void>) => (
 	<div>
@@ -60,12 +68,14 @@ const MainComponent = (props: { rows: RowProps<SiteJSON>[], site: SiteJSON }) =>
 export default function (context): void {
 	const { hooks } = context;
 
+	const SiteInfoToolsSectionHOC = withStoreProvider(SiteInfoToolsSection);
+
 	hooks.addFilter('siteInfoTools_Item', (items) => {
 		items.push({
 			path: '/localBackups',
 			menuItem: 'Backups',
 			render: ({ site }) => (
-				<SiteInfoToolsSection site={site} />
+				<SiteInfoToolsSectionHOC site={site} />
 			),
 		});
 

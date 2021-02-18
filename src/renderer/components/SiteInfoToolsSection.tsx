@@ -2,13 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { EmptyArea, Text, Divider, Button, TextButton } from '@getflywheel/local-components';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import type { Site } from '@getflywheel/local';
-import { URLS } from '../constants';
-import type { HubProviderRecord } from '../types';
-import { HubOAuthProviders, Providers } from '../types';
+import { URLS } from '../../constants';
+import useActiveSiteID from './useActiveSiteID';
+import type { HubProviderRecord } from '../../types';
+import { HubOAuthProviders, Providers } from '../../types';
+import { useStoreSelector } from '../store/store';
 
 /* @ts-ignore */
-import GoogleDriveIcon from './assets/google-drive.svg';
-import DropboxIcon from './assets/dropbox.svg';
+import GoogleDriveIcon from '../assets/google-drive.svg';
+/* @ts-ignore */
+import DropboxIcon from '../assets/dropbox.svg';
 /* @ts-ignore */
 import styles from './SiteInfoToolsSection.scss';
 
@@ -63,6 +66,8 @@ const backupSite = (site: Site, provider: Providers) => ipcAsync(
 
 const SiteInfoToolsSection = (props: Props) => {
 	const { site } = props;
+
+	useActiveSiteID(site.id);
 
 	const [loadingProviders, setLoadingProviders] = useState(false);
 	const [enabledProviders, setEnabledProviders] = useState<HubProviderRecord[]>([]);
