@@ -6,13 +6,10 @@ import { URLS } from '../constants';
 import type { HubProviderRecord } from '../types';
 import { HubOAuthProviders, Providers } from '../types';
 
-/**
- * @todo figure out why the first of these SVG's that gets rendered is what is used for every other icon instance within
- * the component
- */
+/* @ts-ignore */
 import GoogleDriveIcon from './assets/google-drive.svg';
 import DropboxIcon from './assets/dropbox.svg';
-
+/* @ts-ignore */
 import styles from './SiteInfoToolsSection.scss';
 
 interface Props {
