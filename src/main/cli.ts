@@ -197,10 +197,8 @@ export async function listRepos (provider: Providers): Promise<string> {
 	return repos;
 }
 
-export async function backupSite (site: Site, provider: Providers): Promise<string | void> {
+export async function createSnapshot (site: Site, provider: Providers, encryptionPassword: string): Promise<string | void> {
 	const { localBackupRepoID } = getSiteDataFromDisk(site.id);
-
-	const { password } = await getBackupSite(localBackupRepoID);
 
 	if (!localBackupRepoID) {
 		/**
@@ -225,7 +223,7 @@ export async function backupSite (site: Site, provider: Providers): Promise<stri
 
 	const flags = [
 		'--json',
-		`--password-command "echo \'${password}\'"`,
+		`--password-command "echo \'${encryptionPassword}\'"`,
 		`--exclude-file \'${ignoreFilePath}\'`,
 	];
 
