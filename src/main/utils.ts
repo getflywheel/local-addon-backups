@@ -1,4 +1,5 @@
 import type { Site } from '../types';
+import { HubOAuthProviders } from '../types';
 import { getServiceContainer, SiteData } from '@getflywheel/local/main';
 
 const serviceContainer = getServiceContainer().cradle;

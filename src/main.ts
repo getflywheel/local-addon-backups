@@ -1,8 +1,9 @@
 import * as Local from '@getflywheel/local';
 import * as LocalMain from '@getflywheel/local/main';
 import { Providers } from './types';
-import { backupSite, initRepo, listSnapshots, listRepos } from './main/cli';
-import { getEnabledBackupProviders } from './main/hubQueries';
+import { createSnapshot, initRepo, listSnapshots, listRepos } from './main/cli';
+import { createBackupRepo, getEnabledBackupProviders } from './main/hubQueries';
+import { createBackup } from './main/jobs';
 
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
@@ -16,8 +17,13 @@ export default function (context): void {
 			channel: 'backups:backup-site',
 			callback: async (siteId: Local.Site['id'], provider: Providers) => {
 				const site = LocalMain.SiteData.getSite(siteId);
+
+				createBackup(site, provider);
+
+				return;
+
 				await initRepo(site, provider);
-				await backupSite(site, provider);
+				await createSnapshot(site, provider);
 			},
 		},
 	];
@@ -31,7 +37,7 @@ export default function (context): void {
 		LocalMain.addIpcAsyncListener('start-site-backup', async (siteId: Local.Site['id'], provider: Providers) => {
 			const site = LocalMain.SiteData.getSite(siteId);
 			await initRepo(site, provider);
-			await backupSite(site, provider);
+			await createSnapshot(site, provider);
 		});
 
 		LocalMain.addIpcAsyncListener('list-site-snapshots', async (siteId: Local.Site['id'], provider: Providers) => {
