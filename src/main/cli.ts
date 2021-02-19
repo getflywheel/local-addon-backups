@@ -2,52 +2,19 @@ import path from 'path';
 import { exec } from 'child_process';
 import fs from 'fs-extra';
 import { isString } from 'lodash';
-import { SiteData, formatHomePath, getServiceContainer } from '@getflywheel/local/main';
+import { formatHomePath } from '@getflywheel/local/main';
 import getOSBins from './getOSBins';
-import { HubOAuthProviders, Providers } from '../types';
-import type { Site } from '../types';
+import { Providers } from '../types';
+import type { Site, BackupSite } from '../types';
 import {
 	getBackupCredentials,
 	getBackupSite,
-	createBackupSite,
-	getBackupReposByProviderID,
-	createBackupRepo,
 } from './hubQueries';
-
-const serviceContainer = getServiceContainer().cradle;
-
-/**
- * The Site type exported from @getflywheel/local does not have all of the fields on it that this needs
- * This provides an easy place to typecast and update that site object while still satisfying the TS compiler
- *
- * @param id
- * @param sitePartial
- */
-const updateSite = (id: Site['id'], sitePartial: Partial<Site>) => SiteData.updateSite(id, sitePartial);
-
-/**
- * Helper to read site data from disk
- *
- * @param id
- */
-const getSiteDataFromDisk = (id: Site['id']) => {
-	const sites = serviceContainer.userData.get('sites');
-	return sites[id];
-};
+import { getSiteDataFromDisk, providerToHubProvider } from './utils';
 
 const bins = getOSBins();
 
 const localBackupsIgnoreFileName = '.localbackupaddonignore';
-
-
-const providerToHubProvider = (provider: Providers) => {
-	switch (provider) {
-		case 'drive':
-			return HubOAuthProviders.Google;
-		default:
-			return HubOAuthProviders.Dropbox;
-	}
-};
 
 
 /**
@@ -181,52 +148,12 @@ export async function listSnapshots (site: Site, provider: Providers): Promise<[
  *
  * @param site
  */
-export async function initRepo (site: Site, provider: Providers): Promise<string | void> {
-	const hubProvider = providerToHubProvider(provider);
-
+export async function initRepo ({ provider, encryptionPassword, localBackupRepoID }: {
+	provider: Providers,
+	encryptionPassword: string,
+	localBackupRepoID: string,
+}): Promise<string | void> {
 	try {
-		let { localBackupRepoID } = getSiteDataFromDisk(site.id);
-
-		let encryptionPassword;
-		let backupSiteID;
-
-		/**
-		 * A backupSite is a vehicle for managing the uuid (localBackupRepoID) and the encryption password
-		 * for a site. These two values will be used with every provider
-		 */
-		if (localBackupRepoID) {
-			const { uuid, password, id } = await getBackupSite(localBackupRepoID);
-
-			localBackupRepoID = uuid;
-			encryptionPassword = password;
-			backupSiteID = id;
-		} else {
-			const { uuid, password, id } = await createBackupSite(site);
-
-			localBackupRepoID = uuid;
-			encryptionPassword = password;
-			backupSiteID = id;
-			updateSite(site.id, { localBackupRepoID });
-		}
-
-		/**
-		 * @todo figure out how to query for repos by uuid of the site backup objects
-		 * This should theoretically work, but currently appears to be broken on the Hub side:
-		 *
-		 * const backupRepo = await getBackupRepo(backupSiteID, provider);
-		 *
-		 * A backupRepo is a vehicle for managing a site repo on a provider. There will be one of these for each provider
-		 * that holds a backup of a particular site
-		 */
-		let backupRepo = (await getBackupReposByProviderID(hubProvider)).find(({ hash }) => hash === localBackupRepoID);
-
-		/**
-		 * If no backup repo is found, than we probably haven't created on on the hub side for the given provider
-		 */
-		if (!backupRepo) {
-			backupRepo = await createBackupRepo(backupSiteID, localBackupRepoID, hubProvider);
-		}
-
 		const flags = [
 			'--json',
 			`--password-command \"echo \'${encryptionPassword}\'\"`,

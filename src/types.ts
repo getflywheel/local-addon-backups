@@ -1,5 +1,9 @@
 import type { Site as SiteBase } from '@getflywheel/local';
 
+/**
+ * Creates a light wrapper around the Site type as an easy way to extend the type exported
+ * on the Local API
+ */
 export interface Site extends SiteBase {
 	localBackupRepoID?: string;
 }
