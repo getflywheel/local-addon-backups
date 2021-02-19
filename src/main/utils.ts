@@ -1,5 +1,9 @@
-type GenericObject = { [key: string]: any };
+import type { Site } from '../types';
+import { getServiceContainer, SiteData } from '@getflywheel/local/main';
 
+const serviceContainer = getServiceContainer().cradle;
+
+type GenericObject = { [key: string]: any };
 
 /**
  * Converts a snake case string to a camelCase string
@@ -24,3 +28,31 @@ export const convertKeysFromSnakeToCamelCase = <OutPut>(obj: GenericObject) => O
 	acc[snakeToCamelCase(key)] = value;
 	return acc;
 }, {} as OutPut);
+
+/**
+ * Helper to read site data from disk
+ *
+ * @param id
+ */
+export const getSiteDataFromDisk = (id: Site['id']) => {
+	const sites = serviceContainer.userData.get('sites');
+	return sites[id];
+};
+
+export const providerToHubProvider = (provider: Providers) => {
+	switch (provider) {
+		case 'drive':
+			return HubOAuthProviders.Google;
+		default:
+			return HubOAuthProviders.Dropbox;
+	}
+};
+
+/**
+ * The Site type exported from @getflywheel/local does not have all of the fields on it that this needs
+ * This provides an easy place to typecast and update that site object while still satisfying the TS compiler
+ *
+ * @param id
+ * @param sitePartial
+ */
+export const updateSite = (id: Site['id'], sitePartial: Partial<Site>) => SiteData.updateSite(id, sitePartial);
