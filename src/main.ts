@@ -18,7 +18,8 @@ export default function (context): void {
 			callback: async (siteId: Local.Site['id'], provider: Providers) => {
 				const site = LocalMain.SiteData.getSite(siteId);
 
-				createBackup(site, provider);
+				await createBackup(site, provider);
+				console.log('hey, justfinished!!!!!')
 			},
 		},
 	];
