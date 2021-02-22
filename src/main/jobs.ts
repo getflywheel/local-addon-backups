@@ -34,11 +34,11 @@ type BackupMachineEvent =
 	| { type: 'ALREADY_EXISTS' }
 	| { type: 'FAIL' };
 
-const jobs = {};
+const services = {};
 
 const maybeCreateBackupSite = async (context: BackupMachineContext) => {
 	const { site, provider } = context;
-	const interpreter = jobs[site.id][provider];
+	const service = services[site.id][provider];
 
 	let { localBackupRepoID } = getSiteDataFromDisk(site.id);
 
@@ -64,7 +64,7 @@ const maybeCreateBackupSite = async (context: BackupMachineContext) => {
 		updateSite(site.id, { localBackupRepoID });
 	}
 
-	interpreter.send({
+	service.send({
 		type: 'SUCCESS',
 		encryptionPassword,
 		backupSiteID,
@@ -75,7 +75,7 @@ const maybeCreateBackupSite = async (context: BackupMachineContext) => {
 const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 	const { provider, site, localBackupRepoID, backupSiteID, encryptionPassword } = context;
 	const hubProvider = providerToHubProvider(provider);
-	const interpreter = jobs[site.id][provider];
+	const service = services[site.id][provider];
 	/**
 	 * @todo figure out how to query for repos by uuid of the site backup objects
 	 * This should theoretically work, but currently appears to be broken on the Hub side:
@@ -91,7 +91,7 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 	 * on the given provider
 	 */
 	if (backupRepo) {
-		interpreter.send({
+		service.send({
 			type: 'ALREADY_EXISTS',
 		});
 
@@ -104,35 +104,35 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 	backupRepo = await createBackupRepo(backupSiteID, localBackupRepoID, hubProvider);
 	await initRepo({ provider, localBackupRepoID, encryptionPassword });
 
-	interpreter.send({
+	service.send({
 		type: 'SUCCESS',
 	});
 };
 
 const initResticRepo = async (context: BackupMachineContext) => {
 	const { site, provider, localBackupRepoID, encryptionPassword } = context;
-	const interpreter = jobs[site.id][provider];
+	const service = services[site.id][provider];
 	try {
 		await initRepo({ provider, localBackupRepoID, encryptionPassword });
 	} catch (err) {
-		interpreter.send({
+		service.send({
 			type: 'FAIL',
 			errorMessage: err,
 		});
 	}
 
-	interpreter.send({
+	service.send({
 		type: 'SUCCESS',
 	});
 };
 
 const createSnapshot = async (context: BackupMachineContext) => {
 	const { site, provider, encryptionPassword } = context;
-	const interpreter = jobs[site.id][provider];
+	const service = services[site.id][provider];
 
 	await createResticSnapshot(site, provider, encryptionPassword);
 
-	interpreter.send({
+	service.send({
 		type: 'SUCCESS',
 	});
 };
@@ -222,7 +222,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema, BackupM
 /**
  * Create a site backup
  *
- * Creates a new state machine instance/interpreter
+ * Creates a new state machine instance/service
  * @param site
  * @param provider
  */
@@ -230,8 +230,8 @@ export const createBackup = (site: Site, provider: Providers) => {
 	const backupService = interpret(backupMachine.withContext({ site, provider }))
 		.onTransition((state) => console.log('state -----', state.value, state.context));
 
-	jobs[site.id] = {};
-	jobs[site.id][provider] = backupService;
+	services[site.id] = {};
+	services[site.id][provider] = backupService;
 
 	backupService.start();
 };
