@@ -1,10 +1,8 @@
-import type { Site } from '../types';
+import type { Site, GenericObject } from '../types';
 import { HubOAuthProviders } from '../types';
 import { getServiceContainer, SiteData } from '@getflywheel/local/main';
 
 const serviceContainer = getServiceContainer().cradle;
-
-type GenericObject = { [key: string]: any };
 
 /**
  * Converts a snake case string to a camelCase string

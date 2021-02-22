@@ -1,5 +1,7 @@
 import type { Site as SiteBase } from '@getflywheel/local';
 
+export type GenericObject = { [key: string]: any };
+
 /**
  * Creates a light wrapper around the Site type as an easy way to extend the type exported
  * on the Local API
