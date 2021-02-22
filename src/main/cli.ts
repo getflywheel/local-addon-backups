@@ -227,10 +227,15 @@ export async function createSnapshot (site: Site, provider: Providers, encryptio
 		`--exclude-file \'${ignoreFilePath}\'`,
 	];
 
+	/**
+	 * @todo Handle the following error(ssssssss)
+	 *
+	 * If the password is undefined, restic will throw this error:
+	 * Error: Command failed: restic --repo rclone::drive:<uuid> backup --json --password-command "echo 'undefined'" --exclude-file '/home/matt/Local Sites/0/.localbackupaddonignore' '/home/matt/Local Sites/0'
+Fatal: wrong password or no key found
+	 */
+
 	return execPromiseWithRcloneContext(
-		/**
-		 * @todo use the sites uuid provided by Hub instead of site.id
-		 */
 		`${bins.restic} --repo rclone::${provider}:${localBackupRepoID} backup ${flags.join(' ')} \'${expandedSitePath}\'`,
 		provider,
 	);

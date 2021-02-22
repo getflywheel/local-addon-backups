@@ -37,8 +37,7 @@ type BackupMachineEvent =
 const services = {};
 
 const maybeCreateBackupSite = async (context: BackupMachineContext) => {
-	const { site, provider } = context;
-	const service = services[site.id][provider];
+	const { site } = context;
 
 	let { localBackupRepoID } = getSiteDataFromDisk(site.id);
 
@@ -64,18 +63,16 @@ const maybeCreateBackupSite = async (context: BackupMachineContext) => {
 		updateSite(site.id, { localBackupRepoID });
 	}
 
-	service.send({
-		type: 'SUCCESS',
+	return {
 		encryptionPassword,
 		backupSiteID,
-		localBackupRepoID,
-	});
+	};
 };
 
 const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
-	const { provider, site, localBackupRepoID, backupSiteID, encryptionPassword } = context;
+	const { provider, site, backupSiteID, encryptionPassword } = context;
+	const { localBackupRepoID } = site;
 	const hubProvider = providerToHubProvider(provider);
-	const service = services[site.id][provider];
 	/**
 	 * @todo figure out how to query for repos by uuid of the site backup objects
 	 * This should theoretically work, but currently appears to be broken on the Hub side:
@@ -84,18 +81,19 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 	 * A backupRepo is a vehicle for managing a site repo on a provider. There will be one of these for each provider
 	 * that holds a backup of a particular site
 	 */
-	let backupRepo = (await getBackupReposByProviderID(hubProvider)).find(({ hash }) => hash === localBackupRepoID);
+	let backupRepo;
+	if (localBackupRepoID) {
+		backupRepo = (await getBackupReposByProviderID(hubProvider)).find(({ hash }) => hash === localBackupRepoID);
+	}
 
 	/**
 	 * If this already exists on the Hub side, then we assume that the restic repo has been initialized
 	 * on the given provider
 	 */
 	if (backupRepo) {
-		service.send({
-			type: 'ALREADY_EXISTS',
-		});
-
-		return;
+		return {
+			backupRepoAlreadyExists: true,
+		};
 	}
 
 	/**
@@ -104,9 +102,9 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 	backupRepo = await createBackupRepo(backupSiteID, localBackupRepoID, hubProvider);
 	await initRepo({ provider, localBackupRepoID, encryptionPassword });
 
-	service.send({
-		type: 'SUCCESS',
-	});
+	return {
+		backupRepoAlreadyExists: false,
+	};
 };
 
 const initResticRepo = async (context: BackupMachineContext) => {
@@ -120,21 +118,12 @@ const initResticRepo = async (context: BackupMachineContext) => {
 			errorMessage: err,
 		});
 	}
-
-	service.send({
-		type: 'SUCCESS',
-	});
 };
 
 const createSnapshot = async (context: BackupMachineContext) => {
 	const { site, provider, encryptionPassword } = context;
-	const service = services[site.id][provider];
 
 	await createResticSnapshot(site, provider, encryptionPassword);
-
-	service.send({
-		type: 'SUCCESS',
-	});
 };
 
 // eslint-disable-next-line new-cap
@@ -142,7 +131,6 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema, BackupM
 	{
 		id: 'createBackup',
 		initial: 'creatingBackupSite',
-		// can use withContext to extend this before interpreting to give the instance the site and provider
 		context: {
 			site: null,
 			provider: null,
@@ -153,48 +141,57 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema, BackupM
 		},
 		states: {
 			creatingBackupSite: {
-				entry: ['maybeCreateBackupSite'],
-				exit: [
-					assign({
-						encryptionPassword: (context, event) => event.encryptionPassword,
-						backupSiteID: (_, event) => event.backupSiteID,
-						localBackupRepoID: (_, event) => event.localBackupRepoID,
-					}),
-				],
-				on: {
-					SUCCESS: {
+				invoke: {
+					id: 'maybeCreateBackupSite',
+					src: (context, event) => maybeCreateBackupSite(context),
+					onDone: {
 						target: 'creatingBackupRepo',
+						actions: assign({
+							encryptionPassword: (_, event) => event.data.encryptionPassword,
+							backupSiteID: (_, event) => event.data.backupSiteID,
+						}),
 					},
-					FAIL: 'failed',
+					onError: {
+						target: 'failed',
+					},
 				},
 			},
 			creatingBackupRepo: {
-				entry: ['maybeCreateBackupRepo'],
-				on: {
-					ALREADY_EXISTS: {
-						target: 'creatingSnapshot',
+				invoke: {
+					src: (context, event) => maybeCreateBackupRepo(context),
+					onDone: [
+						{
+							target: 'creatingSnapshot',
+							cond: (context, event) => event.data.backupRepoAlreadyExists,
+						},
+						{
+							target: 'initingResticRepo',
+							// cond: (context, event) => !event.data.backupRepoAlreadyExists,
+						},
+					],
+					onError: {
+						target: 'failed',
 					},
-					SUCCESS: {
-						target: 'initingResticRepo',
-					},
-					FAIL: 'failed',
 				},
 			},
 			initingResticRepo: {
-				entry: ['initResticRepo'],
-				on: {
-					SUCCESS: {
+				invoke: {
+					src: (context, event) => initResticRepo(context),
+					onDone: {
 						target: 'creatingSnapshot',
-						actions: ['createSnapshot'],
 					},
-					FAIL: 'failed',
+					onError: {
+						target: 'failed',
+					},
 				},
 			},
 			creatingSnapshot: {
-				entry: ['createSnapshot'],
-				on: {
-					SUCCESS: 'finished',
-					FAIL: 'failed',
+				invoke: {
+					src: (context, event) => createSnapshot(context),
+					onDone: {
+						target: 'finished',
+					},
+					onError: 'failed',
 				},
 			},
 			finished: {
@@ -204,6 +201,8 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema, BackupM
 				type: 'final',
 				/**
 				 * @todo use this entry action to notify the UI of the error and also dump some logs into the Local logger
+				 *
+				 * @todo remember to call .stop() on the service when done
 				 */
 				entry: [],
 			},
