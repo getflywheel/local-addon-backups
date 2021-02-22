@@ -109,21 +109,12 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 };
 
 const initResticRepo = async (context: BackupMachineContext) => {
-	const { site, provider, localBackupRepoID, encryptionPassword } = context;
-	const service = services[site.id][provider];
-	try {
-		await initRepo({ provider, localBackupRepoID, encryptionPassword });
-	} catch (err) {
-		service.send({
-			type: 'FAIL',
-			errorMessage: err,
-		});
-	}
+	const { provider, localBackupRepoID, encryptionPassword } = context;
+	await initRepo({ provider, localBackupRepoID, encryptionPassword });
 };
 
 const createSnapshot = async (context: BackupMachineContext) => {
 	const { site, provider, encryptionPassword } = context;
-
 	await createResticSnapshot(site, provider, encryptionPassword);
 };
 
@@ -200,12 +191,6 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema, BackupM
 			},
 			failed: {
 				type: 'final',
-				/**
-				 * @todo use this entry action to notify the UI of the error and also dump some logs into the Local logger
-				 *
-				 * @todo remember to call .stop() on the service when done
-				 */
-				entry: [],
 			},
 		},
 	},
@@ -244,6 +229,11 @@ export const createBackup = async (site: Site, provider: Providers) => {
 			.onDone(() => backupService.stop())
 			.onStop(() => {
 				delete services[site.id][provider];
+				/**
+				 * @todo figure out the typescript issue with accessing _state. i.e. there is probably a built in way to access this value within xstate
+				 *
+				 * @todo ensure that error messages are getting set correctly
+				 */
 				// eslint-disable-next-line no-underscore-dangle
 				const { error, errorMessage } = backupService._state;
 
