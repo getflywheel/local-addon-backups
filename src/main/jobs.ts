@@ -7,7 +7,8 @@ import {
 	createBackupRepo,
 } from './hubQueries';
 import { initRepo, createSnapshot as createResticSnapshot } from './cli';
-import type { Providers, Site, GenericObject } from '../types';
+import type { Site, Providers, GenericObject } from '../types';
+
 
 interface BackupMachineContext {
 	site: Site;
@@ -166,7 +167,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema, BackupM
 						},
 						{
 							target: 'initingResticRepo',
-							// cond: (context, event) => !event.data.backupRepoAlreadyExists,
+							cond: (context, event) => !event.data.backupRepoAlreadyExists,
 						},
 					],
 					onError: {
@@ -225,12 +226,36 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema, BackupM
  * @param site
  * @param provider
  */
-export const createBackup = (site: Site, provider: Providers) => {
-	const backupService = interpret(backupMachine.withContext({ site, provider }))
-		.onTransition((state) => console.log('state -----', state.value, state.context));
+// eslint-disable-next-line arrow-body-style
+export const createBackup = async (site: Site, provider: Providers) => {
+	if (!services[site.id]) {
+		services[site.id] = {};
+	}
 
-	services[site.id] = {};
-	services[site.id][provider] = backupService;
+	/**
+	 * Silently exit if a backup is already in progress for this site/provider
+	 */
+	if (services[site.id][provider]) {
+		return;
+	}
 
-	backupService.start();
+	return new Promise((resolve) => {
+		const backupService = interpret(backupMachine.withContext({ site, provider }))
+			.onDone(() => backupService.stop())
+			.onStop(() => {
+				delete services[site.id][provider];
+				// eslint-disable-next-line no-underscore-dangle
+				const { error, errorMessage } = backupService._state;
+
+
+				if (error) {
+					resolve({ error, errorMessage });
+				}
+
+				resolve(null);
+			});
+
+		services[site.id][provider] = backupService;
+		backupService.start();
+	});
 };
