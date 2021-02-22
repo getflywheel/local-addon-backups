@@ -1,4 +1,4 @@
-import { Machine, interpret, Interpreter, assign } from 'xstate';
+import { Machine, interpret, assign } from 'xstate';
 import { getSiteDataFromDisk, providerToHubProvider, updateSite } from './utils';
 import {
 	getBackupSite,
@@ -7,20 +7,36 @@ import {
 	createBackupRepo,
 } from './hubQueries';
 import { initRepo, createSnapshot as createResticSnapshot } from './cli';
-import type { Providers, Site } from '../types';
+import type { Providers, Site, GenericObject } from '../types';
 
-interface Context {
+interface BackupMachineContext {
 	site: Site;
 	provider: Providers;
-	encryptionPassword: string;
-	backupSiteID: number;
-	localBackupRepoID: string;
-	errorMessage: string;
+	encryptionPassword?: string;
+	backupSiteID?: number;
+	localBackupRepoID?: string;
+	errorMessage?: string;
 }
+
+interface BackupMachineSchema {
+	states: {
+		creatingBackupSite: GenericObject;
+		creatingBackupRepo: GenericObject;
+		initingResticRepo: GenericObject;
+		creatingSnapshot: GenericObject;
+		finished: GenericObject;
+		failed: GenericObject;
+	}
+}
+
+type BackupMachineEvent =
+	| { type: 'SUCCESS'; encryptionPassword?: string; backupSiteID?: string; localBackupRepoID?: string; }
+	| { type: 'ALREADY_EXISTS' }
+	| { type: 'FAIL' };
 
 const jobs = {};
 
-const maybeCreateBackupSite = async (context: Context) => {
+const maybeCreateBackupSite = async (context: BackupMachineContext) => {
 	const { site, provider } = context;
 	const interpreter = jobs[site.id][provider];
 
@@ -56,7 +72,7 @@ const maybeCreateBackupSite = async (context: Context) => {
 	});
 };
 
-const maybeCreateBackupRepo = async (context: Context) => {
+const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 	const { provider, site, localBackupRepoID, backupSiteID, encryptionPassword } = context;
 	const hubProvider = providerToHubProvider(provider);
 	const interpreter = jobs[site.id][provider];
@@ -93,7 +109,7 @@ const maybeCreateBackupRepo = async (context: Context) => {
 	});
 };
 
-const initResticRepo = async (context: Context) => {
+const initResticRepo = async (context: BackupMachineContext) => {
 	const { site, provider, localBackupRepoID, encryptionPassword } = context;
 	const interpreter = jobs[site.id][provider];
 	try {
@@ -110,7 +126,7 @@ const initResticRepo = async (context: Context) => {
 	});
 };
 
-const createSnapshot = async (context: Context) => {
+const createSnapshot = async (context: BackupMachineContext) => {
 	const { site, provider, encryptionPassword } = context;
 	const interpreter = jobs[site.id][provider];
 
@@ -121,9 +137,8 @@ const createSnapshot = async (context: Context) => {
 	});
 };
 
-
 // eslint-disable-next-line new-cap
-const backupMachine = Machine(
+const backupMachine = Machine<BackupMachineContext, BackupMachineSchema, BackupMachineEvent>(
 	{
 		id: 'createBackup',
 		initial: 'creatingBackupSite',
@@ -133,13 +148,15 @@ const backupMachine = Machine(
 			provider: null,
 			encryptionPassword: null,
 			backupSiteID: null,
+			localBackupRepoID: null,
+			errorMessage: null,
 		},
 		states: {
 			creatingBackupSite: {
 				entry: ['maybeCreateBackupSite'],
 				exit: [
 					assign({
-						encryptionPassword: (_, event) => event.encryptionPassword,
+						encryptionPassword: (context, event) => event.encryptionPassword,
 						backupSiteID: (_, event) => event.backupSiteID,
 						localBackupRepoID: (_, event) => event.localBackupRepoID,
 					}),
@@ -148,7 +165,7 @@ const backupMachine = Machine(
 					SUCCESS: {
 						target: 'creatingBackupRepo',
 					},
-					FAIL: 'finished',
+					FAIL: 'failed',
 				},
 			},
 			creatingBackupRepo: {
@@ -160,7 +177,7 @@ const backupMachine = Machine(
 					SUCCESS: {
 						target: 'initingResticRepo',
 					},
-					FAIL: 'finished',
+					FAIL: 'failed',
 				},
 			},
 			initingResticRepo: {
@@ -170,35 +187,34 @@ const backupMachine = Machine(
 						target: 'creatingSnapshot',
 						actions: ['createSnapshot'],
 					},
-					FAIL: 'finished',
+					FAIL: 'failed',
 				},
 			},
 			creatingSnapshot: {
 				entry: ['createSnapshot'],
 				on: {
 					SUCCESS: 'finished',
-					FAIL: 'finished',
+					FAIL: 'failed',
 				},
 			},
 			finished: {
 				type: 'final',
 			},
+			failed: {
+				type: 'final',
+				/**
+				 * @todo use this entry action to notify the UI of the error and also dump some logs into the Local logger
+				 */
+				entry: [],
+			},
 		},
 	},
 	{
 		actions: {
-			maybeCreateBackupSite: (context, event) => {
-				maybeCreateBackupSite(context);
-			},
-			maybeCreateBackupRepo: (context, event) => {
-				maybeCreateBackupRepo(context);
-			},
-			initResticRepo: (context, event) => {
-				initResticRepo(context);
-			},
-			createSnapshot: (context, event) => {
-				createSnapshot(context);
-			},
+			maybeCreateBackupSite,
+			maybeCreateBackupRepo,
+			initResticRepo,
+			createSnapshot,
 		},
 	},
 );
@@ -211,11 +227,11 @@ const backupMachine = Machine(
  * @param provider
  */
 export const createBackup = (site: Site, provider: Providers) => {
-	const createBackupService = interpret(backupMachine.withContext({ site, provider }))
+	const backupService = interpret(backupMachine.withContext({ site, provider }))
 		.onTransition((state) => console.log('state -----', state.value, state.context));
 
 	jobs[site.id] = {};
-	jobs[site.id][provider] = createBackupService;
+	jobs[site.id][provider] = backupService;
 
-	createBackupService.start();
+	backupService.start();
 };
