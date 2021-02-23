@@ -1,14 +1,14 @@
 import { Machine, interpret, assign, Interpreter } from 'xstate';
 import { getServiceContainer } from '@getflywheel/local/main';
-import { getSiteDataFromDisk, providerToHubProvider, updateSite } from './utils';
+import { getSiteDataFromDisk, providerToHubProvider, updateSite } from '../utils';
 import {
 	getBackupSite,
 	createBackupSite,
 	getBackupReposByProviderID,
 	createBackupRepo,
-} from './hubQueries';
-import { initRepo, createSnapshot as createResticSnapshot } from './cli';
-import type { Site, Providers, GenericObject } from '../types';
+} from '../hubQueries';
+import { initRepo, createSnapshot as createResticSnapshot } from '../cli';
+import type { Site, Providers, GenericObject } from '../../types';
 
 
 const serviceContainer = getServiceContainer().cradle;
