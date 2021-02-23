@@ -1,4 +1,4 @@
-import { Machine, interpret, assign } from 'xstate';
+import { Machine, interpret, assign, Interpreter } from 'xstate';
 import { getServiceContainer } from '@getflywheel/local/main';
 import { getSiteDataFromDisk, providerToHubProvider, updateSite } from './utils';
 import {
@@ -10,12 +10,13 @@ import {
 import { initRepo, createSnapshot as createResticSnapshot } from './cli';
 import type { Site, Providers, GenericObject } from '../types';
 
+
 const serviceContainer = getServiceContainer().cradle;
 const { localLogger } = serviceContainer;
 
 const logger = localLogger.child({
 	thread: 'main',
-	class: 'local-addon-backups:backup-site-jobs',
+	class: 'BackupAddonBackupService',
 });
 
 
@@ -39,13 +40,13 @@ interface BackupMachineSchema {
 	}
 }
 
-
-type Services = { [siteID: string]: { [provider: string]: any }}
+type BackupInterpreter = Interpreter<BackupMachineContext, BackupMachineSchema>
+type SiteServicesByProvider = Map<Providers, BackupInterpreter>
 
 /**
- * Simple object store to hold state machines while they are in progress
+ * Store to hold state machines while they are in progress
  */
-const services: Services = {};
+const services = new Map<string, SiteServicesByProvider>();
 
 const maybeCreateBackupSite = async (context: BackupMachineContext) => {
 	const { site } = context;
@@ -231,22 +232,27 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
  */
 // eslint-disable-next-line arrow-body-style
 export const createBackup = async (site: Site, provider: Providers) => {
-	if (!services[site.id]) {
-		services[site.id] = {};
+	if (!services.has(site.id)) {
+		services.set(site.id, new Map());
 	}
+
+	const siteServices = services.get(site.id);
 
 	/**
 	 * Silently exit if a backup is already in progress for this site/provider
 	 */
-	if (services[site.id][provider]) {
+	if (siteServices.has(provider)) {
 		return;
 	}
 
 	return new Promise((resolve) => {
 		const backupService = interpret(backupMachine.withContext({ site, provider }))
+			.onTransition((state) => {
+				logger.info(state.value);
+			})
 			.onDone(() => backupService.stop())
 			.onStop(() => {
-				delete services[site.id][provider];
+				siteServices.delete(provider);
 				/**
 				 * @todo figure out the typescript issue with accessing _state. i.e. there is probably a built in way to access this value within xstate
 				 *
@@ -263,7 +269,7 @@ export const createBackup = async (site: Site, provider: Providers) => {
 				resolve(null);
 			});
 
-		services[site.id][provider] = backupService;
+		siteServices.set(provider, backupService);
 		backupService.start();
 	});
 };
