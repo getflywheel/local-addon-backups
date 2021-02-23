@@ -134,7 +134,7 @@ export async function listSnapshots (site: Site, provider: Providers): Promise<[
 
 
 		const json = await execPromiseWithRcloneContext(
-			`${bins.restic} --repo rclone::${provider}::${localBackupRepoID} snapshots --json`,
+			`${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} snapshots --json`,
 			provider,
 		);
 
@@ -178,7 +178,7 @@ export async function initRepo ({ provider, encryptionPassword, localBackupRepoI
 		];
 
 		return await execPromiseWithRcloneContext(
-			`${bins.restic} --repo rclone::${provider}:${localBackupRepoID} init ${flags.join(' ')}`,
+			`${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} init ${flags.join(' ')}`,
 			provider,
 		);
 	} catch (err) {
@@ -248,7 +248,7 @@ Fatal: wrong password or no key found
 	 */
 
 	return execPromiseWithRcloneContext(
-		`${bins.restic} --repo rclone::${provider}:${localBackupRepoID} backup ${flags.join(' ')} \'${expandedSitePath}\'`,
+		`${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} backup ${flags.join(' ')} \'${expandedSitePath}\'`,
 		provider,
 	);
 }
