@@ -3,7 +3,7 @@ import * as LocalMain from '@getflywheel/local/main';
 import { Providers } from './types';
 import { listRepos } from './main/cli';
 import { getEnabledBackupProviders } from './main/hubQueries';
-import { createBackup } from './main/backupService';
+import { createBackup } from './main/services/backupService';
 
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
