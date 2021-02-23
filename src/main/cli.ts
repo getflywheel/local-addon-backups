@@ -5,17 +5,35 @@ import { isString } from 'lodash';
 import { formatHomePath } from '@getflywheel/local/main';
 import getOSBins from './getOSBins';
 import { Providers } from '../types';
-import type { Site, BackupSite } from '../types';
-import {
-	getBackupCredentials,
-	getBackupSite,
-} from './hubQueries';
+import type { Site } from '../types';
+import { getBackupCredentials } from './hubQueries';
 import { getSiteDataFromDisk, providerToHubProvider } from './utils';
+
+interface RestoreFromBackupOptions {
+	site: Site;
+	provider: Providers;
+	encryptionPassword: string;
+	siteTmpDir: string;
+}
 
 const bins = getOSBins();
 
 const localBackupsIgnoreFileName = '.localbackupaddonignore';
 
+/**
+ * Utility to generate the --repo flag and argument for restic
+ *
+ * @param provider
+ * @param localBackupRepoID
+ */
+// eslint-disable-next-line arrow-body-style
+const makeRepoFlag = (provider: Providers, localBackupRepoID: string) => {
+	/**
+	 * Note the double colon. This is because we are combining the restic syntax to use rclone as a backend
+	 * along with the rlcone :backend: syntax.
+	 */
+	return `--repo rclone::${provider}:${localBackupRepoID}`;
+};
 
 /**
  * Helper to promisify executing shell commands. The point behind using this over child_process.execSync is
@@ -160,9 +178,6 @@ export async function initRepo ({ provider, encryptionPassword, localBackupRepoI
 		];
 
 		return await execPromiseWithRcloneContext(
-			/**
-			 * @todo use the sites uuid provided by Hub instead of site.id
-			 */
 			`${bins.restic} --repo rclone::${provider}:${localBackupRepoID} init ${flags.join(' ')}`,
 			provider,
 		);
@@ -201,9 +216,6 @@ export async function createSnapshot (site: Site, provider: Providers, encryptio
 	const { localBackupRepoID } = getSiteDataFromDisk(site.id);
 
 	if (!localBackupRepoID) {
-		/**
-		 * @todo Tell the UI that no backup id was found
-		*/
 		throw new Error(`No backup repo id found for ${site.name}`);
 	}
 
@@ -237,6 +249,26 @@ Fatal: wrong password or no key found
 
 	return execPromiseWithRcloneContext(
 		`${bins.restic} --repo rclone::${provider}:${localBackupRepoID} backup ${flags.join(' ')} \'${expandedSitePath}\'`,
+		provider,
+	);
+}
+
+/**
+ * Restore an rclone backup from a given provider into the path specified by options.siteTmpDir
+ * @param options
+ */
+export async function restoreBackup (options: RestoreFromBackupOptions) {
+	const { site, provider, encryptionPassword, siteTmpDir } = options;
+	const { localBackupRepoID } = getSiteDataFromDisk(site.id);
+
+	const flags = [
+		'--json',
+		`--password-command "echo \'${encryptionPassword}\'"`,
+		`--target ${siteTmpDir}`,
+	];
+
+	return execPromiseWithRcloneContext(
+		`${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} ${flags.join()} `,
 		provider,
 	);
 }
