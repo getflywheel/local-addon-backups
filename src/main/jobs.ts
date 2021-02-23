@@ -1,4 +1,5 @@
-import { Machine, interpret, assign, DoneInvokeEvent } from 'xstate';
+import { Machine, interpret, assign } from 'xstate';
+import { getServiceContainer } from '@getflywheel/local/main';
 import { getSiteDataFromDisk, providerToHubProvider, updateSite } from './utils';
 import {
 	getBackupSite,
@@ -8,6 +9,14 @@ import {
 } from './hubQueries';
 import { initRepo, createSnapshot as createResticSnapshot } from './cli';
 import type { Site, Providers, GenericObject } from '../types';
+
+const serviceContainer = getServiceContainer().cradle;
+const { localLogger } = serviceContainer;
+
+const logger = localLogger.child({
+	thread: 'main',
+	class: 'local-addon-backups:backup-site-jobs',
+});
 
 
 interface BackupMachineContext {
@@ -119,6 +128,14 @@ const createSnapshot = async (context: BackupMachineContext) => {
 	await createResticSnapshot(site, provider, encryptionPassword);
 };
 
+const onErrorFactory = () => ({
+	target: 'failed',
+	actions: [
+		'setErrorOnContext',
+		'logError',
+	],
+});
+
 // eslint-disable-next-line new-cap
 const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 	{
@@ -144,10 +161,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 							backupSiteID: (_, event) => event.data.backupSiteID,
 						}),
 					},
-					onError: {
-						target: 'failed',
-						actions: 'handleError',
-					},
+					onError: onErrorFactory(),
 				},
 			},
 			creatingBackupRepo: {
@@ -163,10 +177,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 							cond: (context, event) => !event.data.backupRepoAlreadyExists,
 						},
 					],
-					onError: {
-						target: 'failed',
-						actions: 'handleError',
-					},
+					onError: onErrorFactory(),
 				},
 			},
 			initingResticRepo: {
@@ -175,10 +186,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onDone: {
 						target: 'creatingSnapshot',
 					},
-					onError: {
-						target: 'failed',
-						actions: 'handleError',
-					},
+					onError: onErrorFactory(),
 				},
 			},
 			creatingSnapshot: {
@@ -187,10 +195,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onDone: {
 						target: 'finished',
 					},
-					onError: {
-						target: 'failed',
-						actions: 'handleError',
-					},
+					onError: onErrorFactory(),
 				},
 			},
 			finished: {
@@ -207,9 +212,12 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			maybeCreateBackupRepo,
 			initResticRepo,
 			createSnapshot,
-			handleError: assign((context, event) => ({
+			setErrorOnContext: assign((context, event) => ({
 				error: event.data,
 			})),
+			logError: (context, error) => {
+				logger.error('Error backing up site:', error.data);
+			},
 		},
 	},
 );
