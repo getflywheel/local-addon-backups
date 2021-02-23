@@ -1,4 +1,4 @@
-import { Machine, interpret, assign } from 'xstate';
+import { Machine, interpret, assign, DoneInvokeEvent } from 'xstate';
 import { getSiteDataFromDisk, providerToHubProvider, updateSite } from './utils';
 import {
 	getBackupSite,
@@ -16,7 +16,7 @@ interface BackupMachineContext {
 	encryptionPassword?: string;
 	backupSiteID?: number;
 	localBackupRepoID?: string;
-	errorMessage?: string;
+	error?: string;
 }
 
 interface BackupMachineSchema {
@@ -30,12 +30,13 @@ interface BackupMachineSchema {
 	}
 }
 
-type BackupMachineEvent =
-	| { type: 'SUCCESS'; encryptionPassword?: string; backupSiteID?: string; localBackupRepoID?: string; }
-	| { type: 'ALREADY_EXISTS' }
-	| { type: 'FAIL' };
 
-const services = {};
+type Services = { [siteID: string]: { [provider: string]: any }}
+
+/**
+ * Simple object store to hold state machines while they are in progress
+ */
+const services: Services = {};
 
 const maybeCreateBackupSite = async (context: BackupMachineContext) => {
 	const { site } = context;
@@ -119,7 +120,7 @@ const createSnapshot = async (context: BackupMachineContext) => {
 };
 
 // eslint-disable-next-line new-cap
-const backupMachine = Machine<BackupMachineContext, BackupMachineSchema, BackupMachineEvent>(
+const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 	{
 		id: 'createBackup',
 		initial: 'creatingBackupSite',
@@ -129,7 +130,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema, BackupM
 			encryptionPassword: null,
 			backupSiteID: null,
 			localBackupRepoID: null,
-			errorMessage: null,
+			error: null,
 		},
 		states: {
 			creatingBackupSite: {
@@ -145,6 +146,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema, BackupM
 					},
 					onError: {
 						target: 'failed',
+						actions: 'handleError',
 					},
 				},
 			},
@@ -163,6 +165,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema, BackupM
 					],
 					onError: {
 						target: 'failed',
+						actions: 'handleError',
 					},
 				},
 			},
@@ -174,6 +177,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema, BackupM
 					},
 					onError: {
 						target: 'failed',
+						actions: 'handleError',
 					},
 				},
 			},
@@ -183,7 +187,10 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema, BackupM
 					onDone: {
 						target: 'finished',
 					},
-					onError: 'failed',
+					onError: {
+						target: 'failed',
+						actions: 'handleError',
+					},
 				},
 			},
 			finished: {
@@ -200,6 +207,9 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema, BackupM
 			maybeCreateBackupRepo,
 			initResticRepo,
 			createSnapshot,
+			handleError: assign((context, event) => ({
+				error: event.data,
+			})),
 		},
 	},
 );
@@ -235,11 +245,11 @@ export const createBackup = async (site: Site, provider: Providers) => {
 				 * @todo ensure that error messages are getting set correctly
 				 */
 				// eslint-disable-next-line no-underscore-dangle
-				const { error, errorMessage } = backupService._state;
+				const { error } = backupService._state;
 
 
 				if (error) {
-					resolve({ error, errorMessage });
+					resolve({ error });
 				}
 
 				resolve(null);
