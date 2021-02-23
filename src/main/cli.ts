@@ -228,7 +228,7 @@ export async function createSnapshot (site: Site, provider: Providers, encryptio
 	];
 
 	/**
-	 * @todo Handle the following error(ssssssss)
+	 * @todo Handle the following error(s)
 	 *
 	 * If the password is undefined, restic will throw this error:
 	 * Error: Command failed: restic --repo rclone::drive:<uuid> backup --json --password-command "echo 'undefined'" --exclude-file '/home/matt/Local Sites/0/.localbackupaddonignore' '/home/matt/Local Sites/0'
