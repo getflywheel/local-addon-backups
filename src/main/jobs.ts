@@ -253,14 +253,8 @@ export const createBackup = async (site: Site, provider: Providers) => {
 			.onDone(() => backupService.stop())
 			.onStop(() => {
 				siteServices.delete(provider);
-				/**
-				 * @todo figure out the typescript issue with accessing _state. i.e. there is probably a built in way to access this value within xstate
-				 *
-				 * @todo ensure that error messages are getting set correctly
-				 */
 				// eslint-disable-next-line no-underscore-dangle
 				const { error } = backupService._state;
-
 
 				if (error) {
 					resolve({ error });
