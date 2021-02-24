@@ -50,9 +50,7 @@ const services = new Map<string, SiteServicesByProvider>();
 
 const maybeCreateBackupSite = async (context: BackupMachineContext) => {
 	const { site } = context;
-
 	let { localBackupRepoID } = getSiteDataFromDisk(site.id);
-
 	let encryptionPassword;
 	let backupSiteID;
 
