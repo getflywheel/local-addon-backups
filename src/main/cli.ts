@@ -13,7 +13,7 @@ interface RestoreFromBackupOptions {
 	site: Site;
 	provider: Providers;
 	encryptionPassword: string;
-	siteTmpDir: string;
+	restorePath: string;
 }
 
 const bins = getOSBins();
@@ -258,13 +258,13 @@ Fatal: wrong password or no key found
  * @param options
  */
 export async function restoreBackup (options: RestoreFromBackupOptions) {
-	const { site, provider, encryptionPassword, siteTmpDir } = options;
+	const { site, provider, encryptionPassword, restorePath } = options;
 	const { localBackupRepoID } = getSiteDataFromDisk(site.id);
 
 	const flags = [
 		'--json',
 		`--password-command "echo \'${encryptionPassword}\'"`,
-		`--target ${siteTmpDir}`,
+		`--target ${restorePath}`,
 	];
 
 	return execPromiseWithRcloneContext(

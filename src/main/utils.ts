@@ -1,4 +1,4 @@
-import type { Site, GenericObject } from '../types';
+import type { Site, GenericObject, Providers } from '../types';
 import { HubOAuthProviders } from '../types';
 import { getServiceContainer, SiteData } from '@getflywheel/local/main';
 
