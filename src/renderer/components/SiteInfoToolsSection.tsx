@@ -4,7 +4,7 @@ import { ipcAsync } from '@getflywheel/local/renderer';
 import type { Site } from '@getflywheel/local';
 import { URLS } from '../../constants';
 import useActiveSiteID from './useActiveSiteID';
-import { HubOAuthProviders, Providers } from '../../types';
+import { BackupSnapshot, HubOAuthProviders, HubProviderRecord, Providers } from '../../types';
 import { useStoreSelector, selectors, store, actions } from '../store/store';
 
 /* @ts-ignore */
@@ -91,6 +91,21 @@ const backupSite = (site: Site, provider: Providers) => ipcAsync(
 	provider,
 );
 
+const SnapshotList = (props: { snapshots: BackupSnapshot[] }) => (
+	<ul>
+		{props.snapshots.map(({ updatedAt }) => (
+			<li>
+				{updatedAt}
+				<Button
+					onClick={() => null}
+				>
+					Revert to this backup
+				</Button>
+			</li>
+		))}
+	</ul>
+);
+
 const SiteInfoToolsSection = (props: Props) => {
 	const { site } = props;
 
@@ -100,11 +115,33 @@ const SiteInfoToolsSection = (props: Props) => {
 
 	const [loadingProviders, setLoadingProviders] = useState(false);
 
+	const [snapshots, setSnapshots] = useState({});
+
 	useEffect(() => {
 	    (async () => {
 			setLoadingProviders(true);
-			store.dispatch(actions.setEnabledProviders(await ipcAsync('enabled-providers')));
+			const providers: HubProviderRecord[] = await ipcAsync('backups:enabled-providers');
+			store.dispatch(actions.setEnabledProviders(providers));
 			setLoadingProviders(false);
+
+			const promises = [];
+			const hubProviderNames: HubOAuthProviders[] = [];
+			providers
+				.map(({ id }) => id)
+				.forEach((providerID) => {
+					promises.push(ipcAsync('backups:provider-snapshots', site.id, providerID));
+					hubProviderNames.push(providerID);
+				});
+
+			const resolvedSnapshots: BackupSnapshot[][] = await Promise.all(promises);
+
+			setSnapshots(
+				resolvedSnapshots.reduce((nextSnapshotState, snapshotList, i) => {
+					const provider = hubProviderNames[i];
+					nextSnapshotState[provider] = snapshotList;
+					return nextSnapshotState;
+				}, {}),
+			);
 	    })();
 	}, []);
 
@@ -144,9 +181,15 @@ const SiteInfoToolsSection = (props: Props) => {
 								Backup Site
 							</Button>
 						</div>
-						<EmptyArea className={styles.SiteInfoToolsSection_EmptyArea}>
-							<Text>No backups created yet</Text>
-						</EmptyArea>
+						{
+							snapshots[id]?.length
+								? <SnapshotList snapshots={snapshots[id]} />
+								: (
+									<EmptyArea className={styles.SiteInfoToolsSection_EmptyArea}>
+										<Text>No backups created yet</Text>
+									</EmptyArea>
+								)
+						}
 					</>
 				);
 			}))}

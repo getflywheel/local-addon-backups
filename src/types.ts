@@ -51,10 +51,11 @@ export interface BackupRepo {
 export interface BackupSnapshot {
 	id: number;
 	duration: number;
+	repoID: number;
 	/**
 	 * @todo find out if this can be typed with Date since Hub types this as DateTime
 	 */
-	createdAt: number;
+	updatedAt?: number;
 }
 
 export interface RcloneConfig {

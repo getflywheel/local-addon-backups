@@ -20,6 +20,7 @@ const logger = localLogger.child({
 interface BackupMachineContext {
 	site: Site;
 	provider: Providers;
+	snapshotID: number;
 	encryptionPassword?: string;
 	backupSiteID?: number;
 	localBackupRepoID?: string;
@@ -100,6 +101,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 		context: {
 			site: null,
 			provider: null,
+			snapshotID: null,
 			encryptionPassword: null,
 			backupSiteID: null,
 			localBackupRepoID: null,
@@ -179,7 +181,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 	},
 );
 
-export const restoreFromBackup = async (site: Site, provider: Providers) => {
+export const restoreFromBackup = async (site: Site, provider: Providers, snapshotID: number) => {
 	/**
 	 * @todo share services with backupService so that we can easily prevent a backup/restore from happening simultaneously
 	 */
@@ -196,7 +198,7 @@ export const restoreFromBackup = async (site: Site, provider: Providers) => {
 	}
 
 	return new Promise((resolve) => {
-		const machine = restoreMachine.withContext({ site, provider });
+		const machine = restoreMachine.withContext({ site, provider, snapshotID });
 		const restoreService = interpret(machine)
 			.onTransition((state) => {
 				logger.info(state.value);

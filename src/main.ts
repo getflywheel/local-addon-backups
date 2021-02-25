@@ -1,16 +1,17 @@
 import * as Local from '@getflywheel/local';
 import * as LocalMain from '@getflywheel/local/main';
-import { Providers } from './types';
+import type { HubOAuthProviders, Providers, Site } from './types';
 import { listRepos } from './main/cli';
-import { getEnabledBackupProviders } from './main/hubQueries';
+import { getEnabledBackupProviders, getBackupReposByProviderID, getBackupSnapshots } from './main/hubQueries';
 import { createBackup } from './main/services/backupService';
+import { getSiteDataFromDisk } from './main/utils';
 
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function (context): void {
 	const listenerConfigs = [
 		{
-			channel: 'enabled-providers',
+			channel: 'backups:enabled-providers',
 			callback: async () => await getEnabledBackupProviders(),
 		},
 		{
@@ -19,6 +20,20 @@ export default function (context): void {
 				const site = LocalMain.SiteData.getSite(siteId);
 
 				return await createBackup(site, provider);
+			},
+		},
+		{
+			channel: 'backups:provider-snapshots',
+			callback: async (siteID: Site['id'], provider: HubOAuthProviders) => {
+				const site = getSiteDataFromDisk(siteID);
+				const backupRepo = (await getBackupReposByProviderID(provider)).find(({ hash }) => hash === site.localBackupRepoID);
+
+				if (!backupRepo) {
+					return [];
+				}
+
+				const snapshots = await getBackupSnapshots();
+				return snapshots.filter(({ repoID }) => repoID === backupRepo.id);
 			},
 		},
 	];

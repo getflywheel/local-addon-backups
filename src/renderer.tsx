@@ -111,7 +111,7 @@ export default function (context): void {
 		{
 			onClick: async () => {
 				console.log(
-					await ipcAsync('enabled-providers'),
+					await ipcAsync('backups:enabled-providers'),
 				)
 			},
 			buttonText: 'enabled providers',
