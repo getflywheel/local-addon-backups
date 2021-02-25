@@ -124,7 +124,7 @@ const initResticRepo = async (context: BackupMachineContext) => {
 const createSnapshot = async (context: BackupMachineContext) => {
 	const { site, provider, encryptionPassword, backupRepoID } = context;
 
-	await createBackupSnapshot(backupRepoID);
+	const snapshot = await createBackupSnapshot(backupRepoID);
 
 	let duration = Date.now();
 
@@ -138,7 +138,7 @@ const createSnapshot = async (context: BackupMachineContext) => {
 
 	duration = Date.now() - duration;
 
-	await updateBackupSnapshot({ snapshotID: backupRepoID, resticSnapshotHash, duration });
+	await updateBackupSnapshot({ snapshotID: snapshot.id, resticSnapshotHash, duration });
 };
 
 const onErrorFactory = () => ({
