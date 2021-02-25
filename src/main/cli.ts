@@ -212,7 +212,7 @@ export async function listRepos (provider: Providers): Promise<string> {
 	return repos;
 }
 
-export async function createSnapshot (site: Site, provider: Providers, encryptionPassword: string): Promise<string | void> {
+export async function createSnapshot (site: Site, provider: Providers, encryptionPassword: string): Promise<string> {
 	const { localBackupRepoID } = getSiteDataFromDisk(site.id);
 
 	if (!localBackupRepoID) {
@@ -224,14 +224,9 @@ export async function createSnapshot (site: Site, provider: Providers, encryptio
 	const ignoreFilePath = path.join(expandedSitePath, localBackupsIgnoreFileName);
 	const defaultIgnoreFilePath = path.join(__dirname, '..', '..', 'resources', 'default-ignore-file');
 
-	try {
-		if (!fs.existsSync(ignoreFilePath)) {
-			fs.copySync(defaultIgnoreFilePath, ignoreFilePath);
-		}
-	} catch(err) {
-		console.error(err);
+	if (!fs.existsSync(ignoreFilePath)) {
+		fs.copySync(defaultIgnoreFilePath, ignoreFilePath);
 	}
-
 
 	const flags = [
 		'--json',

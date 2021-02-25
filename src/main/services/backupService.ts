@@ -1,4 +1,4 @@
-import { Machine, interpret, assign, Interpreter } from 'xstate';
+import { Machine, interpret, assign, Interpreter, DoneInvokeEvent } from 'xstate';
 import { getServiceContainer } from '@getflywheel/local/main';
 import { getSiteDataFromDisk, providerToHubProvider, updateSite } from '../utils';
 import {
@@ -6,6 +6,8 @@ import {
 	createBackupSite,
 	getBackupReposByProviderID,
 	createBackupRepo,
+	createBackupSnapshot,
+	updateBackupSnapshot,
 } from '../hubQueries';
 import { initRepo, createSnapshot as createResticSnapshot } from '../cli';
 import type { Site, Providers, GenericObject } from '../../types';
@@ -25,6 +27,7 @@ interface BackupMachineContext {
 	provider: Providers;
 	encryptionPassword?: string;
 	backupSiteID?: number;
+	backupRepoID?: number;
 	localBackupRepoID?: string;
 	error?: string;
 }
@@ -103,6 +106,7 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 	if (backupRepo) {
 		return {
 			backupRepoAlreadyExists: true,
+			backupRepoID: backupRepo.id,
 		};
 	}
 
@@ -114,6 +118,7 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 
 	return {
 		backupRepoAlreadyExists: false,
+		backupRepoID: backupRepo.id,
 	};
 };
 
@@ -123,8 +128,23 @@ const initResticRepo = async (context: BackupMachineContext) => {
 };
 
 const createSnapshot = async (context: BackupMachineContext) => {
-	const { site, provider, encryptionPassword } = context;
-	await createResticSnapshot(site, provider, encryptionPassword);
+	const { site, provider, encryptionPassword, backupRepoID } = context;
+
+	await createBackupSnapshot(backupRepoID);
+
+	let duration = Date.now();
+
+	const res = await createResticSnapshot(site, provider, encryptionPassword);
+
+	const { snapshot_id: resticSnapshotHash } = res
+		.split('\n')
+		.filter((line) => line.length)
+		.map((line) => JSON.parse(line))
+		.find((line) => line.snapshot_id);
+
+	duration = Date.now() - duration;
+
+	await updateBackupSnapshot({ snapshotID: backupRepoID, resticSnapshotHash, duration });
 };
 
 const onErrorFactory = () => ({
@@ -133,6 +153,10 @@ const onErrorFactory = () => ({
 		'setErrorOnContext',
 		'logError',
 	],
+});
+
+const assignBackupRepoIDToContext = assign({
+	backupRepoID: (context, event: DoneInvokeEvent<{ backupRepoID: number }>) => event.data.backupRepoID,
 });
 
 // eslint-disable-next-line new-cap
@@ -146,6 +170,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			encryptionPassword: null,
 			backupSiteID: null,
 			localBackupRepoID: null,
+			backupRepoID: null,
 			error: null,
 		},
 		states: {
@@ -169,10 +194,12 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onDone: [
 						{
 							target: 'creatingSnapshot',
+							actions: assignBackupRepoIDToContext,
 							cond: (context, event) => event.data.backupRepoAlreadyExists,
 						},
 						{
 							target: 'initingResticRepo',
+							actions: assignBackupRepoIDToContext,
 							cond: (context, event) => !event.data.backupRepoAlreadyExists,
 						},
 					],
@@ -215,7 +242,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 				error: event.data,
 			})),
 			logError: (context, error) => {
-				logger.error('Error backing up site:', error.data);
+				logger.error(error.data);
 			},
 		},
 	},
