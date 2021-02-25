@@ -32,6 +32,10 @@ export default function (context): void {
 					return [];
 				}
 
+				/**
+				 * @todo filtering the query directly by passing it a repo_id seems to be broken atm.
+				 * Fix this up once the Hub side is working
+				 */
 				const snapshots = await getBackupSnapshots();
 				return snapshots.filter(({ repoID }) => repoID === backupRepo.id);
 			},
