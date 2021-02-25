@@ -88,7 +88,7 @@ const restoreBackup = async (context: BackupMachineContext) => {
 };
 
 const removeTmpDir = async (context: BackupMachineContext) => {
-	const { site, tmpDirData } = context;
+	const { tmpDirData } = context;
 	tmpDirData.removeCallback();
 };
 
@@ -112,7 +112,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					src: (context, event) => getCredentials(context),
 					onDone: {
 						target: 'creatingTmpDir',
-						actions: assign((context, { data: { encryptionPassword, backupSiteID, localBackupRepoID }}) => ({
+						actions: assign((context, { data: { encryptionPassword, backupSiteID, localBackupRepoID } }) => ({
 							encryptionPassword,
 							backupSiteID,
 							localBackupRepoID,

@@ -141,7 +141,7 @@ export async function getBackupReposByProviderID (provider: HubOAuthProviders): 
 export async function getBackupRepo (id: number, provider: HubOAuthProviders): Promise<BackupRepo[]> {
 	const { data } = await localHubClient.query({
 		query: gql`
-			query getBackupRepos($siteID: Int, $providerID: String) HubProviderRecord
+			query getBackupRepos($siteID: Int, $providerID: String) {
   				backupRepos(site_id: $siteID, provider_id: $providerID) {
     				id
     				site_id
@@ -178,4 +178,51 @@ export async function getEnabledBackupProviders (): Promise<HubProviderRecord[]>
 	});
 
 	return data?.backupProviders;
+}
+
+export async function createBackupSnapshot (repoID: number) {
+	const { data } = await localHubClient.mutate({
+		mutation: gql`
+			mutation createBackupSnapshot($repoID: Int!) {
+				createBackupSnapshot(repo_id: $repoID) {
+					id
+					repo_id
+					hash
+				}
+			}
+		`,
+		variables: {
+			repoID,
+		},
+	});
+
+	// eslint-disable-next-line camelcase
+	const { repo_id, ...rest } = data?.updateBackupSnapshot;
+	// eslint-disable-next-line camelcase
+	return { ...rest, repoID: repo_id };
+}
+
+export async function updateBackupSnapshot (queryArgs: { snapshotID: number, resticSnapshotHash: string, duration: number }): Promise<{}> {
+	const { snapshotID, resticSnapshotHash, duration } = queryArgs;
+
+	const { data } = await localHubClient.mutate({
+		mutation: gql`
+			mutation updateBackupSnapshot($snapshotID: Int!, $resticSnapshotHash: String!, $duration: Int!) {
+				updateBackupSnapshot(id: $snapshotID, hash: $resticSnapshotHash, duration: $duration) {
+					id
+					repo_id
+					hash
+					duration
+				}
+			}	
+		`,
+		variables: {
+			snapshotID,
+			resticSnapshotHash,
+			duration,
+		},
+	});
+
+	const { repo_id: repoID, ...rest } = data?.updateBackupSnapshot;
+	return { ...rest, repoID };
 }

@@ -48,6 +48,15 @@ export interface BackupRepo {
 	hash: string;
 }
 
+export interface BackupSnapshot {
+	id: number;
+	duration: number;
+	/**
+	 * @todo find out if this can be typed with Date since Hub types this as DateTime
+	 */
+	createdAt: number;
+}
+
 export interface RcloneConfig {
 	type: string;
 	clientID: string;
