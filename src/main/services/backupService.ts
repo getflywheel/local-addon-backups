@@ -83,7 +83,7 @@ const maybeCreateBackupSite = async (context: BackupMachineContext) => {
 };
 
 const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
-	const { provider, site, backupSiteID, encryptionPassword } = context;
+	const { provider, site, backupSiteID } = context;
 	const { localBackupRepoID } = site;
 	const hubProvider = providerToHubProvider(provider);
 	/**
@@ -95,29 +95,26 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 	 * that holds a backup of a particular site
 	 */
 	let backupRepo;
+	let backupRepoAlreadyExists = true;
 	if (localBackupRepoID) {
 		backupRepo = (await getBackupReposByProviderID(hubProvider)).find(({ hash }) => hash === localBackupRepoID);
 	}
 
 	/**
 	 * If this already exists on the Hub side, then we assume that the restic repo has been initialized
-	 * on the given provider
+	 * on the given provider. Otherwise, if no backup repo is found, than we probably haven't created it on
+	 * the hub side for the given provider
 	 */
-	if (backupRepo) {
-		return {
-			backupRepoAlreadyExists: true,
-			backupRepoID: backupRepo.id,
-		};
+	if (!backupRepo) {
+		backupRepoAlreadyExists = false;
+
+		/**
+		 */
+		backupRepo = await createBackupRepo(backupSiteID, localBackupRepoID, hubProvider);
 	}
 
-	/**
-	 * If no backup repo is found, than we probably haven't created on on the hub side for the given provider
-	 */
-	backupRepo = await createBackupRepo(backupSiteID, localBackupRepoID, hubProvider);
-	await initRepo({ provider, localBackupRepoID, encryptionPassword });
-
 	return {
-		backupRepoAlreadyExists: false,
+		backupRepoAlreadyExists,
 		backupRepoID: backupRepo.id,
 	};
 };
