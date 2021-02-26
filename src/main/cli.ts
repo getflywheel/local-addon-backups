@@ -19,6 +19,11 @@ interface RestoreFromBackupOptions {
 const bins = getOSBins();
 
 const localBackupsIgnoreFileName = '.localbackupaddonignore';
+let defaultIgnoreFilePath = path.join(__dirname, '..', 'resources', 'default-ignore-file');
+
+if (!fs.existsSync(defaultIgnoreFilePath)) {
+	defaultIgnoreFilePath = path.join(__dirname, '..', '..', 'resources', 'default-ignore-file');
+}
 
 /**
  * Utility to generate the --repo flag and argument for restic
@@ -28,6 +33,9 @@ const localBackupsIgnoreFileName = '.localbackupaddonignore';
  */
 // eslint-disable-next-line arrow-body-style
 const makeRepoFlag = (provider: Providers, localBackupRepoID: string) => {
+	if (!localBackupRepoID) {
+		throw new Error('No repo id found for this site');
+	}
 	/**
 	 * Note the double colon. This is because we are combining the restic syntax to use rclone as a backend
 	 * along with the rlcone :backend: syntax.
@@ -222,7 +230,6 @@ export async function createSnapshot (site: Site, provider: Providers, encryptio
 	const expandedSitePath = formatHomePath(site.path);
 
 	const ignoreFilePath = path.join(expandedSitePath, localBackupsIgnoreFileName);
-	const defaultIgnoreFilePath = path.join(__dirname, '..', '..', 'resources', 'default-ignore-file');
 
 	if (!fs.existsSync(ignoreFilePath)) {
 		fs.copySync(defaultIgnoreFilePath, ignoreFilePath);
@@ -259,7 +266,7 @@ export async function restoreBackup (options: RestoreFromBackupOptions) {
 	const flags = [
 		'--json',
 		`--password-command "echo \'${encryptionPassword}\'"`,
-		`--target ${restorePath}`,
+		`--target "${restorePath}"`,
 	];
 
 	return execPromiseWithRcloneContext(
