@@ -79,11 +79,16 @@ const maybeCreateBackupSite = async (context: BackupMachineContext) => {
 	return {
 		encryptionPassword,
 		backupSiteID,
+		localBackupRepoID,
 	};
 };
 
 const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
-	const { provider, site, backupSiteID } = context;
+	const { provider, backupSiteID } = context;
+	/**
+	 * Read site data from disk to ensure most up to date value for localBackupRepoID
+	 */
+	const site = getSiteDataFromDisk(context.site.id);
 	const { localBackupRepoID } = site;
 	const hubProvider = providerToHubProvider(provider);
 	/**
@@ -96,9 +101,7 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 	 */
 	let backupRepo;
 	let backupRepoAlreadyExists = true;
-	if (localBackupRepoID) {
-		backupRepo = (await getBackupReposByProviderID(hubProvider)).find(({ hash }) => hash === localBackupRepoID);
-	}
+	backupRepo = (await getBackupReposByProviderID(hubProvider)).find(({ siteID }) => siteID === site.id);
 
 	/**
 	 * If this already exists on the Hub side, then we assume that the restic repo has been initialized
@@ -107,7 +110,11 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 	 */
 	if (!backupRepo) {
 		backupRepoAlreadyExists = false;
-		backupRepo = await createBackupRepo(backupSiteID, localBackupRepoID, hubProvider);
+		backupRepo = await createBackupRepo({
+			backupSiteID,
+			localBackupRepoID,
+			provider: hubProvider,
+		});
 	}
 
 	return {
@@ -116,11 +123,17 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 	};
 };
 
+/**
+ * @todo If this fails, we need to delete the backup repo on the Hub side
+ */
 const initResticRepo = async (context: BackupMachineContext) => {
 	const { provider, localBackupRepoID, encryptionPassword } = context;
 	await initRepo({ provider, localBackupRepoID, encryptionPassword });
 };
 
+/**
+ * @todo remove backup snapshot on the Hub side if restic call fails
+ */
 const createSnapshot = async (context: BackupMachineContext) => {
 	const { site, provider, encryptionPassword, backupRepoID } = context;
 
@@ -177,6 +190,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 						actions: assign({
 							encryptionPassword: (_, event) => event.data.encryptionPassword,
 							backupSiteID: (_, event) => event.data.backupSiteID,
+							localBackupRepoID: (_, event) => event.data.localBackupRepoID,
 						}),
 					},
 					onError: onErrorFactory(),
@@ -267,7 +281,7 @@ export const createBackup = async (site: Site, provider: Providers) => {
 	return new Promise((resolve) => {
 		const backupService = interpret(backupMachine.withContext({ site, provider }))
 			.onTransition((state) => {
-				logger.info(state.value);
+				logger.info(`${state.value} [site id: ${site.id}]`);
 			})
 			.onDone(() => backupService.stop())
 			.onStop(() => {
