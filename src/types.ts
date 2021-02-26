@@ -52,6 +52,7 @@ export interface BackupSnapshot {
 	id: number;
 	duration: number;
 	repoID: number;
+	hash: string;
 	/**
 	 * @todo find out if this can be typed with Date since Hub types this as DateTime
 	 */
