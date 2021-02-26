@@ -101,7 +101,7 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 	 */
 	let backupRepo;
 	let backupRepoAlreadyExists = true;
-	backupRepo = (await getBackupReposByProviderID(hubProvider)).find(({ siteID }) => siteID === site.id);
+	backupRepo = (await getBackupReposByProviderID(hubProvider)).find(({ hash }) => hash === localBackupRepoID);
 
 	/**
 	 * If this already exists on the Hub side, then we assume that the restic repo has been initialized
@@ -127,8 +127,8 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
  * @todo If this fails, we need to delete the backup repo on the Hub side
  */
 const initResticRepo = async (context: BackupMachineContext) => {
-	const { provider, localBackupRepoID, encryptionPassword } = context;
-	await initRepo({ provider, localBackupRepoID, encryptionPassword });
+	const { provider, localBackupRepoID, encryptionPassword, site } = context;
+	await initRepo({ provider, localBackupRepoID, encryptionPassword, site });
 };
 
 /**
@@ -143,6 +143,11 @@ const createSnapshot = async (context: BackupMachineContext) => {
 
 	const res = await createResticSnapshot(site, provider, encryptionPassword);
 
+	/**
+	 * @todo this outputs one line per file/dir backed up which can be a lot. It might be slightly
+	 * more performant to travserse this array from the end and only parse from json to js object one at a time
+	 * and then stop as soon as we find a snapshot_id
+	 */
 	const { snapshot_id: resticSnapshotHash } = res
 		.split('\n')
 		.filter((line) => line.length)

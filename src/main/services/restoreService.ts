@@ -1,8 +1,10 @@
+import path from 'path';
+import os from 'os';
 import { Machine, interpret, assign, Interpreter } from 'xstate';
 import { formatHomePath, getServiceContainer } from '@getflywheel/local/main';
 import tmp from 'tmp';
 import type { DirResult } from 'tmp';
-import { moveSync } from 'fs-extra';
+import fs from 'fs-extra';
 import { getSiteDataFromDisk } from '../utils';
 import { getBackupSite } from '../hubQueries';
 import { restoreBackup as restoreResticBackup } from '../cli';
@@ -11,6 +13,10 @@ import type { Site, Providers, GenericObject } from '../../types';
 const serviceContainer = getServiceContainer().cradle;
 const { localLogger } = serviceContainer;
 
+/**
+ * @todo create some sort of filter for this logger and the BackupService logger to obscure any
+ * passwords passed in restic commands via the --password-command flag
+ */
 const logger = localLogger.child({
 	thread: 'main',
 	class: 'BackupAddonRestoreService',
@@ -20,7 +26,7 @@ const logger = localLogger.child({
 interface BackupMachineContext {
 	site: Site;
 	provider: Providers;
-	snapshotID: number;
+	snapshotID: string;
 	encryptionPassword?: string;
 	backupSiteID?: number;
 	localBackupRepoID?: string;
@@ -65,26 +71,37 @@ const createTmpDir = async () => ({
 
 const moveSiteToTmpDir = async (context: BackupMachineContext) => {
 	const { site, tmpDirData } = context;
-	moveSync(
-		formatHomePath(site.path),
-		tmpDirData.name,
+	/**
+	 * Move the entire contents of the site to a tmp dir so that we can easily copy it back should
+	 * we encounter any errors while restoring the restic repo
+	 */
+	const sitePath = formatHomePath(site.path);
+	const siteTmpDirPath = path.join(tmpDirData.name, site.name);
+
+	fs.moveSync(
+		sitePath,
+		siteTmpDirPath,
 		/**
 		 * @todo ensure that we don't go willy nilly deleting files that are actually symlinks pointing outside of a site directory
-		 *
-		 * dereference any symlinks so that we do not accidentally delete any files outside of the site directory when we clean up
-		 * the tmp directory
 		 */
-		// { dereference: true },
 	);
+
+	logger.info(`Site contents moved from \'${sitePath}\' to \'${siteTmpDirPath}\'`);
+
+	/**
+	 * moving the site directory also moves the site's root dir. Restic relies on a directory existing when it does the restore step
+	 * so we need to make sure that an empty dir exists
+	 */
+	fs.ensureDirSync(sitePath);
 };
 
 const restoreBackup = async (context: BackupMachineContext) => {
-	const { site, provider, encryptionPassword } = context;
+	const { site, provider, encryptionPassword, snapshotID } = context;
 	await restoreResticBackup({
 		site,
 		provider,
 		encryptionPassword,
-		restorePath: formatHomePath(site.path),
+		snapshotID,
 	});
 };
 
@@ -92,6 +109,15 @@ const removeTmpDir = async (context: BackupMachineContext) => {
 	const { tmpDirData } = context;
 	tmpDirData.removeCallback();
 };
+
+const onErrorFactory = () => ({
+	target: 'failed',
+	actions: [
+		'setErrorOnContext',
+		'logError',
+		'restoreSite',
+	],
+});
 
 // eslint-disable-next-line new-cap
 const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
@@ -120,9 +146,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 							localBackupRepoID,
 						})),
 					},
-					onError: {
-						target: 'failed',
-					},
+					onError: onErrorFactory(),
 				},
 			},
 			/**
@@ -137,9 +161,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 							tmpDirData: (_, event) => event.data.tmpDirData,
 						}),
 					},
-					onError: {
-						target: 'failed',
-					},
+					onError: onErrorFactory(),
 				},
 			},
 			movingSiteToTmpDir: {
@@ -148,9 +170,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onDone: {
 						target: 'restoringBackup',
 					},
-					onError: {
-						target: 'failed',
-					},
+					onError: onErrorFactory(),
 				},
 			},
 			restoringBackup: {
@@ -159,9 +179,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onDone: {
 						target: 'finished',
 					},
-					onError: {
-						target: 'failed',
-					},
+					onError: onErrorFactory(),
 				},
 			},
 			finished: {
@@ -170,18 +188,43 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			},
 			failed: {
 				type: 'final',
-				entry: 'removeTmpDir',
 			},
 		},
 	},
 	{
 		actions: {
 			removeTmpDir,
+			setErrorOnContext: assign((context, event) => ({
+				error: event.data,
+			})),
+			logError: (context, event) => {
+				logger.error(event.data);
+			},
+			restoreSite: (context, event) => {
+				const { tmpDirData, site } = context;
+
+				/**
+				 * If tmpDirData does not exists, we can assume that we never made it to the onDone branch of the creatingTmpDir state
+				 */
+				if (!tmpDirData) {
+					return;
+				}
+
+				logger.info(`Restoring previous site files due to failed backup restore [site id: ${site.id}]`);
+
+				const formattedSitePath = formatHomePath(site.path);
+
+				fs.ensureDirSync(formattedSitePath);
+				fs.moveSync(path.join(tmpDirData.name, site.name), formattedSitePath);
+
+				removeTmpDir(context);
+			},
 		},
 	},
 );
 
-export const restoreFromBackup = async (site: Site, provider: Providers, snapshotID: number) => {
+export const restoreFromBackup = async (opts: { site: Site; provider: Providers; snapshotID: string; }) => {
+	const { site, provider, snapshotID } = opts;
 	/**
 	 * @todo share services with backupService so that we can easily prevent a backup/restore from happening simultaneously
 	 */
@@ -215,5 +258,8 @@ export const restoreFromBackup = async (site: Site, provider: Providers, snapsho
 
 				resolve(null);
 			});
+
+		siteServices.set(provider, restoreService);
+		restoreService.start();
 	});
 };

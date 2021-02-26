@@ -13,7 +13,7 @@ interface RestoreFromBackupOptions {
 	site: Site;
 	provider: Providers;
 	encryptionPassword: string;
-	restorePath: string;
+	snapshotID: string;
 }
 
 const bins = getOSBins();
@@ -50,7 +50,7 @@ const makeRepoFlag = (provider: Providers, localBackupRepoID: string) => {
  * @param cmd
  * @param env
  */
-async function execPromise (cmd: string, env: { [key: string]: string } = {}): Promise<string> {
+async function execPromise (cmd: string, site: Site, env: { [key: string]: string } = {}): Promise<string> {
 	return new Promise((resolve, reject) => {
 		exec(
 			`${cmd}`,
@@ -59,6 +59,7 @@ async function execPromise (cmd: string, env: { [key: string]: string } = {}): P
 					...process.env,
 					...env,
 				},
+				cwd: formatHomePath(site.path),
 			},
 			(error, stdout, stderr) => {
 				/**
@@ -103,12 +104,12 @@ async function execPromise (cmd: string, env: { [key: string]: string } = {}): P
  * @param cmd
  * @param provider
  */
-async function execPromiseWithRcloneContext (cmd: string, provider: Providers): Promise<string> {
+async function execPromiseWithRcloneContext (cmd: string, site: Site, provider: Providers): Promise<string> {
 	const { type, clientID, token, appKey } = await getBackupCredentials(providerToHubProvider(provider));
 
 	const upperCaseProvider = provider.toUpperCase();
 
-	return execPromise(cmd, {
+	return execPromise(cmd, site, {
 		/**
 		 * This style of env variables is used to configure a specific remote type (ie drive or dropbox) rather than a named remote that
 		 * already exists in an rclone config file. This can then be used with the rclone backend syntax (using a leading colon to define the backend - ie
@@ -143,6 +144,7 @@ export async function listSnapshots (site: Site, provider: Providers): Promise<[
 
 		const json = await execPromiseWithRcloneContext(
 			`${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} snapshots --json`,
+			site,
 			provider,
 		);
 
@@ -174,10 +176,11 @@ export async function listSnapshots (site: Site, provider: Providers): Promise<[
  *
  * @param site
  */
-export async function initRepo ({ provider, encryptionPassword, localBackupRepoID }: {
+export async function initRepo ({ provider, encryptionPassword, localBackupRepoID, site }: {
 	provider: Providers,
 	encryptionPassword: string,
 	localBackupRepoID: string,
+	site: Site,
 }): Promise<string | void> {
 	try {
 		const flags = [
@@ -187,6 +190,7 @@ export async function initRepo ({ provider, encryptionPassword, localBackupRepoI
 
 		return await execPromiseWithRcloneContext(
 			`${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} init ${flags.join(' ')}`,
+			site,
 			provider,
 		);
 	} catch (err) {
@@ -209,9 +213,10 @@ export async function initRepo ({ provider, encryptionPassword, localBackupRepoI
  *
  * @param provider
  */
-export async function listRepos (provider: Providers): Promise<string> {
+export async function listRepos (site: Site, provider: Providers): Promise<string> {
 	const json = await execPromiseWithRcloneContext(
 		`${bins.rclone} lsjson :${provider}: --fast-list --use-json-log`,
+		site,
 		provider,
 	);
 
@@ -250,7 +255,12 @@ Fatal: wrong password or no key found
 	 */
 
 	return execPromiseWithRcloneContext(
-		`${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} backup ${flags.join(' ')} \'${expandedSitePath}\'`,
+		// `${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} backup ${flags.join(' ')} \'${expandedSitePath}\'`,
+		/**
+		 * Use . since we change cwd to the site
+		 */
+		`${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} ${flags.join(' ')} backup .`,
+		site,
 		provider,
 	);
 }
@@ -260,17 +270,18 @@ Fatal: wrong password or no key found
  * @param options
  */
 export async function restoreBackup (options: RestoreFromBackupOptions) {
-	const { site, provider, encryptionPassword, restorePath } = options;
+	const { site, provider, encryptionPassword, snapshotID } = options;
 	const { localBackupRepoID } = getSiteDataFromDisk(site.id);
 
 	const flags = [
 		'--json',
 		`--password-command "echo \'${encryptionPassword}\'"`,
-		`--target "${restorePath}"`,
+		`--target .`,
 	];
 
 	return execPromiseWithRcloneContext(
-		`${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} ${flags.join()} `,
+		`${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} restore ${snapshotID} ${flags.join(' ')} `,
+		site,
 		provider,
 	);
 }

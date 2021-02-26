@@ -91,13 +91,19 @@ const backupSite = (site: Site, provider: Providers) => ipcAsync(
 	provider,
 );
 
-const SnapshotList = (props: { snapshots: BackupSnapshot[] }) => (
+const SnapshotList = (props: { snapshots: BackupSnapshot[], site: Site, provider: Providers }) => (
 	<ul>
-		{props.snapshots.map(({ updatedAt }) => (
+		{props.snapshots.map(({ updatedAt, hash }) => (
 			<li>
 				{updatedAt}
 				<Button
-					onClick={() => null}
+					onClick={() => ipcAsync(
+						'backups:restore-backup', {
+							snapshotID: hash,
+							provider: props.provider,
+							siteID: props.site.id,
+						},
+					)}
 				>
 					Revert to this backup
 				</Button>
@@ -169,6 +175,7 @@ const SiteInfoToolsSection = (props: Props) => {
 			<Divider />
 			{addDivider(enabledProviders.map(({ id, name }) => {
 				const Icon = getProviderIcon(id);
+				const provider = hubProviderToProvider(id);
 
 				return (
 					<>
@@ -176,14 +183,20 @@ const SiteInfoToolsSection = (props: Props) => {
 							<Icon />
 							<Text privateOptions={{ fontSize: 'm', fontWeight: 'bold' }}>{name}</Text>
 							<Button
-								onClick={() => backupSite(site, hubProviderToProvider(id))}
+								onClick={() => backupSite(site, provider)}
 							>
 								Backup Site
 							</Button>
 						</div>
 						{
 							snapshots[id]?.length
-								? <SnapshotList snapshots={snapshots[id]} />
+								? (
+									<SnapshotList
+										snapshots={snapshots[id]}
+										site={site}
+										provider={provider}
+									/>
+								)
 								: (
 									<EmptyArea className={styles.SiteInfoToolsSection_EmptyArea}>
 										<Text>No backups created yet</Text>

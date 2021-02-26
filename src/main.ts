@@ -4,6 +4,7 @@ import type { HubOAuthProviders, Providers, Site } from './types';
 import { listRepos } from './main/cli';
 import { getEnabledBackupProviders, getBackupReposByProviderID, getBackupSnapshots } from './main/hubQueries';
 import { createBackup } from './main/services/backupService';
+import { restoreFromBackup } from './main/services/restoreService';
 import { getSiteDataFromDisk } from './main/utils';
 
 
@@ -38,6 +39,14 @@ export default function (context): void {
 				 */
 				const snapshots = await getBackupSnapshots();
 				return snapshots.filter(({ repoID }) => repoID === backupRepo.id);
+			},
+		},
+		{
+			channel: 'backups:restore-backup',
+			callback: async (opts: { siteID: Site['id']; provider: Providers; snapshotID: string }) => {
+				const { siteID, ...rest } = opts;
+				const site = getSiteDataFromDisk(siteID);
+				return await restoreFromBackup({ site, ...rest });
 			},
 		},
 	];
