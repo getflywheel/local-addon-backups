@@ -79,7 +79,8 @@ export async function createBackupSite (site: Site): Promise<BackupSite> {
 	return data?.createBackupSite;
 }
 
-export async function createBackupRepo (id: number, localBackupRepoID: string, provider: HubOAuthProviders): Promise<BackupRepo> {
+export async function createBackupRepo (queryArgs: { backupSiteID: number; localBackupRepoID: string; provider: HubOAuthProviders; }): Promise<BackupRepo> {
+	const { backupSiteID, localBackupRepoID, provider } = queryArgs;
 	const { data } = await localHubClient.mutate({
 		mutation: gql`
 			mutation createBackupRepo(
@@ -101,7 +102,7 @@ export async function createBackupRepo (id: number, localBackupRepoID: string, p
 		`,
 		variables: {
 			repoID: localBackupRepoID,
-			siteID: id,
+			siteID: backupSiteID,
 			providerID: provider,
 		},
 	});
