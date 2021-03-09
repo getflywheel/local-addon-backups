@@ -51,22 +51,18 @@ export default function (context): void {
 		},
 	];
 
-	try {
-		listenerConfigs.forEach(({ channel, callback }) => {
-			LocalMain.addIpcAsyncListener(channel, callback);
-		});
+	listenerConfigs.forEach(({ channel, callback }) => {
+		LocalMain.addIpcAsyncListener(channel, callback);
+	});
 
 
-		LocalMain.addIpcAsyncListener('start-site-backup', async (siteId: Local.Site['id'], provider: Providers) => {
-			const site = LocalMain.SiteData.getSite(siteId);
-		});
+	LocalMain.addIpcAsyncListener('start-site-backup', async (siteId: Local.Site['id'], provider: Providers) => {
+		const site = LocalMain.SiteData.getSite(siteId);
+	});
 
-		LocalMain.addIpcAsyncListener('list-site-snapshots', async (siteId: Local.Site['id'], provider: Providers) => {
-			const site = LocalMain.SiteData.getSite(siteId);
-		});
-	} catch (err) {
-		console.error('Generic catch block', err);
-	}
+	LocalMain.addIpcAsyncListener('list-site-snapshots', async (siteId: Local.Site['id'], provider: Providers) => {
+		const site = LocalMain.SiteData.getSite(siteId);
+	});
 
 	LocalMain.addIpcAsyncListener('list-repos', async (siteId: Local.Site['id'], provider: Providers) => await listRepos(provider));
 }
