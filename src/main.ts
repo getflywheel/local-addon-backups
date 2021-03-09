@@ -64,5 +64,8 @@ export default function (context): void {
 		const site = LocalMain.SiteData.getSite(siteId);
 	});
 
-	LocalMain.addIpcAsyncListener('list-repos', async (siteId: Local.Site['id'], provider: Providers) => await listRepos(provider));
+	LocalMain.addIpcAsyncListener('list-repos', async (siteId: Local.Site['id'], provider: Providers) => await listRepos(
+		LocalMain.SiteData.getSite(siteId),
+		provider,
+	));
 }
