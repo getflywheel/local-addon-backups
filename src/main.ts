@@ -20,7 +20,7 @@ export default function (context): void {
 			callback: async (siteId: Local.Site['id'], provider: Providers) => {
 				const site = LocalMain.SiteData.getSite(siteId);
 
-				return await createBackup(site, provider);
+				return createBackup(site, provider);
 			},
 		},
 		{
@@ -46,7 +46,7 @@ export default function (context): void {
 			callback: async (opts: { siteID: Site['id']; provider: Providers; snapshotID: string }) => {
 				const { siteID, ...rest } = opts;
 				const site = getSiteDataFromDisk(siteID);
-				return await restoreFromBackup({ site, ...rest });
+				return restoreFromBackup({ site, ...rest });
 			},
 		},
 	];

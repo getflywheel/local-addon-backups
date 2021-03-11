@@ -70,7 +70,7 @@ export default function (context): void {
 
 	const SiteInfoToolsSectionHOC = withStoreProvider(SiteInfoToolsSection);
 
-	hooks.addFilter('siteInfoTools_Item', (items) => {
+	hooks.addFilter('siteInfoToolsItem', (items) => {
 		items.push({
 			path: '/localBackups',
 			menuItem: 'Backups',
