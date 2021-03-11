@@ -251,9 +251,15 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			maybeCreateBackupRepo,
 			initResticRepo,
 			createSnapshot,
+			/**
+			 * @todo document where error (event.error) comes from
+			 */
 			setErrorOnContext: assign((context, event) => ({
 				error: event.data,
 			})),
+			/**
+			 * @tode same documenting here
+			 */
 			logError: (context, error) => {
 				logger.error(error.data);
 			},
