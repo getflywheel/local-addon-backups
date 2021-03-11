@@ -47,6 +47,8 @@ const makeRepoFlag = (provider: Providers, localBackupRepoID: string) => {
  * Helper to promisify executing shell commands. The point behind using this over child_process.execSync is
  * that this will help mitigate long thread blocking commands like initializing a repo with restic
  *
+ * @todo export/use execPromise from Local or use the child_process.exitFile
+ *
  * @param cmd
  * @param env
  */
@@ -255,7 +257,6 @@ Fatal: wrong password or no key found
 	 */
 
 	return execPromiseWithRcloneContext(
-		// `${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} backup ${flags.join(' ')} \'${expandedSitePath}\'`,
 		/**
 		 * Use . since we change cwd to the site
 		 */

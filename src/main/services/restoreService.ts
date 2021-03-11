@@ -1,5 +1,4 @@
 import path from 'path';
-import os from 'os';
 import { Machine, interpret, assign, Interpreter } from 'xstate';
 import { formatHomePath, getServiceContainer } from '@getflywheel/local/main';
 import tmp from 'tmp';
@@ -21,7 +20,6 @@ const logger = localLogger.child({
 	thread: 'main',
 	class: 'BackupAddonRestoreService',
 });
-
 
 interface BackupMachineContext {
 	site: Site;
@@ -121,6 +119,13 @@ const onErrorFactory = () => ({
 
 // eslint-disable-next-line new-cap
 const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
+	/**
+	 * - Flip tmp logic
+	 * - Does restic have a delete flag like rsync?
+	 * - Is there a better way that does require doubling disk footprint?
+	 * - keep ignored files present when restoring
+	 * - can we create a new temp database to import the backup dump? And then if successful then rename it and delete the original
+	 */
 	{
 		id: 'restoreBackup',
 		initial: 'gettingBackupCredentials',
@@ -227,6 +232,7 @@ export const restoreFromBackup = async (opts: { site: Site; provider: Providers;
 	const { site, provider, snapshotID } = opts;
 	/**
 	 * @todo share services with backupService so that we can easily prevent a backup/restore from happening simultaneously
+	 * - only allow one backup OR restore for all sites at one time
 	 */
 	if (!services.has(site.id)) {
 		services.set(site.id, new Map());
