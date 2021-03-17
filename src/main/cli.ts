@@ -6,6 +6,7 @@ import { formatHomePath } from '@getflywheel/local/main';
 import getOSBins from './getOSBins';
 import { Providers } from '../types';
 import type { Site } from '../types';
+import { metaDataFileName } from '../constants';
 import { getBackupCredentials } from './hubQueries';
 import { getSiteDataFromDisk, providerToHubProvider } from './utils';
 
@@ -268,6 +269,8 @@ Fatal: wrong password or no key found
 
 /**
  * Restore an rclone backup from a given provider into the path specified by options.siteTmpDir
+ * --exclude and --include can be used here to backup just a subset of the files from a given backup
+ *
  * @param options
  */
 export async function restoreBackup (options: RestoreFromBackupOptions) {
@@ -278,6 +281,10 @@ export async function restoreBackup (options: RestoreFromBackupOptions) {
 		'--json',
 		`--password-command "echo \'${encryptionPassword}\'"`,
 		`--target .`,
+		/**
+		 * @todo do not add this flag if restoring a backup to a brand new site within Local
+		 */
+		`--exclude ${metaDataFileName}`,
 	];
 
 	return execPromiseWithRcloneContext(

@@ -8,6 +8,7 @@ import type {
 	BackupSnapshot,
 	Site,
 	HubProviderRecord,
+	SiteMetaData,
 } from '../types';
 
 /* @ts-ignore */
@@ -182,11 +183,11 @@ export async function getEnabledBackupProviders (): Promise<HubProviderRecord[]>
 	return data?.backupProviders;
 }
 
-export async function createBackupSnapshot (repoID: number): Promise<BackupSnapshot> {
+export async function createBackupSnapshot (repoID: number, metaData: SiteMetaData): Promise<BackupSnapshot> {
 	const { data } = await localHubClient.mutate({
 		mutation: gql`
-			mutation createBackupSnapshot($repoID: Int!) {
-				createBackupSnapshot(repo_id: $repoID) {
+			mutation createBackupSnapshot($repoID: Int!, $metaData: Mixed) {
+				createBackupSnapshot(repo_id: $repoID, config: $metaData) {
 					id
 					repo_id
 					hash
@@ -195,6 +196,7 @@ export async function createBackupSnapshot (repoID: number): Promise<BackupSnaps
 		`,
 		variables: {
 			repoID,
+			metaData,
 		},
 	});
 

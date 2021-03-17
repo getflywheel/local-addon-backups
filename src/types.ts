@@ -10,6 +10,16 @@ export interface Site extends SiteBase {
 	localBackupRepoID?: string;
 }
 
+type SiteMetaDataBase = Pick<SiteBase,
+	'name' |
+	'services' |
+	'mysql'
+>
+
+export interface SiteMetaData extends SiteMetaDataBase {
+	localBackupRepoID: string;
+}
+
 /**
  * Provider names as used by rclone
  * This is analogous to the options availabe for a Storage Provider while manually configuring an rclone remote
