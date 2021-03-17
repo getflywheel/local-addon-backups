@@ -1,5 +1,7 @@
+import path from 'path';
+import fs from 'fs-extra';
 import { Machine, interpret, assign, Interpreter, DoneInvokeEvent } from 'xstate';
-import { getServiceContainer } from '@getflywheel/local/main';
+import { getServiceContainer, formatHomePath } from '@getflywheel/local/main';
 import { getSiteDataFromDisk, providerToHubProvider, updateSite } from '../utils';
 import {
 	getBackupSite,
@@ -10,8 +12,8 @@ import {
 	updateBackupSnapshot,
 } from '../hubQueries';
 import { initRepo, createSnapshot as createResticSnapshot } from '../cli';
-import type { Site, Providers, GenericObject } from '../../types';
-
+import type { Site, Providers, GenericObject, SiteMetaData } from '../../types';
+import { metaDataFileName } from '../../constants';
 
 const serviceContainer = getServiceContainer().cradle;
 const { localLogger } = serviceContainer;
@@ -135,9 +137,15 @@ const initResticRepo = async (context: BackupMachineContext) => {
  * @todo remove backup snapshot on the Hub side if restic call fails
  */
 const createSnapshot = async (context: BackupMachineContext) => {
-	const { site, provider, encryptionPassword, backupRepoID } = context;
+	const { site, provider, encryptionPassword, backupRepoID, localBackupRepoID } = context;
+	const { name, services, mysql } = site;
+	const metaData: SiteMetaData = { name, services, mysql, localBackupRepoID };
+	const metaDataFilePath = path.join(formatHomePath(site.path), metaDataFileName);
 
-	const snapshot = await createBackupSnapshot(backupRepoID);
+	fs.rmSync(metaDataFilePath, { force: true });
+	fs.writeFileSync(metaDataFilePath, JSON.stringify(metaData));
+
+	const snapshot = await createBackupSnapshot(backupRepoID, metaData);
 
 	let duration = Date.now();
 
@@ -157,6 +165,7 @@ const createSnapshot = async (context: BackupMachineContext) => {
 	duration = Date.now() - duration;
 
 	await updateBackupSnapshot({ snapshotID: snapshot.id, resticSnapshotHash, duration });
+	fs.rmSync(metaDataFilePath, { force: true });
 };
 
 const onErrorFactory = () => ({
@@ -223,7 +232,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 				invoke: {
 					src: (context, event) => initResticRepo(context),
 					onDone: {
-						target: 'creatingSnapshot',
+						target: 'addingSiteMetaData',
 					},
 					onError: onErrorFactory(),
 				},
