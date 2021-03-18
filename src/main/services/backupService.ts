@@ -97,10 +97,6 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 	const { localBackupRepoID } = site;
 	const hubProvider = providerToHubProvider(provider);
 	/**
-	 * @todo figure out how to query for repos by uuid of the site backup objects
-	 * This should theoretically work, but currently appears to be broken on the Hub side:
-	 * const backupRepo = await getBackupRepo(backupSiteID, provider);
-	 *
 	 * A backupRepo is a vehicle for managing a site repo on a provider. There will be one of these for each provider
 	 * that holds a backup of a particular site
 	 */
@@ -137,6 +133,23 @@ const initResticRepo = async (context: BackupMachineContext) => {
 };
 
 /**
+ * Restic outputs periodic updates as in creates a snapshot. This util parses out the snapshot id
+ * from that output
+ *
+ * @param output
+ * @returns
+ */
+export const parseSnapshotIDFromStdOut = (output: string) => {
+	const line = output
+		.split('\n')
+		.find((line) => line.match(/snapshot_id/g));
+
+	const { snapshot_id: resticSnapshotHash } = JSON.parse(line);
+
+	return resticSnapshotHash;
+};
+
+/**
  * @todo remove backup snapshot on the Hub side if restic call fails
  */
 const createSnapshot = async (context: BackupMachineContext) => {
@@ -156,16 +169,7 @@ const createSnapshot = async (context: BackupMachineContext) => {
 		updateBackupSnapshot({ snapshotID: snapshot.id, status: 'running' }),
 	]);
 
-	/**
-	 * @todo this outputs one line per file/dir backed up which can be a lot. It might be slightly
-	 * more performant to travserse this array from the end and only parse from json to js object one at a time
-	 * and then stop as soon as we find a snapshot_id
-	 */
-	const { snapshot_id: resticSnapshotHash } = res
-		.split('\n')
-		.filter((line) => line.length)
-		.map((line) => JSON.parse(line))
-		.find((line) => line.snapshot_id);
+	const resticSnapshotHash = parseSnapshotIDFromStdOut(res);
 
 	fs.removeSync(metaDataFilePath);
 

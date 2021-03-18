@@ -142,33 +142,6 @@ export async function getBackupReposByProviderID (provider: HubOAuthProviders): 
 	}));
 }
 
-export async function getBackupRepo (id: number, provider: HubOAuthProviders): Promise<BackupRepo[]> {
-	const { data } = await localHubClient.query({
-		query: gql`
-			query getBackupRepos($siteID: Int, $providerID: String) {
-  				backupRepos(site_id: $siteID, provider_id: $providerID) {
-    				id
-    				site_id
-    				provider_id
-    				hash
-  				}
-			}
-		`,
-		variables: {
-			siteID: id,
-			providerID: provider,
-		},
-	});
-
-	return [
-		...data?.backupRepos,
-	].map((backupRepo) => ({
-		...backupRepo,
-		providerID: backupRepo.provider_id,
-		siteID: backupRepo.site_id,
-	}))[0];
-}
-
 export async function getEnabledBackupProviders (): Promise<HubProviderRecord[]> {
 	const { data } = await localHubClient.query({
 		query: gql`
