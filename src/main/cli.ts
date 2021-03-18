@@ -60,6 +60,7 @@ async function execPromise (cmd: string, site: Site, env: { [key: string]: strin
 				env: {
 					...process.env,
 					...env,
+					PATH: `${bins.binDir}:${process.env.PATH}`,
 				},
 				cwd: formatHomePath(site.path),
 			},
