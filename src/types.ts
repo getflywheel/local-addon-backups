@@ -58,9 +58,11 @@ export interface BackupRepo {
 	hash: string;
 }
 
+export type SnapshotStatus = 'started' | 'running' | 'complete' | 'errored';
+
 export interface BackupSnapshot {
 	id: number;
-	duration: number;
+	status?: SnapshotStatus;
 	repoID: number;
 	hash: string;
 	/**
