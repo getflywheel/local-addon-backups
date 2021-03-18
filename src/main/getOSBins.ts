@@ -1,12 +1,16 @@
 import fs from 'fs-extra';
 import path from 'path';
 
-interface Bins {
+interface BinPaths {
+	// Path to the restic binary
 	restic: string;
+	// Path to the rclone binary
 	rclone: string;
+	// Path to the directory where binaries are stored. This is useful for adding the above binaries to a system's path
+	binDir: string;
 }
 
-export default function (): Bins {
+export default function (): BinPaths {
 	let resticBinName;
 	let rcloneBinName;
 
@@ -36,6 +40,7 @@ export default function (): Bins {
 	const bins = {
 		restic: path.join(binDirPath, resticBinName),
 		rclone: path.join(binDirPath, rcloneBinName),
+		binDir: binDirPath,
 	};
 
 	if (!fs.existsSync(bins.restic)) {
