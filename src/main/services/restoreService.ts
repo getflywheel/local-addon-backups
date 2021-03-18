@@ -8,6 +8,7 @@ import { getSiteDataFromDisk } from '../utils';
 import { getBackupSite } from '../hubQueries';
 import { restoreBackup as restoreResticBackup } from '../cli';
 import type { Site, Providers, GenericObject } from '../../types';
+import serviceState from './state';
 
 const serviceContainer = getServiceContainer().cradle;
 const { localLogger } = serviceContainer;
@@ -228,23 +229,19 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 	},
 );
 
+/**
+ * Creates a new state machine instance/service to manage restoring up a site
+ *
+ * @param opts
+ * @returns
+ */
 export const restoreFromBackup = async (opts: { site: Site; provider: Providers; snapshotID: string; }) => {
-	const { site, provider, snapshotID } = opts;
-	/**
-	 * @todo share services with backupService so that we can easily prevent a backup/restore from happening simultaneously
-	 * - only allow one backup OR restore for all sites at one time
-	 */
-	if (!services.has(site.id)) {
-		services.set(site.id, new Map());
-	}
-
-	const siteServices = services.get(site.id);
-	/**
-	 * Silently exit if a backup is already in progress for this site/provider
-	 */
-	if (siteServices.has(provider)) {
+	if (serviceState.inProgressStateMachine) {
+		logger.warn('Restore process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.');
 		return;
 	}
+
+	const { site, provider, snapshotID } = opts;
 
 	return new Promise((resolve) => {
 		const machine = restoreMachine.withContext({ site, provider, snapshotID });
@@ -254,7 +251,7 @@ export const restoreFromBackup = async (opts: { site: Site; provider: Providers;
 			})
 			.onDone(() => restoreService.stop())
 			.onStop(() => {
-				siteServices.delete(provider);
+				serviceState.inProgressStateMachine = null;
 				// eslint-disable-next-line no-underscore-dangle
 				const { error } = restoreService._state;
 
@@ -265,7 +262,7 @@ export const restoreFromBackup = async (opts: { site: Site; provider: Providers;
 				resolve(null);
 			});
 
-		siteServices.set(provider, restoreService);
+		serviceState.inProgressStateMachine = restoreService;
 		restoreService.start();
 	});
 };
