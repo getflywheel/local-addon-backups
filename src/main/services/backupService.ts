@@ -18,6 +18,9 @@ import { metaDataFileName } from '../../constants';
 const serviceContainer = getServiceContainer().cradle;
 const { localLogger } = serviceContainer;
 
+/**
+ * @todo filter out password value from the restic --password-command flag
+ */
 const logger = localLogger.child({
 	thread: 'main',
 	class: 'BackupAddonBackupService',
@@ -142,14 +145,16 @@ const createSnapshot = async (context: BackupMachineContext) => {
 	const metaData: SiteMetaData = { name, services, mysql, localBackupRepoID };
 	const metaDataFilePath = path.join(formatHomePath(site.path), metaDataFileName);
 
-	fs.rmSync(metaDataFilePath, { force: true });
+	const snapshot = await createBackupSnapshot(backupRepoID, metaData);
+	await updateBackupSnapshot({ snapshotID: snapshot.id, status: 'started' });
+
+	fs.removeSync(metaDataFilePath);
 	fs.writeFileSync(metaDataFilePath, JSON.stringify(metaData));
 
-	const snapshot = await createBackupSnapshot(backupRepoID, metaData);
-
-	let duration = Date.now();
-
-	const res = await createResticSnapshot(site, provider, encryptionPassword);
+	const [res] = await Promise.all([
+		createResticSnapshot(site, provider, encryptionPassword),
+		updateBackupSnapshot({ snapshotID: snapshot.id, status: 'running' }),
+	]);
 
 	/**
 	 * @todo this outputs one line per file/dir backed up which can be a lot. It might be slightly
@@ -162,10 +167,9 @@ const createSnapshot = async (context: BackupMachineContext) => {
 		.map((line) => JSON.parse(line))
 		.find((line) => line.snapshot_id);
 
-	duration = Date.now() - duration;
+	fs.removeSync(metaDataFilePath);
 
-	await updateBackupSnapshot({ snapshotID: snapshot.id, resticSnapshotHash, duration });
-	fs.rmSync(metaDataFilePath, { force: true });
+	await updateBackupSnapshot({ snapshotID: snapshot.id, resticSnapshotHash, status: 'complete' });
 };
 
 const onErrorFactory = () => ({
@@ -232,7 +236,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 				invoke: {
 					src: (context, event) => initResticRepo(context),
 					onDone: {
-						target: 'addingSiteMetaData',
+						target: 'creatingSnapshot',
 					},
 					onError: onErrorFactory(),
 				},

@@ -9,6 +9,7 @@ import type {
 	Site,
 	HubProviderRecord,
 	SiteMetaData,
+	SnapshotStatus,
 } from '../types';
 
 /* @ts-ignore */
@@ -196,7 +197,7 @@ export async function createBackupSnapshot (repoID: number, metaData: SiteMetaDa
 		`,
 		variables: {
 			repoID,
-			metaData,
+			metaData: JSON.stringify(metaData),
 		},
 	});
 
@@ -206,24 +207,23 @@ export async function createBackupSnapshot (repoID: number, metaData: SiteMetaDa
 	return { ...rest, repoID: repo_id };
 }
 
-export async function updateBackupSnapshot (queryArgs: { snapshotID: number, resticSnapshotHash: string, duration: number }): Promise<BackupSnapshot> {
-	const { snapshotID, resticSnapshotHash, duration } = queryArgs;
+export async function updateBackupSnapshot (queryArgs: { snapshotID: number, resticSnapshotHash?: string, status: SnapshotStatus }): Promise<BackupSnapshot> {
+	const { snapshotID, resticSnapshotHash, status } = queryArgs;
 
 	const { data } = await localHubClient.mutate({
 		mutation: gql`
-			mutation updateBackupSnapshot($snapshotID: Int!, $resticSnapshotHash: String!, $duration: Int!) {
-				updateBackupSnapshot(id: $snapshotID, hash: $resticSnapshotHash, duration: $duration) {
+			mutation updateBackupSnapshot($snapshotID: Int!, $resticSnapshotHash: String, $status: String!) {
+				updateBackupSnapshot(id: $snapshotID, hash: $resticSnapshotHash, status: $status) {
 					id
 					repo_id
 					hash
-					duration
 				}
 			}	
 		`,
 		variables: {
 			snapshotID,
 			resticSnapshotHash,
-			duration,
+			status,
 		},
 	});
 
@@ -239,7 +239,6 @@ export async function getBackupSnapshot (snapshotID: number) {
 					id
 					repo_id
 					hash
-					duration
 				}
 			}	
 		`,
@@ -261,7 +260,6 @@ export async function getBackupSnapshot (snapshotID: number) {
 // 					id
 // 					repo_id
 // 					hash
-// 					duration
 // 					updated_at
 // 				}
 // 			}
@@ -286,7 +284,6 @@ export async function getBackupSnapshots (): Promise<BackupSnapshot[]> {
 					id
 					repo_id
 					hash
-					duration
 					updated_at
 				}
 			}
