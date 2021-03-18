@@ -14,6 +14,7 @@ import {
 import { initRepo, createSnapshot as createResticSnapshot } from '../cli';
 import type { Site, Providers, GenericObject, SiteMetaData } from '../../types';
 import { metaDataFileName } from '../../constants';
+import serviceState from './state';
 
 const serviceContainer = getServiceContainer().cradle;
 const { localLogger } = serviceContainer;
@@ -268,15 +269,11 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			maybeCreateBackupRepo,
 			initResticRepo,
 			createSnapshot,
-			/**
-			 * @todo document where error (event.error) comes from
-			 */
+			// event.error exists when taking the invoke.onError branch in a given state
 			setErrorOnContext: assign((context, event) => ({
 				error: event.data,
 			})),
-			/**
-			 * @tode same documenting here
-			 */
+			// event.error exists when taking the invoke.onError branch in a given state
 			logError: (context, error) => {
 				logger.error(error.data);
 			},
@@ -285,24 +282,15 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 );
 
 /**
- * Create a site backup
+ * Creates a new state machine instance/service to manage backing up a site
  *
- * Creates a new state machine instance/service
  * @param site
  * @param provider
  */
 // eslint-disable-next-line arrow-body-style
 export const createBackup = async (site: Site, provider: Providers) => {
-	if (!services.has(site.id)) {
-		services.set(site.id, new Map());
-	}
-
-	const siteServices = services.get(site.id);
-
-	/**
-	 * Silently exit if a backup is already in progress for this site/provider
-	 */
-	if (siteServices.has(provider)) {
+	if (serviceState.inProgressStateMachine) {
+		logger.warn('Backup process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.');
 		return;
 	}
 
@@ -313,7 +301,7 @@ export const createBackup = async (site: Site, provider: Providers) => {
 			})
 			.onDone(() => backupService.stop())
 			.onStop(() => {
-				siteServices.delete(provider);
+				serviceState.inProgressStateMachine = null;
 				// eslint-disable-next-line no-underscore-dangle
 				const { error } = backupService._state;
 
@@ -324,7 +312,7 @@ export const createBackup = async (site: Site, provider: Providers) => {
 				resolve(null);
 			});
 
-		siteServices.set(provider, backupService);
+		serviceState.inProgressStateMachine = backupService;
 		backupService.start();
 	});
 };
