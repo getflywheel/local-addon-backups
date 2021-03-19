@@ -17,7 +17,12 @@ import { metaDataFileName } from '../../constants';
 import serviceState from './state';
 
 const serviceContainer = getServiceContainer().cradle;
-const { localLogger } = serviceContainer;
+const {
+	localLogger,
+	siteDatabase,
+	siteProvisioner,
+	sendIPCEvent,
+} = serviceContainer;
 
 /**
  * @todo filter out password value from the restic --password-command flag
@@ -40,6 +45,7 @@ interface BackupMachineContext {
 
 interface BackupMachineSchema {
 	states: {
+		creatingDatabaseSnapshot: GenericObject;
 		creatingBackupSite: GenericObject;
 		creatingBackupRepo: GenericObject;
 		initingResticRepo: GenericObject;
@@ -56,6 +62,17 @@ type SiteServicesByProvider = Map<Providers, BackupInterpreter>
  * Store to hold state machines while they are in progress
  */
 const services = new Map<string, SiteServicesByProvider>();
+
+const createDatabaseSnapshot = async (context: BackupMachineContext) => {
+	const { site } = context;
+	sendIPCEvent('updateSiteStatus', site.id, 'exporting database');
+	sendIPCEvent('updateSiteMessage', site.id, {
+		label: 'Creating database snapshot for backup',
+		stripes: true,
+	});
+
+	await siteDatabase.dump(site, path.join(site.paths.sql, 'local-backup-addon-database-dump.sql'));
+};
 
 const maybeCreateBackupSite = async (context: BackupMachineContext) => {
 	const { site } = context;
@@ -111,7 +128,8 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 	 * the hub side for the given provider
 	 */
 	if (!backupRepo) {
-		backupRepoAlreadyExists = false;
+		backupRepoAlreadyExists = false
+		;
 		backupRepo = await createBackupRepo({
 			backupSiteID,
 			localBackupRepoID,
@@ -193,7 +211,7 @@ const assignBackupRepoIDToContext = assign({
 const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 	{
 		id: 'createBackup',
-		initial: 'creatingBackupSite',
+		initial: 'creatingDatabaseSnapshot',
 		context: {
 			site: null,
 			provider: null,
@@ -204,6 +222,17 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			error: null,
 		},
 		states: {
+			creatingDatabaseSnapshot: {
+				invoke: {
+					id: 'createDatabaseSnapshot',
+					src: (context) => createDatabaseSnapshot(context),
+					onDone: {
+						// target: 'creatingBackupSite',
+						target: 'finished',
+					},
+					onError: onErrorFactory(),
+				},
+			},
 			creatingBackupSite: {
 				invoke: {
 					id: 'maybeCreateBackupSite',
@@ -304,6 +333,8 @@ export const createBackup = async (site: Site, provider: Providers) => {
 				serviceState.inProgressStateMachine = null;
 				// eslint-disable-next-line no-underscore-dangle
 				const { error } = backupService._state;
+
+				sendIPCEvent('updateSiteStatus', site.id, 'running');
 
 				if (error) {
 					resolve({ error });
