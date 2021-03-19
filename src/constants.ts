@@ -3,3 +3,5 @@ export const URLS = {
 };
 
 export const metaDataFileName = '.local-backups-site-meta-data.json';
+
+export const backupSQLDumpFile = 'local-backup-addon-database-dump.sql';
