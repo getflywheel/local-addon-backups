@@ -13,7 +13,7 @@ import {
 } from '../hubQueries';
 import { initRepo, createSnapshot as createResticSnapshot } from '../cli';
 import type { Site, Providers, GenericObject, SiteMetaData } from '../../types';
-import { metaDataFileName } from '../../constants';
+import { metaDataFileName, backupSQLDumpFile } from '../../constants';
 import serviceState from './state';
 
 const serviceContainer = getServiceContainer().cradle;
@@ -21,6 +21,7 @@ const {
 	localLogger,
 	siteDatabase,
 	sendIPCEvent,
+	siteProcessManager,
 } = serviceContainer;
 
 /**
@@ -56,13 +57,15 @@ interface BackupMachineSchema {
 
 const createDatabaseSnapshot = async (context: BackupMachineContext) => {
 	const { site } = context;
+	const initialStatus = siteProcessManager.getSiteStatus(site);
 	sendIPCEvent('updateSiteStatus', site.id, 'exporting database');
 	sendIPCEvent('updateSiteMessage', site.id, {
 		label: 'Creating database snapshot for backup',
 		stripes: true,
 	});
 
-	await siteDatabase.dump(site, path.join(site.paths.sql, 'local-backup-addon-database-dump.sql'));
+	await siteDatabase.dump(site, path.join(site.paths.sql, backupSQLDumpFile));
+	sendIPCEvent('updateSiteStatus', site.id, initialStatus);
 };
 
 const maybeCreateBackupSite = async (context: BackupMachineContext) => {
@@ -316,23 +319,13 @@ export const createBackup = async (site: Site, provider: Providers) => {
 	return new Promise((resolve) => {
 		const backupService = interpret(backupMachine.withContext({ site, provider }))
 			.onTransition((state) => {
-				logger.info(`${state.value} [site id: ${site.id}]`);
-				const value = state.value as string;
-
-				let status = 'running';
-
-				if (!['finished', 'failed'].includes(value)) {
-					status = camelCaseToSentence(value);
-				}
-
-				sendIPCEvent('updateSiteStatus', site.id, status);
+				logger.info(`${camelCaseToSentence(state.value as string)} [site id: ${site.id}]`);
 			})
 			.onDone(() => backupService.stop())
 			.onStop(() => {
 				serviceState.inProgressStateMachine = null;
 				// eslint-disable-next-line no-underscore-dangle
 				const { error } = backupService._state;
-
 
 				if (error) {
 					resolve({ error });
