@@ -248,7 +248,6 @@ export async function createSnapshot (site: Site, provider: Providers, encryptio
 	const flags = [
 		'--json',
 		`--password-command "echo \'${encryptionPassword}\'"`,
-		`--exclude-file \'${ignoreFilePath}\'`,
 	];
 
 	/**
