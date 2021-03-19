@@ -1,5 +1,5 @@
 import path from 'path';
-import { Machine, interpret, assign, Interpreter } from 'xstate';
+import { Machine, interpret, assign } from 'xstate';
 import { formatHomePath, getServiceContainer } from '@getflywheel/local/main';
 import tmp from 'tmp';
 import type { DirResult } from 'tmp';
@@ -43,14 +43,6 @@ interface BackupMachineSchema {
 		failed: GenericObject;
 	}
 }
-
-type RestoreInterpreter = Interpreter<BackupMachineContext, BackupMachineSchema>
-type SiteServicesByProvider = Map<Providers, RestoreInterpreter>
-
-/**
- * Store to hold state machines while they are in progress
- */
-const services = new Map<string, SiteServicesByProvider>();
 
 const getCredentials = async (context: BackupMachineContext) => {
 	const { site } = context;
