@@ -1,5 +1,7 @@
+/* eslint-disable camelcase */
 import 'jest-extended';
-import { snakeToCamelCase, convertKeysFromSnakeToCamelCase } from './utils';
+import { snakeToCamelCase, convertKeysFromSnakeToCamelCase, camelCaseToSentence } from './utils';
+
 
 describe('snakeToCamelCase', () => {
 	it('converts strings in snake case to camel case', () => {
@@ -10,12 +12,7 @@ describe('snakeToCamelCase', () => {
 
 describe('convertKeysFromSnakeToCamelCase', () => {
 	it('converts snake case keys in an object to camelCase', () => {
-		const testObj = {
-			client_id: '1234',
-			client_secret: 'very-secret',
-		};
-
-		const result = convertKeysFromSnakeToCamelCase({
+		const result: { [key: string]: any } = convertKeysFromSnakeToCamelCase({
 			client_id: '1234',
 			client_secret: 'very-secret',
 		});
@@ -31,5 +28,11 @@ describe('convertKeysFromSnakeToCamelCase', () => {
 		};
 
 		expect(convertKeysFromSnakeToCamelCase(testObj)).not.toEqual(testObj);
+	});
+});
+
+describe('camelCaseToSentence', () => {
+	it('converst a camel case string to a string of lower case words separated by white space', () => {
+		expect(camelCaseToSentence('theSwissAlps')).toEqual('the swiss alps');
 	});
 });

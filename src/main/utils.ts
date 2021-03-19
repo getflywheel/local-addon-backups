@@ -55,3 +55,11 @@ export const providerToHubProvider = (provider: Providers) => {
  * @param sitePartial
  */
 export const updateSite = (id: Site['id'], sitePartial: Partial<Site>) => SiteData.updateSite(id, sitePartial);
+
+/**
+ * Convert a camel case string to single space separated words
+ *
+ * @param str
+ * @returns
+ */
+export const camelCaseToSentence = (str: string) => str.replace(/([A-Z])/g, ' $1').toLowerCase();
