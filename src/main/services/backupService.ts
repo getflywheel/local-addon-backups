@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs-extra';
 import { Machine, interpret, assign, Interpreter, DoneInvokeEvent } from 'xstate';
 import { getServiceContainer, formatHomePath } from '@getflywheel/local/main';
-import { getSiteDataFromDisk, providerToHubProvider, updateSite } from '../utils';
+import { getSiteDataFromDisk, providerToHubProvider, updateSite, camelCaseToSentence } from '../utils';
 import {
 	getBackupSite,
 	createBackupSite,
@@ -227,8 +227,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					id: 'createDatabaseSnapshot',
 					src: (context) => createDatabaseSnapshot(context),
 					onDone: {
-						// target: 'creatingBackupSite',
-						target: 'finished',
+						target: 'creatingBackupSite',
 					},
 					onError: onErrorFactory(),
 				},
@@ -327,6 +326,15 @@ export const createBackup = async (site: Site, provider: Providers) => {
 		const backupService = interpret(backupMachine.withContext({ site, provider }))
 			.onTransition((state) => {
 				logger.info(`${state.value} [site id: ${site.id}]`);
+				const value = state.value as string;
+
+				let status = 'running';
+
+				if (!['finished', 'failed'].includes(value)) {
+					status = camelCaseToSentence(value);
+				}
+
+				sendIPCEvent('updateSiteStatus', site.id, status);
 			})
 			.onDone(() => backupService.stop())
 			.onStop(() => {
@@ -334,7 +342,6 @@ export const createBackup = async (site: Site, provider: Providers) => {
 				// eslint-disable-next-line no-underscore-dangle
 				const { error } = backupService._state;
 
-				sendIPCEvent('updateSiteStatus', site.id, 'running');
 
 				if (error) {
 					resolve({ error });
