@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs-extra';
-import { Machine, interpret, assign, Interpreter, DoneInvokeEvent } from 'xstate';
+import { Machine, interpret, assign, DoneInvokeEvent } from 'xstate';
 import { getServiceContainer, formatHomePath } from '@getflywheel/local/main';
 import { getSiteDataFromDisk, providerToHubProvider, updateSite, camelCaseToSentence } from '../utils';
 import {
@@ -20,7 +20,6 @@ const serviceContainer = getServiceContainer().cradle;
 const {
 	localLogger,
 	siteDatabase,
-	siteProvisioner,
 	sendIPCEvent,
 } = serviceContainer;
 
@@ -54,14 +53,6 @@ interface BackupMachineSchema {
 		failed: GenericObject;
 	}
 }
-
-type BackupInterpreter = Interpreter<BackupMachineContext, BackupMachineSchema>
-type SiteServicesByProvider = Map<Providers, BackupInterpreter>
-
-/**
- * Store to hold state machines while they are in progress
- */
-const services = new Map<string, SiteServicesByProvider>();
 
 const createDatabaseSnapshot = async (context: BackupMachineContext) => {
 	const { site } = context;
