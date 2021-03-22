@@ -5,7 +5,7 @@ import { formatHomePath, getServiceContainer } from '@getflywheel/local/main';
 import tmp from 'tmp';
 import type { DirResult } from 'tmp';
 import fs from 'fs-extra';
-import { getSiteDataFromDisk, expandTildeToDir } from '../utils';
+import { getSiteDataFromDisk, expandTildeToDir, camelCaseToSentence } from '../utils';
 import { getBackupSite } from '../hubQueries';
 import { restoreBackup as restoreResticBackup, excludePatterns } from '../cli';
 import type { Site, Providers, GenericObject } from '../../types';
@@ -283,7 +283,7 @@ export const restoreFromBackup = async (opts: { site: Site; provider: Providers;
 		const machine = restoreMachine.withContext({ site, provider, snapshotID });
 		const restoreService = interpret(machine)
 			.onTransition((state) => {
-				logger.info(state.value);
+				logger.info(camelCaseToSentence(state.value as string));
 			})
 			.onDone(() => restoreService.stop())
 			.onStop(() => {
