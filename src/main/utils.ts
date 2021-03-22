@@ -63,3 +63,18 @@ export const updateSite = (id: Site['id'], sitePartial: Partial<Site>) => SiteDa
  * @returns
  */
 export const camelCaseToSentence = (str: string) => str.replace(/([A-Z])/g, ' $1').toLowerCase();
+
+/**
+ * Replace a tilde at the start of a string (unix home dir shorthand) with any other base directory
+ *
+ * @param p or
+ * @param tmpDir
+ * @returns
+ */
+export const expandTildeToDir = (originalPathj: string, baseDir: string) => {
+	if (typeof originalPathj !== 'string') {
+		return originalPathj;
+	}
+
+	return originalPathj.replace(/^~\//, `${baseDir}/`).replace(/^~\\/, `${baseDir}\\`);
+};
