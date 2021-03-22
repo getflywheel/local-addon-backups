@@ -1,12 +1,13 @@
-import path, { format } from 'path';
+import path from 'path';
 import { Machine, interpret, assign } from 'xstate';
+import glob from 'glob';
 import { formatHomePath, getServiceContainer } from '@getflywheel/local/main';
 import tmp from 'tmp';
 import type { DirResult } from 'tmp';
 import fs from 'fs-extra';
 import { getSiteDataFromDisk, expandTildeToDir } from '../utils';
 import { getBackupSite } from '../hubQueries';
-import { restoreBackup as restoreResticBackup } from '../cli';
+import { restoreBackup as restoreResticBackup, excludePatterns } from '../cli';
 import type { Site, Providers, GenericObject } from '../../types';
 import serviceState from './state';
 import { backupSQLDumpFile } from '../../constants';
@@ -95,6 +96,8 @@ const importDatabase = async (context: BackupMachineContext) => {
 	});
 };
 
+const globPromise = (pattern: string): Promise<string[]> => new Promise((resolve) => glob(pattern, (err, matches) => resolve(matches)));
+
 const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 	const { site, tmpDirData } = context;
 	/**
@@ -104,7 +107,16 @@ const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 	const sitePath = formatHomePath(site.path);
 	const siteTmpDirPath = path.join(tmpDirData.name, site.name);
 
-	fs.emptyDirSync(sitePath);
+	const itemsToDelete: string[] = [
+		...glob.sync(`${sitePath}/!(${excludePatterns.join('|')})`),
+		...glob.sync(`${sitePath}/.*`),
+	];
+
+	logger.info(`removing the following directories/files to prepare for the site backup: ${itemsToDelete.map((file) => `"${file}"`).join(', ')}`);
+
+	const promises = itemsToDelete.map((dirOrFile: string) => fs.remove(dirOrFile));
+
+	await Promise.all(promises);
 
 	fs.copySync(
 		siteTmpDirPath,
