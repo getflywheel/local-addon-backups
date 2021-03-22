@@ -96,14 +96,8 @@ const importDatabase = async (context: BackupMachineContext) => {
 	});
 };
 
-const globPromise = (pattern: string): Promise<string[]> => new Promise((resolve) => glob(pattern, (err, matches) => resolve(matches)));
-
 const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 	const { site, tmpDirData } = context;
-	/**
-	 * Move the entire contents of the site to a tmp dir so that we can easily copy it back should
-	 * we encounter any errors while restoring the restic repo
-	 */
 	const sitePath = formatHomePath(site.path);
 	const siteTmpDirPath = path.join(tmpDirData.name, site.name);
 
