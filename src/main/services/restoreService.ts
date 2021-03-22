@@ -37,8 +37,8 @@ interface BackupMachineSchema {
 	states: {
 		creatingTmpDir: GenericObject;
 		gettingBackupCredentials: GenericObject;
-		movingSiteToTmpDir: GenericObject;
 		restoringBackup: GenericObject;
+		movingSiteFromTmpDir: GenericObject;
 		finished: GenericObject;
 		failed: GenericObject;
 	}
@@ -68,7 +68,7 @@ const createTmpDir = async () => ({
 	tmpDirData: tmp.dirSync(),
 });
 
-const moveSiteToTmpDir = async (context: BackupMachineContext) => {
+const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 	const { site, tmpDirData } = context;
 	/**
 	 * Move the entire contents of the site to a tmp dir so that we can easily copy it back should
@@ -77,35 +77,38 @@ const moveSiteToTmpDir = async (context: BackupMachineContext) => {
 	const sitePath = formatHomePath(site.path);
 	const siteTmpDirPath = path.join(tmpDirData.name, site.name);
 
-	fs.moveSync(
-		sitePath,
+	fs.emptyDirSync(sitePath);
+
+	fs.copySync(
 		siteTmpDirPath,
+		sitePath,
 		/**
 		 * @todo ensure that we don't go willy nilly deleting files that are actually symlinks pointing outside of a site directory
 		 */
 	);
 
-	logger.info(`Site contents moved from \'${sitePath}\' to \'${siteTmpDirPath}\'`);
-
-	/**
-	 * moving the site directory also moves the site's root dir. Restic relies on a directory existing when it does the restore step
-	 * so we need to make sure that an empty dir exists
-	 */
-	fs.ensureDirSync(sitePath);
+	logger.info(`Site contents moved from \'${siteTmpDirPath}\' to \'${sitePath}\'`);
 };
 
 const restoreBackup = async (context: BackupMachineContext) => {
-	const { site, provider, encryptionPassword, snapshotID } = context;
+	const { site, provider, encryptionPassword, snapshotID, tmpDirData } = context;
+
+	const restoreDir = path.join(tmpDirData.name, site.name);
+
 	await restoreResticBackup({
 		site,
 		provider,
 		encryptionPassword,
 		snapshotID,
+		restoreDir,
 	});
 };
 
 const removeTmpDir = async (context: BackupMachineContext) => {
 	const { tmpDirData } = context;
+
+	// removeCallback will error if the tmp directory is not empty
+	fs.emptyDirSync(tmpDirData.name);
 	tmpDirData.removeCallback();
 };
 
@@ -162,7 +165,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 				invoke: {
 					src: (context, event) => createTmpDir(),
 					onDone: {
-						target: 'movingSiteToTmpDir',
+						target: 'restoringBackup',
 						actions: assign({
 							tmpDirData: (_, event) => event.data.tmpDirData,
 						}),
@@ -170,18 +173,18 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onError: onErrorFactory(),
 				},
 			},
-			movingSiteToTmpDir: {
+			restoringBackup: {
 				invoke: {
-					src: (context, event) => moveSiteToTmpDir(context),
+					src: (context, event) => restoreBackup(context),
 					onDone: {
-						target: 'restoringBackup',
+						target: 'movingSiteFromTmpDir',
 					},
 					onError: onErrorFactory(),
 				},
 			},
-			restoringBackup: {
+			movingSiteFromTmpDir: {
 				invoke: {
-					src: (context, event) => restoreBackup(context),
+					src: (context, event) => moveSiteFromTmpDir(context),
 					onDone: {
 						target: 'finished',
 					},
