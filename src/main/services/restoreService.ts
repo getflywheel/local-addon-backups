@@ -150,7 +150,6 @@ const onErrorFactory = () => ({
 	actions: [
 		'setErrorOnContext',
 		'logError',
-		'restoreSite',
 	],
 });
 
@@ -241,25 +240,6 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			})),
 			logError: (context, event) => {
 				logger.error(event.data);
-			},
-			restoreSite: (context, event) => {
-				const { tmpDirData, site } = context;
-
-				/**
-				 * If tmpDirData does not exists, we can assume that we never made it to the onDone branch of the creatingTmpDir state
-				 */
-				if (!tmpDirData) {
-					return;
-				}
-
-				logger.info(`Restoring previous site files due to failed backup restore [site id: ${site.id}]`);
-
-				const formattedSitePath = formatHomePath(site.path);
-
-				fs.ensureDirSync(formattedSitePath);
-				fs.moveSync(path.join(tmpDirData.name, site.name), formattedSitePath);
-
-				removeTmpDir(context);
 			},
 		},
 	},
