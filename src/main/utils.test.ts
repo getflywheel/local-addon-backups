@@ -1,6 +1,11 @@
 /* eslint-disable camelcase */
 import 'jest-extended';
-import { snakeToCamelCase, convertKeysFromSnakeToCamelCase, camelCaseToSentence } from './utils';
+import {
+	snakeToCamelCase,
+	convertKeysFromSnakeToCamelCase,
+	camelCaseToSentence,
+	expandTildeToDir,
+} from './utils';
 
 
 describe('snakeToCamelCase', () => {
@@ -34,5 +39,12 @@ describe('convertKeysFromSnakeToCamelCase', () => {
 describe('camelCaseToSentence', () => {
 	it('converst a camel case string to a string of lower case words separated by white space', () => {
 		expect(camelCaseToSentence('theSwissAlps')).toEqual('the swiss alps');
+	});
+});
+
+describe('expandTildeToDir', () => {
+	it('replaces tilde (~) with the given base dir', () => {
+		const baseDir = '/usr/tmp/ase5945056dsdf59';
+		expect(expandTildeToDir('~/hello/world', baseDir)).toEqual(`${baseDir}/hello/world`);
 	});
 });
