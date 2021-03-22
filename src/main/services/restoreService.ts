@@ -1,17 +1,18 @@
-import path from 'path';
+import path, { format } from 'path';
 import { Machine, interpret, assign } from 'xstate';
 import { formatHomePath, getServiceContainer } from '@getflywheel/local/main';
 import tmp from 'tmp';
 import type { DirResult } from 'tmp';
 import fs from 'fs-extra';
-import { getSiteDataFromDisk } from '../utils';
+import { getSiteDataFromDisk, expandTildeToDir } from '../utils';
 import { getBackupSite } from '../hubQueries';
 import { restoreBackup as restoreResticBackup } from '../cli';
 import type { Site, Providers, GenericObject } from '../../types';
 import serviceState from './state';
+import { backupSQLDumpFile } from '../../constants';
 
 const serviceContainer = getServiceContainer().cradle;
-const { localLogger } = serviceContainer;
+const { localLogger, runSiteSQLCmd, importSQLFile } = serviceContainer;
 
 /**
  * @todo create some sort of filter for this logger and the BackupService logger to obscure any
@@ -59,6 +60,40 @@ const getCredentials = async (context: BackupMachineContext) => {
 const createTmpDir = async () => ({
 	tmpDirData: tmp.dirSync(),
 });
+
+const importDatabase = async (context: BackupMachineContext) => {
+	const { site, tmpDirData } = context;
+
+	/**
+	 * @todo it might be worthwhile doing a recursive scan for this file
+	 */
+	const sqlFile = path.join(
+		path.join(expandTildeToDir(site.path, tmpDirData.name), 'sql', backupSQLDumpFile),
+	);
+
+	if (!fs.ensureDirSync(sqlFile)) {
+		logger.warn('No SQL file found in this backup: continuing without database restore');
+	}
+
+	const existingSqlMode = await runSiteSQLCmd({ site, query: 'SELECT @@SQL_MODE;' });
+
+	await runSiteSQLCmd({
+		site,
+		query: 'SET GLOBAL SQL_MODE=\'NO_AUTO_VALUE_ON_ZERO\';',
+	});
+
+	await runSiteSQLCmd({
+		site,
+		query: `SET names 'utf8'; DROP DATABASE ${site.mysql!.database}; CREATE DATABASE IF NOT EXISTS ${site.mysql!.database};`,
+	});
+
+	await importSQLFile(site, sqlFile);
+
+	await runSiteSQLCmd({
+		site,
+		query: `SET GLOBAL SQL_MODE='${existingSqlMode}';`,
+	});
+};
 
 const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 	const { site, tmpDirData } = context;
