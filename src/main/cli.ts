@@ -15,6 +15,7 @@ interface RestoreFromBackupOptions {
 	provider: Providers;
 	encryptionPassword: string;
 	snapshotID: string;
+	restoreDir: string;
 }
 
 const bins = getOSBins();
@@ -140,7 +141,7 @@ export async function listSnapshots (site: Site, provider: Providers): Promise<[
 	const { localBackupRepoID } = site;
 
 	if (!localBackupRepoID) {
-		throw new Error('Could not list snapshots since to repo was found on the given provider');
+		throw new Error('Could not list snapshots since no repo was found on the given provider');
 	}
 
 	try {
@@ -275,13 +276,13 @@ Fatal: wrong password or no key found
  * @param options
  */
 export async function restoreBackup (options: RestoreFromBackupOptions) {
-	const { site, provider, encryptionPassword, snapshotID } = options;
+	const { site, provider, encryptionPassword, snapshotID, restoreDir } = options;
 	const { localBackupRepoID } = getSiteDataFromDisk(site.id);
 
 	const flags = [
 		'--json',
 		`--password-command "echo \'${encryptionPassword}\'"`,
-		`--target .`,
+		`--target ${restoreDir}`,
 		/**
 		 * @todo do not add this flag if restoring a backup to a brand new site within Local
 		 */
