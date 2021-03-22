@@ -2,6 +2,7 @@ import path from 'path';
 import { Machine, interpret, assign } from 'xstate';
 import glob from 'glob';
 import { formatHomePath, getServiceContainer } from '@getflywheel/local/main';
+import { Site as LocalSiteModel } from '@getflywheel/local';
 import tmp from 'tmp';
 import type { DirResult } from 'tmp';
 import fs from 'fs-extra';
@@ -41,6 +42,7 @@ interface BackupMachineSchema {
 		gettingBackupCredentials: GenericObject;
 		restoringBackup: GenericObject;
 		movingSiteFromTmpDir: GenericObject;
+		restoringDatabase: GenericObject;
 		finished: GenericObject;
 		failed: GenericObject;
 	}
@@ -63,17 +65,24 @@ const createTmpDir = async () => ({
 });
 
 const importDatabase = async (context: BackupMachineContext) => {
-	const { site, tmpDirData } = context;
+	const { tmpDirData } = context;
+	const site = new LocalSiteModel(context.site);
 
 	/**
 	 * @todo it might be worthwhile doing a recursive scan for this file
 	 */
 	const sqlFile = path.join(
-		path.join(expandTildeToDir(site.path, tmpDirData.name), 'sql', backupSQLDumpFile),
+		// expandTildeToDir(site.path, tmpDirData.name),
+		tmpDirData.name, 'app', 'sql', backupSQLDumpFile,
 	);
 
-	if (!fs.ensureDirSync(sqlFile)) {
+	const a = expandTildeToDir(site.path, tmpDirData.name);
+
+	console.log('looking for sql file', sqlFile, a, tmpDirData.name, site.path);
+
+	if (!fs.existsSync(sqlFile)) {
 		logger.warn('No SQL file found in this backup: continuing without database restore');
+		return;
 	}
 
 	const existingSqlMode = await runSiteSQLCmd({ site, query: 'SELECT @@SQL_MODE;' });
@@ -113,27 +122,27 @@ const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 	await Promise.all(promises);
 
 	fs.copySync(
-		siteTmpDirPath,
+		tmpDirData.name,
 		sitePath,
 		/**
 		 * @todo ensure that we don't go willy nilly deleting files that are actually symlinks pointing outside of a site directory
 		 */
 	);
 
-	logger.info(`Site contents moved from \'${siteTmpDirPath}\' to \'${sitePath}\'`);
+	logger.info(`Site contents moved from \'${tmpDirData.name}\' to \'${sitePath}\'`);
 };
 
 const restoreBackup = async (context: BackupMachineContext) => {
 	const { site, provider, encryptionPassword, snapshotID, tmpDirData } = context;
 
-	const restoreDir = path.join(tmpDirData.name, site.name);
+	// const restoreDir = path.join(tmpDirData.name, site.name);
 
 	await restoreResticBackup({
 		site,
 		provider,
 		encryptionPassword,
 		snapshotID,
-		restoreDir,
+		restoreDir: tmpDirData.name,
 	});
 };
 
@@ -217,6 +226,15 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			movingSiteFromTmpDir: {
 				invoke: {
 					src: (context, event) => moveSiteFromTmpDir(context),
+					onDone: {
+						target: 'restoringDatabase',
+					},
+					onError: onErrorFactory(),
+				},
+			},
+			restoringDatabase: {
+				invoke: {
+					src: (context) => importDatabase(context),
 					onDone: {
 						target: 'finished',
 					},
