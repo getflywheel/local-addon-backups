@@ -20,6 +20,20 @@ interface RestoreFromBackupOptions {
 
 const bins = getOSBins();
 
+/**
+ * Hardcoded values that we always want to ignore with restic or when restoring a site backup
+ *
+ * These patterns will be interpreted as glob patterns
+ * - node-glob in this add-on
+ * - The Go standard lib in restic with either: (See the restic docs for more info: https://restic.readthedocs.io/en/latest/040_backup.html#excluding-files)
+ * 		- https://golang.org/pkg/path/filepath/#Glob
+ * 		- https://golang.org/pkg/os/#ExpandEnv
+ *
+ * The values included here are auto generated things by Local/Wordpress that
+ * either aren't necessary or could cause errors upon restoring the site
+ */
+export const excludePatterns = ['conf'];
+
 const localBackupsIgnoreFileName = '.localbackupaddonignore';
 let defaultIgnoreFilePath = path.join(__dirname, '..', 'resources', 'default-ignore-file');
 
@@ -248,6 +262,7 @@ export async function createSnapshot (site: Site, provider: Providers, encryptio
 	const flags = [
 		'--json',
 		`--password-command "echo \'${encryptionPassword}\'"`,
+		`--exclude "${excludePatterns.join(' ')}"`,
 	];
 
 	/**
