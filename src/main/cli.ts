@@ -152,7 +152,7 @@ async function execPromiseWithRcloneContext (opts: { cmd: string; site: Site; pr
 		 * Define a command that restic can use to get the repository password dynamically. It's useful to set here as opposed to command line flag
 		 * since this only lives inside the scope of the spawned shell which should gaurd against the password getting dumped to a log file
 		 */
-		['RESTIC_PASSWORD_COMMAND']: `\"echo \'${encryptionPassword}\'\"`,
+		['RESTIC_PASSWORD']: `\"${encryptionPassword}\"`,
 	});
 }
 
