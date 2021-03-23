@@ -6,7 +6,7 @@ import { Site as LocalSiteModel } from '@getflywheel/local';
 import tmp from 'tmp';
 import type { DirResult } from 'tmp';
 import fs from 'fs-extra';
-import { getSiteDataFromDisk, expandTildeToDir, camelCaseToSentence } from '../utils';
+import { getSiteDataFromDisk, camelCaseToSentence } from '../utils';
 import { getBackupSite } from '../hubQueries';
 import { restoreBackup as restoreResticBackup, excludePatterns } from '../cli';
 import type { Site, Providers, GenericObject } from '../../types';
