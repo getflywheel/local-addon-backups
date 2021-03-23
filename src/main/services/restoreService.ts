@@ -72,13 +72,8 @@ const importDatabase = async (context: BackupMachineContext) => {
 	 * @todo it might be worthwhile doing a recursive scan for this file
 	 */
 	const sqlFile = path.join(
-		// expandTildeToDir(site.path, tmpDirData.name),
 		tmpDirData.name, 'app', 'sql', backupSQLDumpFile,
 	);
-
-	const a = expandTildeToDir(site.path, tmpDirData.name);
-
-	console.log('looking for sql file', sqlFile, a, tmpDirData.name, site.path);
 
 	if (!fs.existsSync(sqlFile)) {
 		logger.warn('No SQL file found in this backup: continuing without database restore');
@@ -134,8 +129,6 @@ const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 
 const restoreBackup = async (context: BackupMachineContext) => {
 	const { site, provider, encryptionPassword, snapshotID, tmpDirData } = context;
-
-	// const restoreDir = path.join(tmpDirData.name, site.name);
 
 	await restoreResticBackup({
 		site,

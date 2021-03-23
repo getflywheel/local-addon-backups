@@ -122,8 +122,7 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 	 * the hub side for the given provider
 	 */
 	if (!backupRepo) {
-		backupRepoAlreadyExists = false
-		;
+		backupRepoAlreadyExists = false;
 		backupRepo = await createBackupRepo({
 			backupSiteID,
 			localBackupRepoID,
