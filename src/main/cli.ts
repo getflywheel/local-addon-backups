@@ -2,7 +2,7 @@ import path from 'path';
 import { exec } from 'child_process';
 import fs from 'fs-extra';
 import { isString } from 'lodash';
-import { formatHomePath } from '@getflywheel/local/main';
+import { formatHomePath, getServiceContainer } from '@getflywheel/local/main';
 import getOSBins from './getOSBins';
 import { Providers } from '../types';
 import type { Site } from '../types';
@@ -33,6 +33,13 @@ const bins = getOSBins();
  * either aren't necessary or could cause errors upon restoring the site
  */
 export const excludePatterns = ['conf'];
+const serviceContainer = getServiceContainer().cradle;
+const { localLogger } = serviceContainer;
+
+const logger = localLogger.child({
+	thread: 'main',
+	class: 'BackupAddonCLIService',
+});
 
 const localBackupsIgnoreFileName = '.localbackupaddonignore';
 let defaultIgnoreFilePath = path.join(__dirname, '..', 'resources', 'default-ignore-file');
@@ -174,13 +181,14 @@ export async function initRepo ({ provider, encryptionPassword, localBackupRepoI
 	} catch (err) {
 		if (isString(err) && err.includes('Fatal: config file already exists')) {
 			/**
-			 * the repo has already been initted!
-			 *
-			 * @todo handle the case that the repo has already been initted
+			 * The repo has already been initted. Log the error for reference but don't pass the error up the call stack
+			 * so that the BackupService can seamlessly continue creating a site backup
 			 */
+			logger.warn(err);
+			return;
 		}
 
-		console.error(err);
+		logger.error(err);
 	}
 }
 
