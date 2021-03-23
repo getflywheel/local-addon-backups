@@ -1,7 +1,6 @@
 import * as Local from '@getflywheel/local';
 import * as LocalMain from '@getflywheel/local/main';
 import type { HubOAuthProviders, Providers, Site } from './types';
-import { listRepos } from './main/cli';
 import { getEnabledBackupProviders, getBackupReposByProviderID, getBackupSnapshots } from './main/hubQueries';
 import { createBackup } from './main/services/backupService';
 import { restoreFromBackup } from './main/services/restoreService';
@@ -56,7 +55,6 @@ export default function (context): void {
 		LocalMain.addIpcAsyncListener(channel, callback);
 	});
 
-
 	LocalMain.addIpcAsyncListener('start-site-backup', async (siteId: Local.Site['id'], provider: Providers) => {
 		const site = LocalMain.SiteData.getSite(siteId);
 	});
@@ -64,9 +62,4 @@ export default function (context): void {
 	LocalMain.addIpcAsyncListener('list-site-snapshots', async (siteId: Local.Site['id'], provider: Providers) => {
 		const site = LocalMain.SiteData.getSite(siteId);
 	});
-
-	LocalMain.addIpcAsyncListener('list-repos', async (siteId: Local.Site['id'], provider: Providers) => await listRepos(
-		LocalMain.SiteData.getSite(siteId),
-		provider,
-	));
 }
