@@ -99,7 +99,6 @@ const importDatabase = async (context: BackupMachineContext) => {
 const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 	const { site, tmpDirData } = context;
 	const sitePath = formatHomePath(site.path);
-	const siteTmpDirPath = path.join(tmpDirData.name, site.name);
 
 	const itemsToDelete: string[] = [
 		...glob.sync(`${sitePath}/!(${excludePatterns.join('|')})`),
