@@ -100,15 +100,6 @@ export default function (context): void {
 			description: 'Query for all site backups (this might take a few seconds).',
 		},
 		{
-			onClick: async (site, provider) => {
-				console.log(
-					await ipcAsync('list-repos', site.id, provider),
-				);
-			},
-			buttonText: 'List Repos',
-			description: 'Lists repos for all sites',
-		},
-		{
 			onClick: async () => {
 				console.log(
 					await ipcAsync('backups:enabled-providers'),

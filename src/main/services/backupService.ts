@@ -24,14 +24,10 @@ const {
 	siteProcessManager,
 } = serviceContainer;
 
-/**
- * @todo filter out password value from the restic --password-command flag
- */
 const logger = localLogger.child({
 	thread: 'main',
 	class: 'BackupAddonBackupService',
 });
-
 
 interface BackupMachineContext {
 	site: Site;

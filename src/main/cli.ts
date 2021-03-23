@@ -123,7 +123,8 @@ async function execPromise (cmd: string, site: Site, env: { [key: string]: strin
  * @param cmd
  * @param provider
  */
-async function execPromiseWithRcloneContext (cmd: string, site: Site, provider: Providers): Promise<string> {
+async function execPromiseWithRcloneContext (opts: { cmd: string; site: Site; provider: Providers; encryptionPassword: string; }): Promise<string> {
+	const { cmd, site, provider, encryptionPassword } = opts;
 	const { type, clientID, token, appKey } = await getBackupCredentials(providerToHubProvider(provider));
 
 	const upperCaseProvider = provider.toUpperCase();
@@ -140,55 +141,13 @@ async function execPromiseWithRcloneContext (cmd: string, site: Site, provider: 
 		[`RCLONE_${upperCaseProvider}_CLIENT_ID`]: clientID,
 		[`RCLONE_${upperCaseProvider}_TOKEN`]: token,
 		[`RCLONE_${upperCaseProvider}_APP_KEY`]: appKey,
+		/**
+		 * Define a command that restic can use to get the repository password dynamically. It's useful to set here as opposed to command line flag
+		 * since this only lives inside the scope of the spawned shell which should gaurd against the password getting dumped to a log file
+		 */
+		['RESTIC_PASSWORD_COMMAND']: `\"echo \'${encryptionPassword}\'\"`,
 	});
 }
-
-/**
- * List all snapshots on a provider for a given site
- *
- * @todo Type the objects in the returned array
- *
- * @param site
- * @param provider
- */
-export async function listSnapshots (site: Site, provider: Providers): Promise<[]> {
-	const { localBackupRepoID } = site;
-
-	if (!localBackupRepoID) {
-		throw new Error('Could not list snapshots since no repo was found on the given provider');
-	}
-
-	try {
-
-
-		const json = await execPromiseWithRcloneContext(
-			`${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} snapshots --json`,
-			site,
-			provider,
-		);
-
-		return JSON.parse(json);
-	} catch (err) {
-		/**
-		 * ------------------------------------------------------------------------
-		 * Potential failure messages
-		 * ------------------------------------------------------------------------
-		 *
-		 *
-		 * ------------------------------------------------------------------------
-		 * No repos exist
-		 * ------------------------------------------------------------------------
-		 * Error: Command failed: /home/matt/code/local-addon-backups/vendor/linux/restic --repo rclone::drive::<repo-uuid> snapshots --json
-		 * Fatal: unable to open config file: <config/> does not exist
-		 * Is there a repository at the following location?
-		 * rclone::drive::<reop-uuid>
-		 */
-		console.error(err);
-	}
-
-	return [];
-}
-
 
 /**
  * Initialize a restic repository on a given provider
@@ -204,14 +163,14 @@ export async function initRepo ({ provider, encryptionPassword, localBackupRepoI
 	try {
 		const flags = [
 			'--json',
-			`--password-command \"echo \'${encryptionPassword}\'\"`,
 		];
 
-		return await execPromiseWithRcloneContext(
-			`${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} init ${flags.join(' ')}`,
+		return await execPromiseWithRcloneContext({
+			cmd: `${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} init ${flags.join(' ')}`,
 			site,
 			provider,
-		);
+			encryptionPassword,
+		});
 	} catch (err) {
 		if (isString(err) && err.includes('Fatal: config file already exists')) {
 			/**
@@ -226,24 +185,13 @@ export async function initRepo ({ provider, encryptionPassword, localBackupRepoI
 }
 
 /**
- * List all repos in a given provider
+ * Creates a new restic snapshot on a given provider
  *
- * @todo Do we need this?
- *
+ * @param site
  * @param provider
+ * @param encryptionPassword
+ * @returns
  */
-export async function listRepos (site: Site, provider: Providers): Promise<string> {
-	const json = await execPromiseWithRcloneContext(
-		`${bins.rclone} lsjson :${provider}: --fast-list --use-json-log`,
-		site,
-		provider,
-	);
-
-	const repos = JSON.parse(json);
-
-	return repos;
-}
-
 export async function createSnapshot (site: Site, provider: Providers, encryptionPassword: string): Promise<string> {
 	const { localBackupRepoID } = getSiteDataFromDisk(site.id);
 
@@ -263,6 +211,7 @@ export async function createSnapshot (site: Site, provider: Providers, encryptio
 		'--json',
 		`--password-command "echo \'${encryptionPassword}\'"`,
 		`--exclude "${excludePatterns.join(' ')}"`,
+		`--exclude-file \'${ignoreFilePath}\'`,
 	];
 
 	/**
@@ -273,14 +222,15 @@ export async function createSnapshot (site: Site, provider: Providers, encryptio
 Fatal: wrong password or no key found
 	 */
 
-	return execPromiseWithRcloneContext(
+	return execPromiseWithRcloneContext({
 		/**
-		 * Use . since we change cwd to the site
+		 * This passes "." as the path since we cwd of the shell to the site
 		 */
-		`${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} ${flags.join(' ')} backup .`,
+		cmd: `${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} ${flags.join(' ')} backup .`,
 		site,
 		provider,
-	);
+		encryptionPassword,
+	});
 }
 
 /**
@@ -295,7 +245,6 @@ export async function restoreBackup (options: RestoreFromBackupOptions) {
 
 	const flags = [
 		'--json',
-		`--password-command "echo \'${encryptionPassword}\'"`,
 		`--target ${restoreDir}`,
 		/**
 		 * @todo do not add this flag if restoring a backup to a brand new site within Local
@@ -303,9 +252,10 @@ export async function restoreBackup (options: RestoreFromBackupOptions) {
 		`--exclude ${metaDataFileName}`,
 	];
 
-	return execPromiseWithRcloneContext(
-		`${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} restore ${snapshotID} ${flags.join(' ')} `,
+	return execPromiseWithRcloneContext({
+		cmd: `${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} restore ${snapshotID} ${flags.join(' ')} `,
 		site,
 		provider,
-	);
+		encryptionPassword,
+	});
 }

@@ -16,10 +16,6 @@ import { backupSQLDumpFile } from '../../constants';
 const serviceContainer = getServiceContainer().cradle;
 const { localLogger, runSiteSQLCmd, importSQLFile } = serviceContainer;
 
-/**
- * @todo create some sort of filter for this logger and the BackupService logger to obscure any
- * passwords passed in restic commands via the --password-command flag
- */
 const logger = localLogger.child({
 	thread: 'main',
 	class: 'BackupAddonRestoreService',
