@@ -80,3 +80,13 @@ export interface RcloneConfig {
 	token: string;
 	appKey: string;
 }
+
+export enum RestoreStates {
+	creatingTmpDir = 'creatingTmpDir',
+	gettingBackupCredentials = 'gettingBackupCredentials',
+	restoringBackup = 'restoringBackup',
+	movingSiteFromTmpDir = 'movingSiteFromTmpDir',
+	restoringDatabase = 'restoringDatabase',
+	finished = 'finished',
+	failed = 'failed',
+}

@@ -4,7 +4,7 @@ import { TextButton, TableListRow, FlySelect } from '@getflywheel/local-componen
 import { ipcAsync } from '@getflywheel/local/renderer';
 import type { SiteJSON } from '@getflywheel/local';
 import { startCase } from 'lodash';
-import { Providers } from './types';
+import { Providers, RestoreStates } from './types';
 import { store } from './renderer/store/store';
 import SiteInfoToolsSection from './renderer/components/siteinfotools/SiteInfoToolsSection';
 import { setupListeners } from './renderer/helpers/setupListeners';
@@ -72,7 +72,6 @@ const MainComponent = (props: { rows: RowProps<SiteJSON>[], site: SiteJSON }) =>
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function (context): void {
 	const { hooks } = context;
-
 	const SiteInfoToolsSectionHOC = withStoreProvider(SiteInfoToolsSection);
 
 	hooks.addFilter('siteInfoToolsItem', (items) => {
@@ -121,4 +120,9 @@ export default function (context): void {
 			rows={rows}
 		/>
 	));
+
+	hooks.addFilter('showSiteOverlayStatuses', (statuses: string[]) => {
+		statuses.push(...Object.values(RestoreStates));
+		return statuses;
+	});
 }
