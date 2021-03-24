@@ -4,7 +4,7 @@ import { TextButton, TableListRow, FlySelect } from '@getflywheel/local-componen
 import { ipcAsync } from '@getflywheel/local/renderer';
 import type { SiteJSON } from '@getflywheel/local';
 import { startCase } from 'lodash';
-import { Providers, RestoreStates } from './types';
+import { Providers, RestoreStates, BackupStates } from './types';
 import { store } from './renderer/store/store';
 import SiteInfoToolsSection from './renderer/components/siteinfotools/SiteInfoToolsSection';
 import { setupListeners } from './renderer/helpers/setupListeners';
@@ -123,6 +123,7 @@ export default function (context): void {
 
 	hooks.addFilter('showSiteOverlayStatuses', (statuses: string[]) => {
 		statuses.push(...Object.values(RestoreStates));
+		statuses.push(BackupStates.creatingDatabaseSnapshot);
 		return statuses;
 	});
 }
