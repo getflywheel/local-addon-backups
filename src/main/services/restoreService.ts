@@ -9,12 +9,13 @@ import { getSiteDataFromDisk, camelCaseToSentence } from '../utils';
 import { getBackupSite } from '../hubQueries';
 import { restoreBackup as restoreResticBackup } from '../cli';
 import type { Site, Providers, GenericObject } from '../../types';
+import { RestoreStates } from '../../types';
 import serviceState from './state';
 import { backupSQLDumpFile, IPCEVENTS } from '../../constants';
 import { getFilteredSiteFiles } from '../../helpers/ignoreFilesPattern';
 
 const serviceContainer = getServiceContainer().cradle;
-const { localLogger, runSiteSQLCmd, importSQLFile, sendIPCEvent, siteProcessManager } = serviceContainer;
+const { localLogger, runSiteSQLCmd, importSQLFile, siteProcessManager, sendIPCEvent } = serviceContainer;
 
 const logger = localLogger.child({
 	thread: 'main',
@@ -35,13 +36,13 @@ interface BackupMachineContext {
 
 interface BackupMachineSchema {
 	states: {
-		creatingTmpDir: GenericObject;
-		gettingBackupCredentials: GenericObject;
-		restoringBackup: GenericObject;
-		movingSiteFromTmpDir: GenericObject;
-		restoringDatabase: GenericObject;
-		finished: GenericObject;
-		failed: GenericObject;
+		[RestoreStates.creatingTmpDir]: GenericObject;
+		[RestoreStates.gettingBackupCredentials]: GenericObject;
+		[RestoreStates.restoringBackup]: GenericObject;
+		[RestoreStates.movingSiteFromTmpDir]: GenericObject;
+		[RestoreStates.restoringDatabase]: GenericObject;
+		[RestoreStates.finished]: GenericObject;
+		[RestoreStates.failed]: GenericObject;
 	}
 }
 
@@ -177,7 +178,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 	 */
 	{
 		id: 'restoreBackup',
-		initial: 'gettingBackupCredentials',
+		initial: RestoreStates.gettingBackupCredentials,
 		context: {
 			site: null,
 			initialSiteStatus: null,
@@ -190,7 +191,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			error: null,
 		},
 		states: {
-			gettingBackupCredentials: {
+			[RestoreStates.gettingBackupCredentials]: {
 				invoke: {
 					src: (context, event) => getCredentials(context),
 					onDone: {
@@ -207,7 +208,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			/**
 			 * @todo refactor this into an action or something else since createTmpDir technically does not need to be async
 			 */
-			creatingTmpDir: {
+			[RestoreStates.creatingTmpDir]: {
 				invoke: {
 					src: (context, event) => createTmpDir(),
 					onDone: {
@@ -219,7 +220,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onError: onErrorFactory(),
 				},
 			},
-			restoringBackup: {
+			[RestoreStates.restoringBackup]: {
 				invoke: {
 					src: (context, event) => restoreBackup(context),
 					onDone: {
@@ -228,7 +229,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onError: onErrorFactory(),
 				},
 			},
-			movingSiteFromTmpDir: {
+			[RestoreStates.movingSiteFromTmpDir]: {
 				invoke: {
 					src: (context, event) => moveSiteFromTmpDir(context),
 					onDone: {
@@ -237,7 +238,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onError: onErrorFactory(),
 				},
 			},
-			restoringDatabase: {
+			[RestoreStates.restoringDatabase]: {
 				invoke: {
 					src: (context) => importDatabase(context),
 					onDone: {
@@ -246,11 +247,11 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onError: onErrorFactory(),
 				},
 			},
-			finished: {
+			[RestoreStates.finished]: {
 				type: 'final',
 				entry: 'removeTmpDir',
 			},
-			failed: {
+			[RestoreStates.failed]: {
 				type: 'final',
 			},
 		},
@@ -289,13 +290,24 @@ export const restoreFromBackup = async (opts: { site: Site; provider: Providers;
 		const restoreService = interpret(machine)
 			.onTransition((state) => {
 				sendIPCEvent(IPCEVENTS.BACKUP_STARTED);
-				logger.info(camelCaseToSentence(state.value as string));
+
+				const actionLabel = camelCaseToSentence(state.value as string);
+				logger.info(actionLabel);
+
+				sendIPCEvent('updateSiteStatus', site.id, state.value);
+				sendIPCEvent('updateSiteMessage', site.id, {
+					label: actionLabel,
+					stripes: true,
+				});
 			})
 			.onDone(() => restoreService.stop())
 			.onStop(() => {
 				serviceState.inProgressStateMachine = null;
 				// eslint-disable-next-line no-underscore-dangle
 				const { error } = restoreService._state;
+				const siteModel = new LocalSiteModel(site);
+
+				siteProcessManager.restart(siteModel);
 
 				sendIPCEvent(IPCEVENTS.BACKUP_COMPLETED);
 

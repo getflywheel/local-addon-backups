@@ -57,12 +57,14 @@ const createDatabaseSnapshot = async (context: BackupMachineContext) => {
 	const { site, initialSiteStatus } = context;
 
 	sendIPCEvent('updateSiteStatus', site.id, 'exporting_db');
+
 	sendIPCEvent('updateSiteMessage', site.id, {
 		label: 'Creating database snapshot for backup',
 		stripes: true,
 	});
 
 	await siteDatabase.dump(site, path.join(site.paths.sql, backupSQLDumpFile));
+
 	sendIPCEvent('updateSiteStatus', site.id, initialSiteStatus);
 };
 
@@ -352,7 +354,9 @@ export const createBackup = async (site: Site, provider: Providers, description:
 		const backupService = interpret(backupMachine.withContext({ site, provider, description, initialSiteStatus }))
 			.onTransition((state) => {
 				sendIPCEvent(IPCEVENTS.BACKUP_STARTED);
-				logger.info(`${camelCaseToSentence(state.value as string)} [site id: ${site.id}]`);
+				const status = camelCaseToSentence(state.value as string);
+				logger.info(`${status} [site id: ${site.id}]`);
+				sendIPCEvent('updateSiteStatus', site.id, status);
 			})
 			.onDone(() => backupService.stop())
 			.onStop(() => {
@@ -360,11 +364,14 @@ export const createBackup = async (site: Site, provider: Providers, description:
 				// eslint-disable-next-line no-underscore-dangle
 				const { error } = backupService._state;
 
+				siteProcessManager.restart(site);
 				sendIPCEvent(IPCEVENTS.BACKUP_COMPLETED);
 
 				if (error) {
 					resolve({ error });
 				}
+
+				siteProcessManager.restart(site);
 
 				resolve(null);
 			});
