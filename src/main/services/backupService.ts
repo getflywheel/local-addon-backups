@@ -14,6 +14,7 @@ import {
 import { initRepo, createSnapshot as createResticSnapshot } from '../cli';
 import type { Site, Providers, GenericObject, SiteMetaData } from '../../types';
 import { metaDataFileName, backupSQLDumpFile, IPCEVENTS } from '../../constants';
+import { BackupStates } from '../../types';
 import serviceState from './state';
 
 const serviceContainer = getServiceContainer().cradle;
@@ -43,13 +44,13 @@ interface BackupMachineContext {
 
 interface BackupMachineSchema {
 	states: {
-		creatingDatabaseSnapshot: GenericObject;
-		creatingBackupSite: GenericObject;
-		creatingBackupRepo: GenericObject;
-		initingResticRepo: GenericObject;
-		creatingSnapshot: GenericObject;
-		finished: GenericObject;
-		failed: GenericObject;
+		[BackupStates.creatingDatabaseSnapshot]: GenericObject;
+		[BackupStates.creatingBackupSite]: GenericObject;
+		[BackupStates.creatingBackupRepo]: GenericObject;
+		[BackupStates.initingResticRepo]: GenericObject;
+		[BackupStates.creatingSnapshot]: GenericObject;
+		[BackupStates.finished]: GenericObject;
+		[BackupStates.failed]: GenericObject;
 	}
 }
 
@@ -234,7 +235,7 @@ const assignBackupRepoIDToContext = assign({
 const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 	{
 		id: 'createBackup',
-		initial: 'creatingDatabaseSnapshot',
+		initial: BackupStates.creatingDatabaseSnapshot,
 		context: {
 			site: null,
 			initialSiteStatus: null,
@@ -247,7 +248,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			error: null,
 		},
 		states: {
-			creatingDatabaseSnapshot: {
+			[BackupStates.creatingDatabaseSnapshot]: {
 				invoke: {
 					id: 'createDatabaseSnapshot',
 					src: (context) => createDatabaseSnapshot(context),
@@ -257,7 +258,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onError: onErrorFactory(),
 				},
 			},
-			creatingBackupSite: {
+			[BackupStates.creatingBackupSite]: {
 				invoke: {
 					id: 'maybeCreateBackupSite',
 					src: (context, event) => maybeCreateBackupSite(context),
@@ -272,7 +273,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onError: onErrorFactory(),
 				},
 			},
-			creatingBackupRepo: {
+			[BackupStates.creatingBackupRepo]: {
 				invoke: {
 					src: (context, event) => maybeCreateBackupRepo(context),
 					onDone: [
@@ -290,7 +291,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onError: onErrorFactory(),
 				},
 			},
-			initingResticRepo: {
+			[BackupStates.initingResticRepo]: {
 				invoke: {
 					src: (context, event) => initResticRepo(context),
 					onDone: {
@@ -299,7 +300,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onError: onErrorFactory(),
 				},
 			},
-			creatingSnapshot: {
+			[BackupStates.creatingSnapshot]: {
 				invoke: {
 					src: (context, event) => createSnapshot(context),
 					onDone: {
@@ -308,10 +309,10 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onError: onErrorFactory(),
 				},
 			},
-			finished: {
+			[BackupStates.finished]: {
 				type: 'final',
 			},
-			failed: {
+			[BackupStates.failed]: {
 				type: 'final',
 			},
 		},

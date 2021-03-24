@@ -81,6 +81,16 @@ export interface RcloneConfig {
 	appKey: string;
 }
 
+export enum BackupStates {
+	creatingDatabaseSnapshot = 'creatingDatabaseSnapshot',
+	creatingBackupSite = 'creatingBackupSite',
+	creatingBackupRepo = 'creatingBackupRepo',
+	initingResticRepo = 'initingResticRepo',
+	creatingSnapshot = 'creatingSnapshot',
+	finished = 'finished',
+	failed = 'failed',
+}
+
 export enum RestoreStates {
 	creatingTmpDir = 'creatingTmpDir',
 	gettingBackupCredentials = 'gettingBackupCredentials',
