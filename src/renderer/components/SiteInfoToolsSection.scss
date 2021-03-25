@@ -1,5 +1,9 @@
+@import '~@getflywheel/local-components/src/styles/_partials/index';
+
 .SiteInfoToolsSection {
-	padding: 27px;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
 }
 
 .SiteInfoToolsSection_Header {
@@ -7,7 +11,7 @@
 	flex-direction: row;
 	justify-content: space-between;
 	align-items: center;
-	margin-bottom: 27px;
+	padding: 20px;
 }
 
 .SiteInfoToolsSection_ProviderHeader {
@@ -18,9 +22,13 @@
 	padding: 30px 0;
 }
 
-.SiteInfoToolsSection_ProviderDivider {
-	/* To account for the 27px container margin, set a negative margin on the left and right */
-	margin: 20px -27px 0 -27px;
+.SiteInfoToolsSection_Content {
+	flex-grow: 1;
+	width: 100%;
+	height: 100%;
+	// todo - crum: create theme mixin for this pattern (as it's used in flywheel-local, as well)
+	// @include __theme-background($gray1, $gray-dark);
+	@include __theme-background($gray1 !important, $gray-dark-alt !important);
 }
 
 .SiteInfoToolsSection_EmptyArea {

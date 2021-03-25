@@ -1,0 +1,98 @@
+@import '~@getflywheel/local-components/src/styles/_partials/index';
+
+.ProviderDropdown_Cont {
+	display: flex;
+}
+
+.ProviderDropdown {
+	display: inline-flex;
+	align-items: center;
+	color: $green;
+
+	&:hover {
+		color: $green-dark;
+
+		> svg:not(.ProviderDropdown_Content_ProviderSvg) path {
+			fill: $green-dark !important;
+		}
+
+		&:global(.FlyDropdown__Open .FlyDropdown_Caret) {
+			background: $green-dark;
+		}
+	}
+
+	> svg:not(.ProviderDropdown_Content_ProviderSvg) {
+		margin: 0 0 0 10px;
+
+		path {
+			fill: $green;
+		}
+	}
+
+	&:global(.FlyDropdown__Open .FlyDropdown_Caret) {
+		background: $green;
+	}
+
+	:global(.FlyDropdown_Items) {
+		width: max-content;
+
+		&::before {
+			z-index: 8;
+		}
+	}
+
+	ul > li {
+		padding: 20px;
+
+		&:last-child:not(:first-child) {
+			@include theme-border-top;
+		}
+	}
+}
+
+.ProviderDropdown_Label {
+	margin-right: 5px;
+}
+
+.ProviderDropdown_Content_ProviderSvg {
+	width: auto;
+	height: 18px;
+	margin-right: 5px;
+}
+
+.ProviderDropdown_Content_Button {
+	padding-left: 0;
+	padding-right: 0;
+}
+
+.ProviderDropdown_Item_TextButton {
+	display: flex !important;
+	width: 100%;
+	padding: 0;
+	text-align: left !important;
+
+	&:hover {
+		color: $green-dark;
+
+		svg path {
+			fill: $green-dark !important;
+		}
+
+		&:global(.FlyDropdown__Open .FlyDropdown_Caret) {
+			background: $green-dark;
+		}
+	}
+}
+
+.ProviderDropdown_Item_TextButton_Label {
+	flex-grow: 1;
+}
+
+.ProviderDropdown_Item_TextButton_Value {
+	margin-left: 10px;
+}
+
+.TextButtonExternal_Svg {
+	width: auto !important;
+	margin: 0 !important;
+}
