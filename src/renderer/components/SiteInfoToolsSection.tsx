@@ -1,17 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { EmptyArea, Text, Divider, Button, TextButton } from '@getflywheel/local-components';
+import { EmptyArea, Text, Divider, Button, PrimaryButton } from '@getflywheel/local-components';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import type { Site } from '@getflywheel/local';
 import { URLS } from '../../constants';
 import useActiveSiteID from './useActiveSiteID';
 import { BackupSnapshot, HubOAuthProviders, HubProviderRecord, Providers } from '../../types';
 import { useStoreSelector, selectors, store, actions } from '../store/store';
-
-/* @ts-ignore */
+import { ProviderDropdown } from './ProviderDropdown';
 import GoogleDriveIcon from '../assets/google-drive.svg';
-/* @ts-ignore */
 import DropboxIcon from '../assets/dropbox.svg';
-/* @ts-ignore */
 import styles from './SiteInfoToolsSection.scss';
 
 interface Props {
@@ -164,48 +161,69 @@ const SiteInfoToolsSection = (props: Props) => {
 	return (
 		<div className={styles.SiteInfoToolsSection}>
 			<div className={styles.SiteInfoToolsSection_Header}>
+				<ProviderDropdown
+					enabledProviders={enabledProviders}
+					onClickItem={() => launchBrowser(`${URLS.LOCAL_HUB}/addons/backups`)}
+					/>
 				{/* <GoogleDriveIcon /> */}
-				<Text>
-					Latest backup: N/A
-				</Text>
-				<TextButton onClick={() => launchBrowser(`${URLS.LOCAL_HUB}/addons/backups`)}>
-					Manage Connections
-				</TextButton>
+				{enabledProviders.length
+					? (
+						<PrimaryButton
+							onClick={() => alert('backup now wireup')}
+							privateOptions={{
+								padding: 'm',
+							}}
+						>
+							Back Up Site
+						</PrimaryButton>
+					)
+					: (
+						<PrimaryButton
+							onClick={() => launchBrowser(`${URLS.LOCAL_HUB}/addons/backups`)}
+							privateOptions={{
+								padding: 'm',
+							}}
+						>
+							Connect Provider
+						</PrimaryButton>
+					)
+				}
 			</div>
-			<Divider />
-			{addDivider(enabledProviders.map(({ id, name }) => {
-				const Icon = getProviderIcon(id);
-				const provider = hubProviderToProvider(id);
+			<div className={styles.SiteInfoToolsSection_Content}>
+				{addDivider(enabledProviders.map(({ id, name }) => {
+					const Icon = getProviderIcon(id);
+					const provider = hubProviderToProvider(id);
 
-				return (
-					<>
-						<div className={styles.SiteInfoToolsSection_ProviderHeader}>
-							<Icon />
-							<Text privateOptions={{ fontSize: 'm', fontWeight: 'bold' }}>{name}</Text>
-							<Button
-								onClick={() => backupSite(site, provider)}
-							>
-								Backup Site
-							</Button>
-						</div>
-						{
-							snapshots[id]?.length
-								? (
-									<SnapshotList
-										snapshots={snapshots[id]}
-										site={site}
-										provider={provider}
-									/>
-								)
-								: (
-									<EmptyArea className={styles.SiteInfoToolsSection_EmptyArea}>
-										<Text>No backups created yet</Text>
-									</EmptyArea>
-								)
-						}
-					</>
-				);
-			}))}
+					return (
+						<>
+							<div className={styles.SiteInfoToolsSection_ProviderHeader}>
+								<Icon />
+								<Text privateOptions={{ fontSize: 'm', fontWeight: 'bold' }}>{name}</Text>
+								<Button
+									onClick={() => backupSite(site, provider)}
+								>
+									Backup Site
+								</Button>
+							</div>
+							{
+								snapshots[id]?.length
+									? (
+										<SnapshotList
+											snapshots={snapshots[id]}
+											site={site}
+											provider={provider}
+										/>
+									)
+									: (
+										<EmptyArea className={styles.SiteInfoToolsSection_EmptyArea}>
+											<Text>No backups created yet</Text>
+										</EmptyArea>
+									)
+							}
+						</>
+					);
+				}))}
+				</div>
 		</div>
 	);
 };
