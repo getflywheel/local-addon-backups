@@ -26,8 +26,6 @@
 	flex-grow: 1;
 	width: 100%;
 	height: 100%;
-	// todo - crum: create theme mixin for this pattern (as it's used in flywheel-local, as well)
-	// @include __theme-background($gray1, $gray-dark);
 	@include __theme-background($gray1 !important, $gray-dark-alt !important);
 }
 

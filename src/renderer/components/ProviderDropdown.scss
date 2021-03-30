@@ -41,11 +41,15 @@
 		}
 	}
 
-	ul > li {
-		padding: 20px;
+	ul {
 
-		&:last-child:not(:first-child) {
-			@include theme-border-top;
+
+		> li {
+			padding: 20px;
+
+			&:last-child:not(:first-child) {
+				@include theme-border-top;
+			}
 		}
 	}
 }
@@ -88,8 +92,18 @@
 	flex-grow: 1;
 }
 
+.ProviderDropdown_Item_TextButton__Deactivated .ProviderDropdown_Item_TextButton_Label {
+	@include theme-color-graydark-else-white;
+}
+
 .ProviderDropdown_Item_TextButton_Value {
 	margin-left: 10px;
+}
+
+.ProviderDropdown_Item_TextButton__Deactivated .ProviderDropdown_Item_TextButton_Value {
+	> svg path {
+		fill: $green !important;
+	}
 }
 
 .TextButtonExternal_Svg {
