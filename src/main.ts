@@ -16,11 +16,11 @@ export default function (context): void {
 		},
 		{
 			channel: 'backups:backup-site',
-			callback: async (siteId: Local.Site['id'], provider: Providers) => {
+			callback: async (siteId: Local.Site['id'], provider: Providers, description: string) => {
 				const siteJSON = LocalMain.SiteData.getSite(siteId);
 				const site = new Local.Site(siteJSON);
 
-				return createBackup(site, provider);
+				return createBackup(site, provider, description);
 			},
 		},
 		{

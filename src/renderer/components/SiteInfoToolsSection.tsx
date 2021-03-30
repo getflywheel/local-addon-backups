@@ -86,10 +86,11 @@ const launchBrowser = (url: string) => ipcAsync(
  * @param site
  * @param provider
  */
-const backupSite = (site: Site, provider: Providers) => ipcAsync(
+const backupSite = (site: Site, provider: Providers, description: string) => ipcAsync(
 	'backups:backup-site',
 	site.id,
 	provider,
+	description,
 );
 
 const SnapshotList = (props: { snapshots: BackupSnapshot[], site: Site, provider: Providers }) => (

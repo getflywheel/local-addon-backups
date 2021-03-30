@@ -32,6 +32,7 @@ const logger = localLogger.child({
 interface BackupMachineContext {
 	site: Site;
 	provider: Providers;
+	description: string;
 	encryptionPassword?: string;
 	backupSiteID?: number;
 	backupRepoID?: number;
@@ -161,9 +162,9 @@ export const parseSnapshotIDFromStdOut = (output: string) => {
  * @todo remove backup snapshot on the Hub side if restic call fails
  */
 const createSnapshot = async (context: BackupMachineContext) => {
-	const { site, provider, encryptionPassword, backupRepoID, localBackupRepoID } = context;
+	const { site, provider, encryptionPassword, backupRepoID, localBackupRepoID, description } = context;
 	const { name, services, mysql } = site;
-	const metaData: SiteMetaData = { name, services, mysql, localBackupRepoID };
+	const metaData: SiteMetaData = { name, services, mysql, localBackupRepoID, description };
 	const metaDataFilePath = path.join(formatHomePath(site.path), metaDataFileName);
 
 	const snapshot = await createBackupSnapshot(backupRepoID, metaData);
@@ -204,6 +205,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 		context: {
 			site: null,
 			provider: null,
+			description: null,
 			encryptionPassword: null,
 			backupSiteID: null,
 			localBackupRepoID: null,
@@ -305,14 +307,14 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
  * @param provider
  */
 // eslint-disable-next-line arrow-body-style
-export const createBackup = async (site: Site, provider: Providers) => {
+export const createBackup = async (site: Site, provider: Providers, description: string) => {
 	if (serviceState.inProgressStateMachine) {
 		logger.warn('Backup process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.');
 		return;
 	}
 
 	return new Promise((resolve) => {
-		const backupService = interpret(backupMachine.withContext({ site, provider }))
+		const backupService = interpret(backupMachine.withContext({ site, provider, description }))
 			.onTransition((state) => {
 				sendIPCEvent(IPCEVENTS.BACKUP_STARTED);
 				logger.info(`${camelCaseToSentence(state.value as string)} [site id: ${site.id}]`);
