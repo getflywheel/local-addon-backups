@@ -42,7 +42,15 @@
 	}
 
 	ul {
+		// shift to right hack for overflow issue cutoff (need to eventually use React Portals)
+		$shiftRight: 30px;
 
+		margin-right: -$shiftRight;
+		margin-top: 10px;
+
+		&::before {
+			right: 11px + $shiftRight;
+		}
 
 		> li {
 			padding: 20px;
@@ -104,6 +112,10 @@
 	> svg path {
 		fill: $green !important;
 	}
+}
+
+.ProviderDropdown_Item_TextButton_CheckmarkSvg {
+	margin: 0 !important;
 }
 
 .TextButtonExternal_Svg {

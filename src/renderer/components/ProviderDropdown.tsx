@@ -64,7 +64,7 @@ const renderDropdownProviderItem = (provider?: HubProviderRecord, isActiveProvid
 	provider?.name,
 	provider && isActiveProvider
 		? (
-			<CheckmarkIcon />
+			<CheckmarkIcon className={styles.ProviderDropdown_Item_TextButton_CheckmarkSvg} />
 		)
 		: 'Select',
 	isActiveProvider,
