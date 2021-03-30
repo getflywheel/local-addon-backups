@@ -18,6 +18,7 @@ type SiteMetaDataBase = Pick<SiteBase,
 
 export interface SiteMetaData extends SiteMetaDataBase {
 	localBackupRepoID: string;
+	description: string;
 }
 
 /**

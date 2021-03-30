@@ -16,8 +16,10 @@ import styles from './BackupInfoModal.scss';
 import { BackupSnapshot, Providers } from '../../types';
 import { getFilteredSiteFiles } from '../../helpers/ignoreFilesPattern';
 
+import remote = require('@electron/remote');
+
 interface ModalContentsProps {
-	submitAction: (site, provider) => void;
+	submitAction: (site, provider, description) => void;
 	site: Site;
 	provider: Providers;
 	snapshots: BackupSnapshot[];
@@ -27,6 +29,7 @@ const ModalContents = (props: ModalContentsProps) => {
 	const { submitAction, site, provider, snapshots } = props;
 
 	const [data, setData] = useState(0);
+	const [inputDescriptionData, setInputData] = useState('');
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -43,6 +46,14 @@ const ModalContents = (props: ModalContentsProps) => {
 		fetchData();
 	}, []);
 
+	const onInputChange = (event) => {
+		setInputData(event.target.value);
+	};
+
+	const browseFilesToExclude = async () => {
+
+	};
+
 	return (
 		<div>
 			<Title size="l" container={{ margin: 'm 0' }}>Back up site</Title>
@@ -51,26 +62,25 @@ const ModalContents = (props: ModalContentsProps) => {
 			<div className={styles.AlignLeft}>
 				{ !snapshots?.length &&
 				<div>
-					<Title size="m" className="align-left">Estimated size of first backup: {data.toFixed(2)}MB</Title>
+					<Title size="m" className="align-left">Estimated size of first backup: {data.toFixed(2)} MB</Title>
 					<p style={{ marginTop: 7 }}>For large sites, backing up your site for the first time can take up to hours to complete. Your site will be locked while the database is backed up.</p>
 				</div>
 				}
 
 				<Title size="m" style={{ paddingBottom: 15, paddingTop: 15 }}>Add a description</Title>
-				<BasicInput>
-
-				</BasicInput>
+				<BasicInput value={inputDescriptionData} onChange={onInputChange} />
 
 				<Title size="m" style={{ paddingTop: 15 }}>Ignore files</Title>
 				<p style={{ marginTop: 7 }}>Add any files(s) you would like to exclude from this backup.</p>
 
-				<TextButton
+				{/* <TextButton
 					style={{ marginTop: 5 }}
 					className={styles.NoPaddingLeft}
 					onClick={FlyModal.onRequestClose}
-				>
+				> */}
 					Edit files to ignore
-				</TextButton>
+				{/* </TextButton> */}
+				<input type="file" />
 			</div>
 			<hr />
 
@@ -85,7 +95,7 @@ const ModalContents = (props: ModalContentsProps) => {
 
 				<PrimaryButton
 					style={{ marginTop: 0 }}
-					onClick={() => submitAction(site, provider)}
+					onClick={() => submitAction(site, provider, inputDescriptionData)}
 				>
 					Start Backup
 				</PrimaryButton>
@@ -94,7 +104,7 @@ const ModalContents = (props: ModalContentsProps) => {
 };
 
 export const createBackupModal = (
-	submitAction: (site, provider) => void,
+	submitAction: (site, provider, description) => void,
 	site: Site,
 	provider: Providers,
 	snapshots: BackupSnapshot[],
@@ -120,5 +130,3 @@ export const createBackupModal = (
 		document.getElementById('popup-container'),
 	);
 });
-
-// export default createBackupModal();

@@ -258,6 +258,7 @@ export async function getBackupSnapshots (): Promise<BackupSnapshot[]> {
 					repo_id
 					hash
 					updated_at
+					config
 				}
 			}
 		`,
