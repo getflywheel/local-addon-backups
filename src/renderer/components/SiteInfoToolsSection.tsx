@@ -161,10 +161,7 @@ const SiteInfoToolsSection = (props: Props) => {
 	return (
 		<div className={styles.SiteInfoToolsSection}>
 			<div className={styles.SiteInfoToolsSection_Header}>
-				<ProviderDropdown
-					enabledProviders={enabledProviders}
-					onClickItem={() => launchBrowser(`${URLS.LOCAL_HUB}/addons/backups`)}
-					/>
+				<ProviderDropdown gotoUrlHub={() => launchBrowser(`${URLS.LOCAL_HUB}/addons/backups`)} />
 				{/* <GoogleDriveIcon /> */}
 				{enabledProviders.length
 					? (
