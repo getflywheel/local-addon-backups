@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import {
 	FlyModal,
@@ -9,11 +9,12 @@ import {
 } from '@getflywheel/local-components';
 import type { Site } from '@getflywheel/local';
 import classnames from 'classnames';
+import getSize from 'get-folder-size';
 
 /* @ts-ignore */
 import styles from './BackupInfoModal.scss';
 import { BackupSnapshot, Providers } from '../../types';
-import { getSiteSizeEstimate } from '../utils';
+import { getFilteredSiteFiles } from '../../helpers/ignoreFilesPattern';
 
 interface ModalContentsProps {
 	submitAction: (site, provider) => void;
@@ -25,6 +26,23 @@ interface ModalContentsProps {
 const ModalContents = (props: ModalContentsProps) => {
 	const { submitAction, site, provider, snapshots } = props;
 
+	const [data, setData] = useState(0);
+
+	useEffect(() => {
+		const fetchData = async () => {
+			const filesToEstimate = getFilteredSiteFiles(site);
+			let siteSize = 0;
+
+			filesToEstimate.forEach(async (dir) => {
+				await getSize(dir, (err, size: number) => {
+					siteSize += (size / 1024 / 1024);
+					setData(siteSize);
+				});
+			});
+		};
+		fetchData();
+	}, []);
+
 	return (
 		<div>
 			<Title size="l" container={{ margin: 'm 0' }}>Back up site</Title>
@@ -33,7 +51,7 @@ const ModalContents = (props: ModalContentsProps) => {
 			<div className={styles.AlignLeft}>
 				{ !snapshots?.length &&
 				<div>
-					<Title size="m" className="align-left">Estimated size of first backup: </Title>
+					<Title size="m" className="align-left">Estimated size of first backup: {data.toFixed(2)}MB</Title>
 					<p style={{ marginTop: 7 }}>For large sites, backing up your site for the first time can take up to hours to complete. Your site will be locked while the database is backed up.</p>
 				</div>
 				}
