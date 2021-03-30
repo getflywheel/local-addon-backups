@@ -8,10 +8,11 @@ import type { DirResult } from 'tmp';
 import fs from 'fs-extra';
 import { getSiteDataFromDisk, camelCaseToSentence } from '../utils';
 import { getBackupSite } from '../hubQueries';
-import { restoreBackup as restoreResticBackup, excludePatterns } from '../cli';
+import { restoreBackup as restoreResticBackup } from '../cli';
 import type { Site, Providers, GenericObject } from '../../types';
 import serviceState from './state';
 import { backupSQLDumpFile, IPCEVENTS } from '../../constants';
+import { excludePatterns, getFilesToIgnore } from '../../helpers/ignoreFilesPattern';
 
 const serviceContainer = getServiceContainer().cradle;
 const { localLogger, runSiteSQLCmd, importSQLFile, sendIPCEvent } = serviceContainer;
@@ -98,12 +99,8 @@ const importDatabase = async (context: BackupMachineContext) => {
 
 const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 	const { site, tmpDirData } = context;
-	const sitePath = formatHomePath(site.path);
 
-	const itemsToDelete: string[] = [
-		...glob.sync(`${sitePath}/!(${excludePatterns.join('|')})`),
-		...glob.sync(`${sitePath}/.*`),
-	];
+	const itemsToDelete = getFilesToIgnore(site);
 
 	logger.info(`removing the following directories/files to prepare for the site backup: ${itemsToDelete.map((file) => `"${file}"`).join(', ')}`);
 

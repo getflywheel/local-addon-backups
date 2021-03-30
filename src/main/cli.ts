@@ -9,6 +9,7 @@ import type { Site } from '../types';
 import { metaDataFileName } from '../constants';
 import { getBackupCredentials } from './hubQueries';
 import { getSiteDataFromDisk, providerToHubProvider } from './utils';
+import { excludePatterns } from '../helpers/ignoreFilesPattern';
 
 interface RestoreFromBackupOptions {
 	site: Site;
@@ -32,7 +33,6 @@ const bins = getOSBins();
  * The values included here are auto generated things by Local/Wordpress that
  * either aren't necessary or could cause errors upon restoring the site
  */
-export const excludePatterns = ['conf'];
 const serviceContainer = getServiceContainer().cradle;
 const { localLogger } = serviceContainer;
 
