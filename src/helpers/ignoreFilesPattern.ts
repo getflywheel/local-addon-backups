@@ -14,7 +14,5 @@ export const getFilteredSiteFiles = (site: Site) => {
 		...glob.sync(`${sitePath}/.*`),
 	];
 
-	console.log(filteredSiteFiles);
-
 	return filteredSiteFiles;
 };
