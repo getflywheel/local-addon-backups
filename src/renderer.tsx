@@ -121,7 +121,7 @@ export default function (context): void {
 		/>
 	));
 
-	hooks.addFilter('showSiteOverlayStatuses', (statuses: string[]) => {
+	hooks.addFilter('allowedSiteOverlayStatuses', (statuses: string[]) => {
 		statuses.push(...Object.values(RestoreStates));
 		statuses.push(BackupStates.creatingDatabaseSnapshot);
 		return statuses;
