@@ -101,8 +101,8 @@ const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 	const sitePath = formatHomePath(site.path);
 
 	const itemsToDelete: string[] = [
-		...glob.sync(`${sitePath}/!(${excludePatterns.join('|')})`),
-		...glob.sync(`${sitePath}/.*`),
+		...glob.sync(`${sitePath}/!(${excludePatterns.join('|')})`, { dot: true }),
+		// ...glob.sync(`${sitePath}/.*`),
 	];
 
 	logger.info(`removing the following directories/files to prepare for the site backup: ${itemsToDelete.map((file) => `"${file}"`).join(', ')}`);

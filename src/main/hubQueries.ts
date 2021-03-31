@@ -19,7 +19,6 @@ const { localHubClient } = getServiceContainer().cradle;
  * @todo add handling (logging + UI) in case the Hub user has been logged out
  */
 
-
 export async function getBackupCredentials (provider: HubOAuthProviders): Promise<RcloneConfig> {
 	const { data } = await localHubClient.mutate({
 		mutation: gql`
@@ -40,7 +39,6 @@ export async function getBackupCredentials (provider: HubOAuthProviders): Promis
 		appKey: data?.getBackupCredentials?.config?.app_key,
 	};
 }
-
 
 export async function getBackupSite (localBackupRepoID: string): Promise<BackupSite> {
 	const { data } = await localHubClient.query({

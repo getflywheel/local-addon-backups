@@ -101,9 +101,14 @@ export default function (context): void {
 		},
 		{
 			onClick: async () => {
+				try {
+
 				console.log(
 					await ipcAsync('backups:enabled-providers'),
 				)
+				} catch(e) {
+					console.log('------------', e)
+				}
 			},
 			buttonText: 'enabled providers',
 			description: 'get the old enabled providers',
