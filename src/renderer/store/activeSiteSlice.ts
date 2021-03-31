@@ -2,23 +2,39 @@ import {
 	createSlice,
 	PayloadAction,
 } from '@reduxjs/toolkit';
-import { updateActiveSiteAndDataSources } from './thunks';
+import { BackupSnapshot } from '../../types';
+import {
+	getSnapshotForActiveSiteProviderHub,
+	updateActiveSiteAndDataSources,
+} from './thunks';
 
 /**
- * The site that's currently "active".
+ * State for the active site.
  */
  export const activeSiteSlice = createSlice({
-	name: 'activeSiteID',
-	initialState: null as string | null,
+	name: 'activeSite',
+	initialState: {
+		id: null as string | null,
+		snapshots: null as BackupSnapshot[] | null,
+	},
 	reducers: {
 		setActiveSiteID: (state, action: PayloadAction<string>) => {
-			state = action.payload;
-			return state;
+			state.id = action.payload;
 		},
 	},
 	extraReducers: (builder) => {
-		builder.addCase(updateActiveSiteAndDataSources.fulfilled, (_, { payload }) => {
-			return payload;
+		builder.addCase(getSnapshotForActiveSiteProviderHub.fulfilled, (state, { payload }) => {
+			state.snapshots = payload;
+		});
+		builder.addCase(getSnapshotForActiveSiteProviderHub.pending, (state, { payload }) => {
+			// todo - crum: handle pending
+		});
+		builder.addCase(getSnapshotForActiveSiteProviderHub.rejected, (_, action) => {
+			// todo - crum: handle error
+			console.log('...rejected:', action.error);
+		});
+		builder.addCase(updateActiveSiteAndDataSources.fulfilled, (state, { payload }) => {
+			state.id = payload;
 		});
 		builder.addCase(updateActiveSiteAndDataSources.rejected, (_, action) => {
 			// todo - crum: handle error

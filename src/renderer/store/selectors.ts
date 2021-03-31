@@ -1,14 +1,12 @@
 import { createSelector } from '@reduxjs/toolkit';
-import { State, store } from './store';
-
-const activeSiteID = (state: State) => state.activeSiteID;
+import { State } from './store';
 
 /**
- * The last selected/active provided derived from the current active site and providers.
+ * The selected/active provider derived from the current active site and known providers.
  */
-const activeSiteProvider = createSelector(
+const selectActiveProvider = createSelector(
 	[
-		(state: State) => state.activeSiteID,
+		(state: State) => state.activeSite.id,
 		(state: State) => state.providers,
 	],
 	(activeSiteID, { activeProviders, enabledProviders }) => {
@@ -26,6 +24,5 @@ const activeSiteProvider = createSelector(
  * Organized export of available selectors.
  */
 export const selectors = {
-	activeSiteID: (): string => activeSiteID(store.getState()),
-	activeSiteProvider,
+	selectActiveProvider,
 };

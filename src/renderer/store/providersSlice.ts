@@ -1,6 +1,4 @@
-import {
-	createSlice,
-} from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 import type { HubProviderRecord } from '../../types';
 import {
 	initActiveProvidersFromLocalStorage,
