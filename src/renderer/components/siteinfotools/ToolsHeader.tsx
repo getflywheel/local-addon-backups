@@ -2,7 +2,7 @@ import React from 'react';
 import styles from './ToolsHeader.scss';
 import { ProviderDropdown } from './ProviderDropdown';
 import { PrimaryButton } from '@getflywheel/local-components';
-import { useStoreSelector, selectors } from '../../store/store';
+import { useStoreSelector } from '../../store/store';
 import { launchBrowserToHubBackups } from '../../helpers/launchBrowser';
 
 export const ToolsHeader = () => {

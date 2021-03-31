@@ -12,12 +12,12 @@ import type { HubProviderRecord } from '../../../types';
 import { HubOAuthProviders } from '../../../types';
 import {
 	actions,
-	selectors,
 	store,
 	useStoreSelector,
 } from '../../store/store';
 import classnames from 'classnames';
 import { launchBrowserToHubBackups } from '../../helpers/launchBrowser';
+import { selectors } from '../../store/selectors';
 
 const renderProviderIcon = (provider: HubProviderRecord): React.ReactNode => {
 	switch (provider.id) {

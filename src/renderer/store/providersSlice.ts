@@ -1,11 +1,10 @@
 import {
 	createSlice,
-	PayloadAction,
 } from '@reduxjs/toolkit';
 import type { HubProviderRecord } from '../../types';
 import {
-	initActiveProvidersLocalStorage,
-	initProvidersHub,
+	initActiveProvidersFromLocalStorage,
+	getEnabledProvidersHub,
 	setActiveProviderAndPersist,
 } from './thunks';
 
@@ -17,7 +16,7 @@ export const providersSlice = createSlice({
 		/**
 		 * Lookup table of active provider ids for each given site.
 		 */
-		activeProviders: {} as ActiveProvidersLookup,
+		activeProviders: null as ActiveProvidersLookup | null,
 		/**
 		 * List of providers from Hub that can be used for all sites.
 		 */
@@ -29,21 +28,21 @@ export const providersSlice = createSlice({
 	},
 	reducers: {},
 	extraReducers: (builder) => {
-		builder.addCase(initActiveProvidersLocalStorage.fulfilled, (state, { payload }) => {
+		builder.addCase(initActiveProvidersFromLocalStorage.fulfilled, (state, { payload }) => {
 			state.activeProviders = payload;
 		});
-		builder.addCase(initActiveProvidersLocalStorage.rejected, (_, action) => {
+		builder.addCase(initActiveProvidersFromLocalStorage.rejected, (_, action) => {
 			// todo - crum: handle error
 			console.log('...rejected:', action.error);
 		});
-		builder.addCase(initProvidersHub.fulfilled, (state, { payload }) => {
+		builder.addCase(getEnabledProvidersHub.fulfilled, (state, { payload }) => {
 			state.isLoadingEnabledProviders = false;
 			state.enabledProviders = payload;
 		});
-		builder.addCase(initProvidersHub.pending, (state, { payload }) => {
+		builder.addCase(getEnabledProvidersHub.pending, (state, { payload }) => {
 			state.isLoadingEnabledProviders = true;
 		});
-		builder.addCase(initProvidersHub.rejected, (state, action) => {
+		builder.addCase(getEnabledProvidersHub.rejected, (state, action) => {
 			state.isLoadingEnabledProviders = false;
 			// todo - crum: handle error
 			console.log('...rejected:', action.error);

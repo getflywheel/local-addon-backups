@@ -1,35 +1,14 @@
 import { useSelector, TypedUseSelectorHook } from 'react-redux';
-import {
-	configureStore,
-	createSlice,
-	PayloadAction,
-} from '@reduxjs/toolkit';
-import {
-	providersSlice,
-} from './providersSlice';
+import { configureStore } from '@reduxjs/toolkit';
+import { providersSlice } from './providersSlice';
+import { activeSiteSlice } from './activeSiteSlice';
 import * as thunks from './thunks';
-
-export { selectors } from './selectors';
-
-/**
- * The site that's currently "active".
- */
-const activeSiteIDSlice = createSlice({
-	name: 'activeSiteID',
-	initialState: null as string | null,
-	reducers: {
-		setActiveSiteID: (state, action: PayloadAction<string>) => {
-			state = action.payload;
-			return state;
-		},
-	},
-});
 
 /**
  * Convenience collection of Redux actions.
  */
  export const actions = {
-	...activeSiteIDSlice.actions,
+	...activeSiteSlice.actions,
 	...providersSlice.actions,
 	// include all thunks here to make it easier to reference both actions and thunks from same place
 	...thunks,
@@ -40,15 +19,10 @@ const activeSiteIDSlice = createSlice({
  */
 export const store = configureStore({
 	reducer: {
-		activeSiteID: activeSiteIDSlice.reducer,
+		activeSiteID: activeSiteSlice.reducer,
 		providers: providersSlice.reducer,
 	},
 });
-
-/**
- * Init store calls.
- */
-store.dispatch(thunks.init());
 
 /**
  * Redux store typings.
