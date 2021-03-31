@@ -2,11 +2,13 @@ import React from 'react';
 import styles from './ToolsHeader.scss';
 import { ProviderDropdown } from './ProviderDropdown';
 import { PrimaryButton } from '@getflywheel/local-components';
-import { useStoreSelector } from '../../store/store';
+import { actions, store, useStoreSelector } from '../../store/store';
 import { launchBrowserToHubBackups } from '../../helpers/launchBrowser';
+import { selectors } from '../../store/selectors';
 
 export const ToolsHeader = () => {
 	const { enabledProviders } = useStoreSelector((state) => state.providers);
+	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 
 	return (
 		<div className={styles.ToolsHeaders}>
@@ -14,7 +16,8 @@ export const ToolsHeader = () => {
 			{enabledProviders.length
 				? (
 					<PrimaryButton
-						onClick={() => alert('backup now wireup')}
+						disabled={!activeSiteProvider}
+						onClick={() => store.dispatch(actions.backupSite())}
 						privateOptions={{
 							padding: 'm',
 						}}

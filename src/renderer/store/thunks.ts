@@ -2,8 +2,44 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import type { BackupSnapshot, HubProviderRecord } from '../../types';
 import { State } from './store';
 import { ipcAsync } from '@getflywheel/local/renderer';
+import { selectors } from './selectors';
+import { hubProviderToProvider } from '../helpers/hubProviderToProvider';
 
 const localStorageKey = 'local-addon-backups-activeProviders';
+
+/**
+ * Request to backup site to Hub.
+ */
+ const backupSite = createAsyncThunk(
+	'backupSite',
+	async (_, { rejectWithValue, getState }) => {
+		const state = getState() as State;
+		const rsyncProviderId = hubProviderToProvider(selectors.selectActiveProvider(state)?.id);
+
+		try {
+			/**
+			 * Light convenience wrapper around ipcAsync to backup a site
+			 *
+			 * @param site
+			 * @param provider
+			 */
+			const huh = await ipcAsync(
+				'backups:backup-site',
+				state.activeSite.id,
+				rsyncProviderId,
+			);
+
+			return huh;
+		}
+		catch (error) {
+			if (!error.response) {
+				throw error;
+			}
+
+			return rejectWithValue(error.response);
+		}
+	}
+ );
 
 /**
  * Get provider data from Hub.
@@ -146,6 +182,7 @@ const setActiveProviderAndPersist = createAsyncThunk(
 );
 
 export {
+	backupSite,
 	initActiveProvidersFromLocalStorage,
 	getEnabledProvidersHub,
 	getSnapshotForActiveSiteProviderHub,
