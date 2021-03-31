@@ -19,7 +19,7 @@ import * as thunks from './thunks';
  */
 export const store = configureStore({
 	reducer: {
-		activeSiteID: activeSiteSlice.reducer,
+		activeSite: activeSiteSlice.reducer,
 		providers: providersSlice.reducer,
 	},
 });

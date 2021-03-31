@@ -1,12 +1,11 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import type { Site } from '@getflywheel/local';
 import updateActiveSiteAndDataSources from '../updateActiveSiteAndDataSources';
-import { BackupSnapshot, HubOAuthProviders, HubProviderRecord, Providers } from '../../../types';
-import { useStoreSelector, store } from '../../store/store';
+import { HubOAuthProviders, Providers } from '../../../types';
+import { useStoreSelector } from '../../store/store';
 import styles from './SiteInfoToolsSection.scss';
 import { ToolsHeader } from '../siteinfotools/ToolsHeader';
-import * as thunks from '../../store/thunks';
 
 interface Props {
 	site: Site;
@@ -67,6 +66,7 @@ const SiteInfoToolsSection = ({ site }: Props) => {
 	updateActiveSiteAndDataSources(site.id);
 
 	const { isLoadingEnabledProviders } = useStoreSelector((state) => state.providers);
+	const { snapshots } = useStoreSelector((state) => state.activeSite);
 
 	/**
 	 * @todo sometimes the query to hub fails (like if the auth token has expired)
@@ -82,7 +82,11 @@ const SiteInfoToolsSection = ({ site }: Props) => {
 		<div className={styles.SiteInfoToolsSection}>
 			<ToolsHeader />
 			<div className={styles.SiteInfoToolsSection_Content}>
-				{}
+				{!snapshots?.length && (
+					<div className={styles.SiteInfoToolsSection_Content_Empty}>
+						There are no backups created for this site yet.
+					</div>
+				)}
 			</div>
 		</div>
 	);

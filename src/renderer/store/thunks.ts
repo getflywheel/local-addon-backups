@@ -46,8 +46,11 @@ const getSnapshotForActiveSiteProviderHub = createAsyncThunk(
 			const snapshots: BackupSnapshot[] = await ipcAsync(
 				'backups:provider-snapshots',
 				siteId,
-				state.providers.activeProviders[state.activeSiteID],
+				state.providers.activeProviders[state.activeSite.id],
 			);
+
+			console.log('------ ', snapshots);
+			console.log('------ ');
 
 			return snapshots;
 		}
@@ -95,7 +98,7 @@ const setActiveProviderAndPersist = createAsyncThunk(
 		const state = getState() as State;
 		const activeProviders = {
 			...state.providers.activeProviders,
-			[state.activeSiteID]: providerId,
+			[state.activeSite.id]: providerId,
 		};
 
 		try {
@@ -145,6 +148,7 @@ const setActiveProviderAndPersist = createAsyncThunk(
 export {
 	initActiveProvidersFromLocalStorage,
 	getEnabledProvidersHub,
+	getSnapshotForActiveSiteProviderHub,
 	setActiveProviderAndPersist,
 	updateActiveSiteAndDataSources,
 }

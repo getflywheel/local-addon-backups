@@ -21,6 +21,9 @@
 	@include __theme-background($gray1 !important, $gray-dark-alt !important);
 }
 
-.SiteInfoToolsSection_EmptyArea {
-	margin: 0;
+.SiteInfoToolsSection_Content_Empty {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
 }
