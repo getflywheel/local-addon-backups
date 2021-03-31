@@ -5,11 +5,9 @@ import {
 	PayloadAction,
 } from '@reduxjs/toolkit';
 import {
-	initProvidersFromLocalStorage,
 	providersSlice,
-	setActiveProviderAndPersist,
-} from './slices/providersSlice';
-import type { HubProviderRecord } from '../../types';
+} from './providersSlice';
+import * as thunks from './thunks';
 
 export { selectors } from './selectors';
 
@@ -28,27 +26,13 @@ const activeSiteIDSlice = createSlice({
 });
 
 /**
- * List of backup providers (e.g. google drive, dropbox) enabled for a particular site.
- */
-const enabledProvidersSlice = createSlice({
-	name: 'enabledProviders',
-	initialState: [] as HubProviderRecord[],
-	reducers: {
-		setEnabledProviders: (state, action: PayloadAction<HubProviderRecord[]>) => {
-			state = action.payload;
-			return state;
-		},
-	},
-});
-
-/**
  * Convenience collection of Redux actions.
  */
  export const actions = {
 	...activeSiteIDSlice.actions,
-	...enabledProvidersSlice.actions,
 	...providersSlice.actions,
-	setActiveProviderAndPersist,
+	// include all thunks here to make it easier to reference both actions and thunks from same place
+	...thunks,
 };
 
 /**
@@ -57,7 +41,6 @@ const enabledProvidersSlice = createSlice({
 export const store = configureStore({
 	reducer: {
 		activeSiteID: activeSiteIDSlice.reducer,
-		enabledProviders: enabledProvidersSlice.reducer,
 		providers: providersSlice.reducer,
 	},
 });
@@ -65,7 +48,7 @@ export const store = configureStore({
 /**
  * Init store calls.
  */
-store.dispatch(initProvidersFromLocalStorage());
+store.dispatch(thunks.init());
 
 /**
  * Redux store typings.

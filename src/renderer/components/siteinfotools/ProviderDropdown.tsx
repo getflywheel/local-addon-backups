@@ -68,7 +68,7 @@ const renderDropdownProviderItem = (provider?: HubProviderRecord, isActiveProvid
 );
 
 export const ProviderDropdown = () => {
-	const enabledProviders = useStoreSelector(selectors.enabledProviders);
+	const { enabledProviders } = useStoreSelector((state) => state.providers);
 	const activeSiteProvider = useStoreSelector(selectors.activeSiteProvider)
 	const dropdownItems: React.ComponentProps<typeof FlyDropdown>['items'] = [];
 

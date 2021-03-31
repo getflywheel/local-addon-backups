@@ -5,47 +5,12 @@ import type { Site } from '@getflywheel/local';
 import useActiveSiteID from '../useActiveSiteID';
 import { BackupSnapshot, HubOAuthProviders, HubProviderRecord, Providers } from '../../../types';
 import { useStoreSelector, selectors, store, actions } from '../../store/store';
-import GoogleDriveIcon from '../../assets/google-drive.svg';
-import DropboxIcon from '../../assets/dropbox.svg';
 import styles from './SiteInfoToolsSection.scss';
 import { ToolsHeader } from '../siteinfotools/ToolsHeader';
 
 interface Props {
 	site: Site;
 }
-
-/**
- * Map a Hub provided storage provider id to the appropriate icon
- *
- * @param provider
- */
-const getProviderIcon = (provider: HubOAuthProviders) => {
-	if (provider === 'google') {
-		return GoogleDriveIcon;
-	}
-
-	if (provider === 'dropbox') {
-		return DropboxIcon;
-	}
-
-	return null;
-};
-
-/**
- * Helper to add dividers between each of a list of JSX elements. Does not add ad divider
- * before the first or after the last element
- *
- * @param items
- */
-const addDivider = (items) => items.reduce((acc, item, i) => {
-	acc.push(item);
-
-	if (i !== items.length - 1) {
-		acc.push(<Divider className={styles.SiteInfoToolsSection_ProviderDivider}/>);
-	}
-
-	return acc;
-}, []);
 
 /**
  * Hub/Rsync use slightly different naming conventions for each provider. This maps from the Hub
@@ -98,50 +63,47 @@ const SnapshotList = (props: { snapshots: BackupSnapshot[], site: Site, provider
 	</ul>
 );
 
-const SiteInfoToolsSection = (props: Props) => {
-	const { site } = props;
-
+const SiteInfoToolsSection = ({ site }: Props) => {
 	useActiveSiteID(site.id);
+	const { isLoadingEnabledProviders } = useStoreSelector((state) => state.providers);
 
-	const enabledProviders = useStoreSelector(selectors.enabledProviders);
+	// const { enabledProviders } = useStoreSelector((state) => state.providers);
+	// const [loadingProviders, setLoadingProviders] = useState(false);
+	// const [snapshots, setSnapshots] = useState({});
 
-	const [loadingProviders, setLoadingProviders] = useState(false);
+	// useEffect(() => {
+	//     (async () => {
+	// 		setLoadingProviders(true);
+	// 		const providers: HubProviderRecord[] = await ipcAsync('backups:enabled-providers');
+	// 		store.dispatch(actions.setEnabledProviders(providers));
+	// 		setLoadingProviders(false);
 
-	const [snapshots, setSnapshots] = useState({});
+	// 		const promises = [];
+	// 		const hubProviderNames: HubOAuthProviders[] = [];
+	// 		providers
+	// 			.map(({ id }) => id)
+	// 			.forEach((providerID) => {
+	// 				promises.push(ipcAsync('backups:provider-snapshots', site.id, providerID));
+	// 				hubProviderNames.push(providerID);
+	// 			});
 
-	useEffect(() => {
-	    (async () => {
-			setLoadingProviders(true);
-			const providers: HubProviderRecord[] = await ipcAsync('backups:enabled-providers');
-			store.dispatch(actions.setEnabledProviders(providers));
-			setLoadingProviders(false);
+	// 		const resolvedSnapshots: BackupSnapshot[][] = await Promise.all(promises);
 
-			const promises = [];
-			const hubProviderNames: HubOAuthProviders[] = [];
-			providers
-				.map(({ id }) => id)
-				.forEach((providerID) => {
-					promises.push(ipcAsync('backups:provider-snapshots', site.id, providerID));
-					hubProviderNames.push(providerID);
-				});
-
-			const resolvedSnapshots: BackupSnapshot[][] = await Promise.all(promises);
-
-			setSnapshots(
-				resolvedSnapshots.reduce((nextSnapshotState, snapshotList, i) => {
-					const provider = hubProviderNames[i];
-					nextSnapshotState[provider] = snapshotList;
-					return nextSnapshotState;
-				}, {}),
-			);
-	    })();
-	}, []);
+	// 		setSnapshots(
+	// 			resolvedSnapshots.reduce((nextSnapshotState, snapshotList, i) => {
+	// 				const provider = hubProviderNames[i];
+	// 				nextSnapshotState[provider] = snapshotList;
+	// 				return nextSnapshotState;
+	// 			}, {}),
+	// 		);
+	//     })();
+	// }, []);
 
 	/**
 	 * @todo sometimes the query to hub fails (like if the auth token has expired)
 	 * we should handle that more gracefully
 	 */
-	if (loadingProviders) {
+	if (isLoadingEnabledProviders) {
 		return (
 			<span>loading...</span>
 		);
@@ -151,7 +113,7 @@ const SiteInfoToolsSection = (props: Props) => {
 		<div className={styles.SiteInfoToolsSection}>
 			<ToolsHeader />
 			<div className={styles.SiteInfoToolsSection_Content}>
-				{addDivider(enabledProviders.map(({ id, name }) => {
+				{/* {addDivider(enabledProviders.map(({ id, name }) => {
 					const Icon = getProviderIcon(id);
 					const provider = hubProviderToProvider(id);
 
@@ -183,7 +145,7 @@ const SiteInfoToolsSection = (props: Props) => {
 							}
 						</>
 					);
-				}))}
+				}))} */}
 				</div>
 		</div>
 	);
