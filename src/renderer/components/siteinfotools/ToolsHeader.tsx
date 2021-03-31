@@ -6,7 +6,7 @@ import { useStoreSelector, selectors } from '../../store/store';
 import { launchBrowserToHubBackups } from '../../helpers/launchBrowser';
 
 export const ToolsHeader = () => {
-	const enabledProviders = useStoreSelector(selectors.enabledProviders);
+	const { enabledProviders } = useStoreSelector((state) => state.providers);
 
 	return (
 		<div className={styles.ToolsHeaders}>

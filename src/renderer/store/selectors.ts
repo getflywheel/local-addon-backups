@@ -4,9 +4,7 @@ import {
 import { State, store } from './store';
 import type { HubProviderRecord } from '../../types';
 
-const activeSiteID = (state) => state.activeSiteID;
-
-const enabledProviders = (state) => state.enabledProviders;
+const activeSiteID = (state: State) => state.activeSiteID;
 
 /**
  * The last selected/active provided derived from the current active site and providers.
@@ -14,13 +12,15 @@ const enabledProviders = (state) => state.enabledProviders;
 const activeSiteProvider = createSelector(
 	[
 		(state: State) => state.activeSiteID,
-		(state: State) => state.enabledProviders,
 		(state: State) => state.providers,
 	],
-	(activeSiteID, enabledProviders, {activeProviders}) => {
+	(activeSiteID, { activeProviders, enabledProviders }) => {
+		console.log('!! activeSiteID', activeSiteID, '&enabledProviders', enabledProviders, '&activeProviders', activeProviders);
 		if (!activeSiteID || !enabledProviders || !activeProviders) {
 			return null;
 		}
+
+		console.log('...enabledProviders', enabledProviders);
 
 		const activeSiteProviderId = activeProviders[activeSiteID];
 
@@ -34,5 +34,4 @@ const activeSiteProvider = createSelector(
 export const selectors = {
 	activeSiteID: (): string => activeSiteID(store.getState()),
 	activeSiteProvider,
-	enabledProviders: (): HubProviderRecord[] => enabledProviders(store.getState()),
 };
