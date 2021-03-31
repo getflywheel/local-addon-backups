@@ -1,7 +1,7 @@
 import path from 'path';
 import { Machine, interpret, assign } from 'xstate';
 import glob from 'glob';
-import { formatHomePath, getServiceContainer } from '@getflywheel/local/main';
+import { getServiceContainer } from '@getflywheel/local/main';
 import { Site as LocalSiteModel } from '@getflywheel/local';
 import tmp from 'tmp';
 import type { DirResult } from 'tmp';
@@ -13,6 +13,8 @@ import type { Site, Providers, GenericObject } from '../../types';
 import serviceState from './state';
 import { backupSQLDumpFile, IPCEVENTS } from '../../constants';
 import { excludePatterns, getFilesToIgnore } from '../../helpers/ignoreFilesPattern';
+import { getFilteredSiteFiles } from '../../helpers/ignoreFilesPattern';
+import { formatHomePath } from '../../helpers/formatHomePath';
 
 const serviceContainer = getServiceContainer().cradle;
 const { localLogger, runSiteSQLCmd, importSQLFile, sendIPCEvent } = serviceContainer;
@@ -100,7 +102,9 @@ const importDatabase = async (context: BackupMachineContext) => {
 const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 	const { site, tmpDirData } = context;
 
-	const itemsToDelete = getFilesToIgnore(site);
+	const sitePath = formatHomePath(site.path);
+
+	const itemsToDelete = getFilteredSiteFiles(site);
 
 	logger.info(`removing the following directories/files to prepare for the site backup: ${itemsToDelete.map((file) => `"${file}"`).join(', ')}`);
 
