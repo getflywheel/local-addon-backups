@@ -5,8 +5,8 @@ import { ipcAsync } from '@getflywheel/local/renderer';
 import type { SiteJSON } from '@getflywheel/local';
 import { startCase } from 'lodash';
 import { Providers } from './types';
-import SiteInfoToolsSection from './renderer/components/SiteInfoToolsSection';
 import { store } from './renderer/store/store';
+import SiteInfoToolsSection from './renderer/components/siteinfotools/SiteInfoToolsSection';
 
 const titlize = (a: string) => startCase(a.toLowerCase());
 
@@ -28,6 +28,7 @@ const Row = (props: RowProps<void>) => (
 			style={{ paddingLeft: 0 }}
 			onClick={props.onClick}
 		>
+
 			{props.buttonText}
 		</TextButton>
 		{props.description ? (

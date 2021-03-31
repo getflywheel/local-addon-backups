@@ -5,22 +5,19 @@ import {
 	TextButton,
 } from '@getflywheel/local-components';
 import styles from './ProviderDropdown.scss';
-import LoginIconExternalLinkSvg from '../assets/external-link.svg';
-import GoogleDriveIcon from '../assets/google-drive.svg';
-import DropboxIcon from '../assets/dropbox.svg';
-import type { HubProviderRecord } from '../../types';
-import { HubOAuthProviders } from '../../types';
+import LoginIconExternalLinkSvg from '../../assets/external-link.svg';
+import GoogleDriveIcon from '../../assets/google-drive.svg';
+import DropboxIcon from '../../assets/dropbox.svg';
+import type { HubProviderRecord } from '../../../types';
+import { HubOAuthProviders } from '../../../types';
 import {
 	actions,
 	selectors,
 	store,
 	useStoreSelector,
-} from '../store/store';
+} from '../../store/store';
 import classnames from 'classnames';
-
-interface Props {
-	gotoUrlHub: () => void;
-}
+import { launchBrowserToHubBackups } from '../../helpers/launchBrowser';
 
 const renderProviderIcon = (provider: HubProviderRecord): React.ReactNode => {
 	switch (provider.id) {
@@ -70,7 +67,7 @@ const renderDropdownProviderItem = (provider?: HubProviderRecord, isActiveProvid
 	isActiveProvider,
 );
 
-export const ProviderDropdown = ({ gotoUrlHub }: Props) => {
+export const ProviderDropdown = () => {
 	const enabledProviders = useStoreSelector(selectors.enabledProviders);
 	const activeSiteProvider = useStoreSelector(selectors.activeSiteProvider)
 	const dropdownItems: React.ComponentProps<typeof FlyDropdown>['items'] = [];
@@ -87,14 +84,14 @@ export const ProviderDropdown = ({ gotoUrlHub }: Props) => {
 		dropdownItems.push({
 			color: 'none',
 			content: renderDropdownConnectItem('Add or Manage Provider'),
-			onClick: gotoUrlHub,
+			onClick: launchBrowserToHubBackups,
 		});
 	}
 	else {
 		dropdownItems.push({
 			color: 'none',
 			content: renderDropdownConnectItem(),
-			onClick: gotoUrlHub,
+			onClick: launchBrowserToHubBackups,
 		});
 	}
 
