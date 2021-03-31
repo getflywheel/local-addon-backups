@@ -64,9 +64,7 @@ const createDatabaseSnapshot = async (context: BackupMachineContext) => {
 		stripes: true,
 	});
 
-	await siteDatabase.dump(site, path.join(site.paths.sql, backupSQLDumpFile));
-
-	sendIPCEvent('updateSiteStatus', site.id, initialSiteStatus);
+	return await siteDatabase.dump(site, path.join(site.paths.sql, backupSQLDumpFile));
 };
 
 const maybeCreateBackupSite = async (context: BackupMachineContext) => {
@@ -203,7 +201,7 @@ const createSnapshot = async (context: BackupMachineContext) => {
 };
 
 const onErrorFactory = () => ({
-	target: 'failed',
+	target: BackupStates.failed,
 	actions: [
 		'setErrorOnContext',
 		'logError',
@@ -253,7 +251,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					id: 'createDatabaseSnapshot',
 					src: (context) => createDatabaseSnapshot(context),
 					onDone: {
-						target: 'creatingBackupSite',
+						target: BackupStates.creatingBackupSite,
 					},
 					onError: onErrorFactory(),
 				},
@@ -263,7 +261,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					id: 'maybeCreateBackupSite',
 					src: (context, event) => maybeCreateBackupSite(context),
 					onDone: {
-						target: 'creatingBackupRepo',
+						target: BackupStates.creatingBackupRepo,
 						actions: assign({
 							encryptionPassword: (_, event) => event.data.encryptionPassword,
 							backupSiteID: (_, event) => event.data.backupSiteID,
@@ -278,12 +276,12 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					src: (context, event) => maybeCreateBackupRepo(context),
 					onDone: [
 						{
-							target: 'creatingSnapshot',
+							target: BackupStates.creatingSnapshot,
 							actions: assignBackupRepoIDToContext,
 							cond: (context, event) => event.data.backupRepoAlreadyExists,
 						},
 						{
-							target: 'initingResticRepo',
+							target: BackupStates.initingResticRepo,
 							actions: assignBackupRepoIDToContext,
 							cond: (context, event) => !event.data.backupRepoAlreadyExists,
 						},
@@ -295,7 +293,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 				invoke: {
 					src: (context, event) => initResticRepo(context),
 					onDone: {
-						target: 'creatingSnapshot',
+						target: BackupStates.creatingSnapshot,
 					},
 					onError: onErrorFactory(),
 				},
@@ -304,7 +302,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 				invoke: {
 					src: (context, event) => createSnapshot(context),
 					onDone: {
-						target: 'finished',
+						target: BackupStates.finished,
 					},
 					onError: onErrorFactory(),
 				},
