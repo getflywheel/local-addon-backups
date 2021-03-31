@@ -15,6 +15,7 @@ import getSize from 'get-folder-size';
 import styles from './BackupInfoModal.scss';
 import { BackupSnapshot, Providers } from '../../types';
 import { getFilteredSiteFiles } from '../../helpers/ignoreFilesPattern';
+import { formatHomePath } from '../../helpers/formatHomePath';
 
 import remote = require('@electron/remote');
 
@@ -27,6 +28,7 @@ interface ModalContentsProps {
 
 const ModalContents = (props: ModalContentsProps) => {
 	const { submitAction, site, provider, snapshots } = props;
+	const { dialog } = remote;
 
 	const [data, setData] = useState(0);
 	const [inputDescriptionData, setInputData] = useState('');
@@ -51,7 +53,24 @@ const ModalContents = (props: ModalContentsProps) => {
 	};
 
 	const browseFilesToExclude = async () => {
+		const sitePath = formatHomePath(site.path);
 
+		const { canceled, filePaths } = await dialog.showOpenDialog(remote.getCurrentWindow(), {
+			title: 'Browse to select files to exclude from backup',
+			defaultPath: sitePath,
+			properties: ['openFile', 'openDirectory', 'multiSelections'],
+		});
+
+		if (canceled || !filePaths) {
+			return;
+		}
+
+		console.log(filePaths);
+	};
+
+	const onModalSubmit = () => {
+		submitAction(site, provider, inputDescriptionData);
+		FlyModal.onRequestClose();
 	};
 
 	return (
@@ -73,14 +92,13 @@ const ModalContents = (props: ModalContentsProps) => {
 				<Title size="m" style={{ paddingTop: 15 }}>Ignore files</Title>
 				<p style={{ marginTop: 7 }}>Add any files(s) you would like to exclude from this backup.</p>
 
-				{/* <TextButton
+				<TextButton
 					style={{ marginTop: 5 }}
 					className={styles.NoPaddingLeft}
-					onClick={FlyModal.onRequestClose}
-				> */}
+					onClick={browseFilesToExclude}
+				>
 					Edit files to ignore
-				{/* </TextButton> */}
-				<input type="file" />
+				</TextButton>
 			</div>
 			<hr />
 
@@ -95,7 +113,7 @@ const ModalContents = (props: ModalContentsProps) => {
 
 				<PrimaryButton
 					style={{ marginTop: 0 }}
-					onClick={() => submitAction(site, provider, inputDescriptionData)}
+					onClick={() => onModalSubmit()}
 				>
 					Start Backup
 				</PrimaryButton>

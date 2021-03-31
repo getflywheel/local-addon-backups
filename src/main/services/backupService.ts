@@ -31,6 +31,7 @@ const logger = localLogger.child({
 
 interface BackupMachineContext {
 	site: Site;
+	initialSiteStatus: string;
 	provider: Providers;
 	description: string;
 	encryptionPassword?: string;
@@ -53,16 +54,16 @@ interface BackupMachineSchema {
 }
 
 const createDatabaseSnapshot = async (context: BackupMachineContext) => {
-	const { site } = context;
-	const initialStatus = siteProcessManager.getSiteStatus(site);
-	sendIPCEvent('updateSiteStatus', site.id, 'exporting database');
+	const { site, initialSiteStatus } = context;
+
+	sendIPCEvent('updateSiteStatus', site.id, 'exporting_db');
 	sendIPCEvent('updateSiteMessage', site.id, {
 		label: 'Creating database snapshot for backup',
 		stripes: true,
 	});
 
 	await siteDatabase.dump(site, path.join(site.paths.sql, backupSQLDumpFile));
-	sendIPCEvent('updateSiteStatus', site.id, initialStatus);
+	sendIPCEvent('updateSiteStatus', site.id, initialSiteStatus);
 };
 
 const maybeCreateBackupSite = async (context: BackupMachineContext) => {
@@ -70,6 +71,8 @@ const maybeCreateBackupSite = async (context: BackupMachineContext) => {
 	let { localBackupRepoID } = getSiteDataFromDisk(site.id);
 	let encryptionPassword;
 	let backupSiteID;
+
+	sendIPCEvent('updateSiteStatus', site.id, 'backing_up');
 
 	/**
 	 * A backupSite is a vehicle for managing the uuid (localBackupRepoID) and the encryption password
@@ -162,7 +165,7 @@ export const parseSnapshotIDFromStdOut = (output: string) => {
  * @todo remove backup snapshot on the Hub side if restic call fails
  */
 const createSnapshot = async (context: BackupMachineContext) => {
-	const { site, provider, encryptionPassword, backupRepoID, localBackupRepoID, description } = context;
+	const { site, provider, encryptionPassword, backupRepoID, localBackupRepoID, description, initialSiteStatus } = context;
 	const { name, services, mysql } = site;
 	const metaData: SiteMetaData = { name, services, mysql, localBackupRepoID, description };
 	const metaDataFilePath = path.join(formatHomePath(site.path), metaDataFileName);
@@ -183,6 +186,17 @@ const createSnapshot = async (context: BackupMachineContext) => {
 	fs.removeSync(metaDataFilePath);
 
 	await updateBackupSnapshot({ snapshotID: snapshot.id, resticSnapshotHash, status: 'complete' });
+
+	sendIPCEvent('updateSiteStatus', site.id, initialSiteStatus);
+
+	sendIPCEvent('showSiteBanner', {
+		siteID: site.id,
+		variant: 'success',
+		icon: false,
+		id: 'site-backed-up',
+		title: 'Backup complete!',
+		message: `${site.name} has been successfully backed up.`,
+	});
 };
 
 const onErrorFactory = () => ({
@@ -190,8 +204,25 @@ const onErrorFactory = () => ({
 	actions: [
 		'setErrorOnContext',
 		'logError',
+		'setErroredStatus',
 	],
 });
+
+const setErroredStatus = (context: BackupMachineContext) => {
+	const { initialSiteStatus, site } = context;
+	sendIPCEvent('updateSiteStatus', site.id, initialSiteStatus);
+
+	sendIPCEvent('showSiteBanner', {
+		siteID: site.id,
+		id: 'site-errored-backup',
+		variant: 'error',
+		icon: false,
+		title: 'Backup errored!',
+		message: `There was an error while completing your backup.`,
+	});
+
+	siteProcessManager.restart(site);
+};
 
 const assignBackupRepoIDToContext = assign({
 	backupRepoID: (context, event: DoneInvokeEvent<{ backupRepoID: number }>) => event.data.backupRepoID,
@@ -204,6 +235,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 		initial: 'creatingDatabaseSnapshot',
 		context: {
 			site: null,
+			initialSiteStatus: null,
 			provider: null,
 			description: null,
 			encryptionPassword: null,
@@ -296,6 +328,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			logError: (context, error) => {
 				logger.error(error.data);
 			},
+			setErroredStatus,
 		},
 	},
 );
@@ -314,7 +347,9 @@ export const createBackup = async (site: Site, provider: Providers, description:
 	}
 
 	return new Promise((resolve) => {
-		const backupService = interpret(backupMachine.withContext({ site, provider, description }))
+		const initialSiteStatus = siteProcessManager.getSiteStatus(site);
+
+		const backupService = interpret(backupMachine.withContext({ site, provider, description, initialSiteStatus }))
 			.onTransition((state) => {
 				sendIPCEvent(IPCEVENTS.BACKUP_STARTED);
 				logger.info(`${camelCaseToSentence(state.value as string)} [site id: ${site.id}]`);
