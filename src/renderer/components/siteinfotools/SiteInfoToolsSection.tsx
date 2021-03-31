@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { EmptyArea, Text, Divider, Button, PrimaryButton } from '@getflywheel/local-components';
+import { EmptyArea, Text, Divider, Button } from '@getflywheel/local-components';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import type { Site } from '@getflywheel/local';
-import { URLS } from '../../constants';
-import useActiveSiteID from './useActiveSiteID';
-import { BackupSnapshot, HubOAuthProviders, HubProviderRecord, Providers } from '../../types';
-import { useStoreSelector, selectors, store, actions } from '../store/store';
-import { ProviderDropdown } from './ProviderDropdown';
-import GoogleDriveIcon from '../assets/google-drive.svg';
-import DropboxIcon from '../assets/dropbox.svg';
+import useActiveSiteID from '../useActiveSiteID';
+import { BackupSnapshot, HubOAuthProviders, HubProviderRecord, Providers } from '../../../types';
+import { useStoreSelector, selectors, store, actions } from '../../store/store';
+import GoogleDriveIcon from '../../assets/google-drive.svg';
+import DropboxIcon from '../../assets/dropbox.svg';
 import styles from './SiteInfoToolsSection.scss';
+import { ToolsHeader } from '../siteinfotools/ToolsHeader';
 
 interface Props {
 	site: Site;
@@ -65,16 +64,6 @@ const hubProviderToProvider = (hubProvider: HubOAuthProviders) => {
 
 	return null;
 };
-
-/**
- * Light convenience wrapper around ipcAsync to launch a web browser in the default browser as configured by Local
- *
- * @param url
- */
-const launchBrowser = (url: string) => ipcAsync(
-	'browserService:launch',
-	url,
-);
 
 /**
  * Light convenience wrapper around ipcAsync to backup a site
@@ -160,32 +149,7 @@ const SiteInfoToolsSection = (props: Props) => {
 
 	return (
 		<div className={styles.SiteInfoToolsSection}>
-			<div className={styles.SiteInfoToolsSection_Header}>
-				<ProviderDropdown gotoUrlHub={() => launchBrowser(`${URLS.LOCAL_HUB}/addons/backups`)} />
-				{/* <GoogleDriveIcon /> */}
-				{enabledProviders.length
-					? (
-						<PrimaryButton
-							onClick={() => alert('backup now wireup')}
-							privateOptions={{
-								padding: 'm',
-							}}
-						>
-							Back Up Site
-						</PrimaryButton>
-					)
-					: (
-						<PrimaryButton
-							onClick={() => launchBrowser(`${URLS.LOCAL_HUB}/addons/backups`)}
-							privateOptions={{
-								padding: 'm',
-							}}
-						>
-							Connect Provider
-						</PrimaryButton>
-					)
-				}
-			</div>
+			<ToolsHeader />
 			<div className={styles.SiteInfoToolsSection_Content}>
 				{addDivider(enabledProviders.map(({ id, name }) => {
 					const Icon = getProviderIcon(id);

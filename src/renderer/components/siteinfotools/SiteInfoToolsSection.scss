@@ -6,14 +6,6 @@
 	height: 100%;
 }
 
-.SiteInfoToolsSection_Header {
-	display: flex;
-	flex-direction: row;
-	justify-content: space-between;
-	align-items: center;
-	padding: 20px;
-}
-
 .SiteInfoToolsSection_ProviderHeader {
 	display: grid;
 	grid-template-columns: [icon] 50px [provider-name] auto [action-button] 136px;
