@@ -73,8 +73,6 @@ const getSnapshotForActiveSiteProviderHub = createAsyncThunk(
 		const state = getState() as State;
 
 		try {
-			console.log('------ snapshots for siteId:', siteId);
-
 			if (!siteId) {
 				return null;
 			}
@@ -84,9 +82,6 @@ const getSnapshotForActiveSiteProviderHub = createAsyncThunk(
 				siteId,
 				state.providers.activeProviders[state.activeSite.id],
 			);
-
-			console.log('------ ', snapshots);
-			console.log('------ ');
 
 			return snapshots;
 		}
