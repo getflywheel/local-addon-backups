@@ -1,8 +1,5 @@
-import {
-	createSelector,
-} from '@reduxjs/toolkit';
+import { createSelector } from '@reduxjs/toolkit';
 import { State, store } from './store';
-import type { HubProviderRecord } from '../../types';
 
 const activeSiteID = (state: State) => state.activeSiteID;
 
@@ -15,12 +12,9 @@ const activeSiteProvider = createSelector(
 		(state: State) => state.providers,
 	],
 	(activeSiteID, { activeProviders, enabledProviders }) => {
-		console.log('!! activeSiteID', activeSiteID, '&enabledProviders', enabledProviders, '&activeProviders', activeProviders);
 		if (!activeSiteID || !enabledProviders || !activeProviders) {
 			return null;
 		}
-
-		console.log('...enabledProviders', enabledProviders);
 
 		const activeSiteProviderId = activeProviders[activeSiteID];
 
