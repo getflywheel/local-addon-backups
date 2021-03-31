@@ -143,7 +143,7 @@ const removeTmpDir = async (context: BackupMachineContext) => {
 };
 
 const onErrorFactory = () => ({
-	target: 'failed',
+	target: RestoreStates.failed,
 	actions: [
 		'setErrorOnContext',
 		'logError',
@@ -195,7 +195,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 				invoke: {
 					src: (context, event) => getCredentials(context),
 					onDone: {
-						target: 'creatingTmpDir',
+						target: RestoreStates.creatingTmpDir,
 						actions: assign((context, { data: { encryptionPassword, backupSiteID, localBackupRepoID } }) => ({
 							encryptionPassword,
 							backupSiteID,
@@ -212,7 +212,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 				invoke: {
 					src: (context, event) => createTmpDir(),
 					onDone: {
-						target: 'restoringBackup',
+						target: RestoreStates.restoringBackup,
 						actions: assign({
 							tmpDirData: (_, event) => event.data.tmpDirData,
 						}),
@@ -224,7 +224,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 				invoke: {
 					src: (context, event) => restoreBackup(context),
 					onDone: {
-						target: 'movingSiteFromTmpDir',
+						target: RestoreStates.movingSiteFromTmpDir,
 					},
 					onError: onErrorFactory(),
 				},
@@ -233,7 +233,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 				invoke: {
 					src: (context, event) => moveSiteFromTmpDir(context),
 					onDone: {
-						target: 'restoringDatabase',
+						target: RestoreStates.restoringDatabase,
 					},
 					onError: onErrorFactory(),
 				},
@@ -242,7 +242,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 				invoke: {
 					src: (context) => importDatabase(context),
 					onDone: {
-						target: 'finished',
+						target: RestoreStates.finished,
 					},
 					onError: onErrorFactory(),
 				},
