@@ -14,10 +14,12 @@ import getSize from 'get-folder-size';
 /* @ts-ignore */
 import styles from './BackupInfoModal.scss';
 import { BackupSnapshot, Providers } from '../../types';
-import { getFilteredSiteFiles } from '../../helpers/ignoreFilesPattern';
-import { formatHomePath } from '../../helpers/formatHomePath';
+import { getFilteredSiteFiles, getIgnoreFilePath } from '../../helpers/ignoreFilesPattern';
 
-import remote = require('@electron/remote');
+const remote = require('@electron/remote');
+
+const { shell } = remote;
+
 
 interface ModalContentsProps {
 	submitAction: (site, provider, description) => void;
@@ -28,7 +30,6 @@ interface ModalContentsProps {
 
 const ModalContents = (props: ModalContentsProps) => {
 	const { submitAction, site, provider, snapshots } = props;
-	const { dialog } = remote;
 
 	const [data, setData] = useState(0);
 	const [inputDescriptionData, setInputData] = useState('');
@@ -52,25 +53,14 @@ const ModalContents = (props: ModalContentsProps) => {
 		setInputData(event.target.value);
 	};
 
-	const browseFilesToExclude = async () => {
-		const sitePath = formatHomePath(site.path);
-
-		const { canceled, filePaths } = await dialog.showOpenDialog(remote.getCurrentWindow(), {
-			title: 'Browse to select files to exclude from backup',
-			defaultPath: sitePath,
-			properties: ['openFile', 'openDirectory', 'multiSelections'],
-		});
-
-		if (canceled || !filePaths) {
-			return;
-		}
-
-		console.log(filePaths);
-	};
-
 	const onModalSubmit = () => {
 		submitAction(site, provider, inputDescriptionData);
 		FlyModal.onRequestClose();
+	};
+
+	const onClickEditIgnore = async (site: Site) => {
+		const ignoreFilePath = getIgnoreFilePath(site);
+		shell.openPath(ignoreFilePath);
 	};
 
 	return (
@@ -95,7 +85,7 @@ const ModalContents = (props: ModalContentsProps) => {
 				<TextButton
 					style={{ marginTop: 5 }}
 					className={styles.NoPaddingLeft}
-					onClick={browseFilesToExclude}
+					onClick={() => onClickEditIgnore(site)}
 				>
 					Edit files to ignore
 				</TextButton>
