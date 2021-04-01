@@ -9,7 +9,7 @@ import type { Site } from '../types';
 import { metaDataFileName } from '../constants';
 import { getBackupCredentials } from './hubQueries';
 import { getSiteDataFromDisk, providerToHubProvider } from './utils';
-import { excludePatterns } from '../helpers/ignoreFilesPattern';
+import { excludePatterns, getIgnoreFilePath } from '../helpers/ignoreFilesPattern';
 
 interface RestoreFromBackupOptions {
 	site: Site;
@@ -40,13 +40,6 @@ const logger = localLogger.child({
 	thread: 'main',
 	class: 'BackupAddonCLIService',
 });
-
-const localBackupsIgnoreFileName = '.localbackupaddonignore';
-let defaultIgnoreFilePath = path.join(__dirname, '..', 'resources', 'default-ignore-file');
-
-if (!fs.existsSync(defaultIgnoreFilePath)) {
-	defaultIgnoreFilePath = path.join(__dirname, '..', '..', 'resources', 'default-ignore-file');
-}
 
 /**
  * Utility to generate the --repo flag and argument for restic
@@ -207,17 +200,10 @@ export async function createSnapshot (site: Site, provider: Providers, encryptio
 		throw new Error(`No backup repo id found for ${site.name}`);
 	}
 
-	const expandedSitePath = formatHomePath(site.path);
-
-	const ignoreFilePath = path.join(expandedSitePath, localBackupsIgnoreFileName);
-
-	if (!fs.existsSync(ignoreFilePath)) {
-		fs.copySync(defaultIgnoreFilePath, ignoreFilePath);
-	}
+	const ignoreFilePath = getIgnoreFilePath(site);
 
 	const flags = [
 		'--json',
-		`--password-command "echo \'${encryptionPassword}\'"`,
 		`--exclude "${excludePatterns.join(' ')}"`,
 		`--exclude-file \'${ignoreFilePath}\'`,
 	];
