@@ -20,6 +20,11 @@ const selectActiveProvider = createSelector(
 	},
 );
 
+const getIsBackupRunning = createSelector(
+	(state: State) => state.backupInProgress,
+	({ backupRunning }) => backupRunning,
+);
+
 /**
  * Organized export of available selectors.
  */

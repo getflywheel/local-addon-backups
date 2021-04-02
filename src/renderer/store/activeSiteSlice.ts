@@ -11,7 +11,7 @@ import {
 /**
  * State for the active site.
  */
- export const activeSiteSlice = createSlice({
+export const activeSiteSlice = createSlice({
 	name: 'activeSite',
 	initialState: {
 		id: null as string | null,
