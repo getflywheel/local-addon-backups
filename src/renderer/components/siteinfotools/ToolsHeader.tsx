@@ -8,15 +8,16 @@ import { selectors } from '../../store/selectors';
 
 export const ToolsHeader = () => {
 	const { enabledProviders } = useStoreSelector((state) => state.providers);
-	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
+	const { backupRunning } = useStoreSelector((state) => state.backupInProgress);
 
+	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 	return (
 		<div className={styles.ToolsHeaders}>
 			<ProviderDropdown />
 			{enabledProviders.length
 				? (
 					<PrimaryButton
-						disabled={!activeSiteProvider}
+						disabled={!activeSiteProvider || backupRunning}
 						onClick={() => store.dispatch(actions.backupSite())}
 						privateOptions={{
 							padding: 'm',

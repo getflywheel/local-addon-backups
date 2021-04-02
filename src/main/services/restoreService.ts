@@ -11,10 +11,10 @@ import { getBackupSite } from '../hubQueries';
 import { restoreBackup as restoreResticBackup, excludePatterns } from '../cli';
 import type { Site, Providers, GenericObject } from '../../types';
 import serviceState from './state';
-import { backupSQLDumpFile } from '../../constants';
+import { backupSQLDumpFile, IPCEVENTS } from '../../constants';
 
 const serviceContainer = getServiceContainer().cradle;
-const { localLogger, runSiteSQLCmd, importSQLFile } = serviceContainer;
+const { localLogger, runSiteSQLCmd, importSQLFile, sendIPCEvent } = serviceContainer;
 
 const logger = localLogger.child({
 	thread: 'main',
@@ -269,6 +269,7 @@ export const restoreFromBackup = async (opts: { site: Site; provider: Providers;
 		const machine = restoreMachine.withContext({ site, provider, snapshotID });
 		const restoreService = interpret(machine)
 			.onTransition((state) => {
+				sendIPCEvent(IPCEVENTS.BACKUP_STARTED);
 				logger.info(camelCaseToSentence(state.value as string));
 			})
 			.onDone(() => restoreService.stop())
@@ -276,6 +277,8 @@ export const restoreFromBackup = async (opts: { site: Site; provider: Providers;
 				serviceState.inProgressStateMachine = null;
 				// eslint-disable-next-line no-underscore-dangle
 				const { error } = restoreService._state;
+
+				sendIPCEvent(IPCEVENTS.BACKUP_COMPLETED);
 
 				if (error) {
 					resolve({ error });

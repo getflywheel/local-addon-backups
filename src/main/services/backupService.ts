@@ -13,7 +13,7 @@ import {
 } from '../hubQueries';
 import { initRepo, createSnapshot as createResticSnapshot } from '../cli';
 import type { Site, Providers, GenericObject, SiteMetaData } from '../../types';
-import { metaDataFileName, backupSQLDumpFile } from '../../constants';
+import { metaDataFileName, backupSQLDumpFile, IPCEVENTS } from '../../constants';
 import serviceState from './state';
 
 const serviceContainer = getServiceContainer().cradle;
@@ -314,6 +314,7 @@ export const createBackup = async (site: Site, provider: Providers) => {
 	return new Promise((resolve) => {
 		const backupService = interpret(backupMachine.withContext({ site, provider }))
 			.onTransition((state) => {
+				sendIPCEvent(IPCEVENTS.BACKUP_STARTED);
 				logger.info(`${camelCaseToSentence(state.value as string)} [site id: ${site.id}]`);
 			})
 			.onDone(() => backupService.stop())
@@ -321,6 +322,8 @@ export const createBackup = async (site: Site, provider: Providers) => {
 				serviceState.inProgressStateMachine = null;
 				// eslint-disable-next-line no-underscore-dangle
 				const { error } = backupService._state;
+
+				sendIPCEvent(IPCEVENTS.BACKUP_COMPLETED);
 
 				if (error) {
 					resolve({ error });
