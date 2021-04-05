@@ -30,22 +30,22 @@ interface ModalContentsProps {
 const ModalContents = (props: ModalContentsProps) => {
 	const { submitAction, site, snapshots } = props;
 
-	const [data, setData] = useState(0);
+	const [siteSizeInMB, setSiteSizeInMB] = useState(0);
 	const [inputDescriptionData, setInputData] = useState('');
 
 	useEffect(() => {
-		const fetchData = async () => {
+		const fetchSiteSizeInMB = async () => {
 			const filesToEstimate = getFilteredSiteFiles(site);
 			let siteSize = 0;
 
 			filesToEstimate.forEach(async (dir) => {
 				await getSize(dir, (err, size: number) => {
 					siteSize += (size / 1024 / 1024);
-					setData(siteSize);
+					setSiteSizeInMB(siteSize);
 				});
 			});
 		};
-		fetchData();
+		fetchSiteSizeInMB();
 	}, []);
 
 	const onInputChange = (event) => {
@@ -70,7 +70,7 @@ const ModalContents = (props: ModalContentsProps) => {
 			<div className={styles.AlignLeft}>
 				{ !snapshots?.length &&
 				<div>
-					<Title size="m" className="align-left">Estimated size of first backup: {data.toFixed(2)} MB</Title>
+					<Title size="m" className="align-left">Estimated size of first backup: {siteSizeInMB.toFixed(2)} MB</Title>
 					<p style={{ marginTop: 7 }}>For large sites, backing up your site for the first time can take up to hours to complete. Your site will be locked while the database is backed up.</p>
 				</div>
 				}
