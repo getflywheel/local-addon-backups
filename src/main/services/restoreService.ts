@@ -15,7 +15,7 @@ import { getFilteredSiteFiles } from '../../helpers/ignoreFilesPattern';
 import { formatHomePath } from '../../helpers/formatHomePath';
 
 const serviceContainer = getServiceContainer().cradle;
-const { localLogger, runSiteSQLCmd, importSQLFile, sendIPCEvent } = serviceContainer;
+const { localLogger, runSiteSQLCmd, importSQLFile, sendIPCEvent, siteProcessManager } = serviceContainer;
 
 const logger = localLogger.child({
 	thread: 'main',
@@ -24,6 +24,7 @@ const logger = localLogger.child({
 
 interface BackupMachineContext {
 	site: Site;
+	initialSiteStatus: string;
 	provider: Providers;
 	snapshotID: string;
 	encryptionPassword?: string;
@@ -146,8 +147,25 @@ const onErrorFactory = () => ({
 	actions: [
 		'setErrorOnContext',
 		'logError',
+		'setErroredStatus',
 	],
 });
+
+const setErroredStatus = (context: BackupMachineContext) => {
+	const { initialSiteStatus, site } = context;
+	sendIPCEvent('updateSiteStatus', site.id, initialSiteStatus);
+
+	sendIPCEvent('showSiteBanner', {
+		siteID: site.id,
+		id: 'site-errored-backup',
+		variant: 'error',
+		icon: 'warning',
+		title: 'Backup errored!',
+		message: `There was an error while restoring your backup.`,
+	});
+
+	siteProcessManager.restart(site);
+};
 
 // eslint-disable-next-line new-cap
 const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
@@ -246,6 +264,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			logError: (context, event) => {
 				logger.error(event.data);
 			},
+			setErroredStatus,
 		},
 	},
 );
@@ -265,7 +284,9 @@ export const restoreFromBackup = async (opts: { site: Site; provider: Providers;
 	const { site, provider, snapshotID } = opts;
 
 	return new Promise((resolve) => {
-		const machine = restoreMachine.withContext({ site, provider, snapshotID });
+		const initialSiteStatus = siteProcessManager.getSiteStatus(site);
+
+		const machine = restoreMachine.withContext({ site, provider, snapshotID, initialSiteStatus });
 		const restoreService = interpret(machine)
 			.onTransition((state) => {
 				sendIPCEvent(IPCEVENTS.BACKUP_STARTED);
