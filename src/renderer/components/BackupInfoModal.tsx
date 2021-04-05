@@ -11,9 +11,8 @@ import type { Site } from '@getflywheel/local';
 import classnames from 'classnames';
 import getSize from 'get-folder-size';
 
-/* @ts-ignore */
 import styles from './BackupInfoModal.scss';
-import { BackupSnapshot, Providers } from '../../types';
+import { BackupSnapshot } from '../../types';
 import { getFilteredSiteFiles, getIgnoreFilePath } from '../../helpers/ignoreFilesPattern';
 
 const remote = require('@electron/remote');
