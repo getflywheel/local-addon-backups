@@ -4,10 +4,11 @@ import {
 } from '@reduxjs/toolkit';
 
 /**
- * State for whether a backup or restore is currently in progress.
+ * Controls state variables that pertain to all sites
+ * Eg, is a backup currently in progress, etc...
  */
-export const backupInProgressSlice = createSlice({
-	name: 'backupInProgress',
+export const directorSlice = createSlice({
+	name: 'director',
 	initialState: {
 		backupRunning: false as boolean,
 	},
