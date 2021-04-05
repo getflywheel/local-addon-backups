@@ -27,7 +27,7 @@ const SiteInfoToolsSection = ({ site }: Props) => {
 
 	return (
 		<div className={styles.SiteInfoToolsSection}>
-			<ToolsHeader />
+			<ToolsHeader site={site} />
 			<div className={styles.SiteInfoToolsSection_Content}>
 				{!snapshots?.length && (
 					<div className={styles.SiteInfoToolsSection_Content_Empty}>

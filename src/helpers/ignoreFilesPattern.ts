@@ -3,7 +3,6 @@ import path from 'path';
 import fs from 'fs-extra';
 import { formatHomePath } from '../helpers/formatHomePath';
 import type { Site } from '../types';
-import { shell } from 'electron';
 
 export const excludePatterns = ['conf'];
 
