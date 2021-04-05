@@ -8,7 +8,7 @@ import { selectors } from '../../store/selectors';
 
 export const ToolsHeader = () => {
 	const { enabledProviders } = useStoreSelector((state) => state.providers);
-	const { backupRunning } = useStoreSelector((state) => state.backupInProgress);
+	const backupRunning = store.getState().backupInProgress.backupRunning;
 
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 	return (
