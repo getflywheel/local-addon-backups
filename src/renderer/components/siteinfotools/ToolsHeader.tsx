@@ -8,9 +8,9 @@ import { selectors } from '../../store/selectors';
 
 export const ToolsHeader = () => {
 	const { enabledProviders } = useStoreSelector((state) => state.providers);
+	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 	const backupRunning = store.getState().backupInProgress.backupRunning;
 
-	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 	return (
 		<div className={styles.ToolsHeaders}>
 			<ProviderDropdown />
