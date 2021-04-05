@@ -22,14 +22,13 @@ const { shell } = remote;
 
 
 interface ModalContentsProps {
-	submitAction: (site, provider, description) => void;
+	submitAction: (description) => void;
 	site: Site;
-	provider: Providers;
 	snapshots: BackupSnapshot[];
 }
 
 const ModalContents = (props: ModalContentsProps) => {
-	const { submitAction, site, provider, snapshots } = props;
+	const { submitAction, site, snapshots } = props;
 
 	const [data, setData] = useState(0);
 	const [inputDescriptionData, setInputData] = useState('');
@@ -54,7 +53,7 @@ const ModalContents = (props: ModalContentsProps) => {
 	};
 
 	const onModalSubmit = () => {
-		submitAction(site, provider, inputDescriptionData);
+		submitAction(inputDescriptionData);
 		FlyModal.onRequestClose();
 	};
 
@@ -112,9 +111,8 @@ const ModalContents = (props: ModalContentsProps) => {
 };
 
 export const createBackupModal = (
-	submitAction: (site, provider, description) => void,
+	submitAction: (description) => void,
 	site: Site,
-	provider: Providers,
 	snapshots: BackupSnapshot[],
 ) => new Promise((resolve) => {
 	const onSubmit = (checked) => {
@@ -131,7 +129,6 @@ export const createBackupModal = (
 			<ModalContents
 				submitAction={submitAction}
 				site={site}
-				provider={provider}
 				snapshots={snapshots}
 			/>
 		</FlyModal>,

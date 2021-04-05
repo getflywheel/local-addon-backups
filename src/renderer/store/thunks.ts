@@ -12,7 +12,7 @@ const localStorageKey = 'local-addon-backups-activeProviders';
  */
  const backupSite = createAsyncThunk(
 	'backupSite',
-	async (_, { rejectWithValue, getState }) => {
+	async (description:string, { rejectWithValue, getState }) => {
 		const state = getState() as State;
 		const rsyncProviderId = hubProviderToProvider(selectors.selectActiveProvider(state)?.id);
 
@@ -27,6 +27,7 @@ const localStorageKey = 'local-addon-backups-activeProviders';
 				'backups:backup-site',
 				state.activeSite.id,
 				rsyncProviderId,
+				description,
 			);
 
 			return huh;

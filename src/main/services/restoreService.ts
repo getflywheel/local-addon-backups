@@ -1,6 +1,5 @@
 import path from 'path';
 import { Machine, interpret, assign } from 'xstate';
-import glob from 'glob';
 import { getServiceContainer } from '@getflywheel/local/main';
 import { Site as LocalSiteModel } from '@getflywheel/local';
 import tmp from 'tmp';
@@ -12,7 +11,6 @@ import { restoreBackup as restoreResticBackup } from '../cli';
 import type { Site, Providers, GenericObject } from '../../types';
 import serviceState from './state';
 import { backupSQLDumpFile, IPCEVENTS } from '../../constants';
-import { excludePatterns, getFilesToIgnore } from '../../helpers/ignoreFilesPattern';
 import { getFilteredSiteFiles } from '../../helpers/ignoreFilesPattern';
 import { formatHomePath } from '../../helpers/formatHomePath';
 
