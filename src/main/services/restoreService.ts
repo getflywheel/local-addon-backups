@@ -1,7 +1,7 @@
 import path from 'path';
 import { Machine, interpret, assign } from 'xstate';
 import { getServiceContainer } from '@getflywheel/local/main';
-import { Site as LocalSiteModel } from '@getflywheel/local';
+import { Site as LocalSiteModel, SiteStatus } from '@getflywheel/local';
 import tmp from 'tmp';
 import type { DirResult } from 'tmp';
 import fs from 'fs-extra';
@@ -24,7 +24,7 @@ const logger = localLogger.child({
 
 interface BackupMachineContext {
 	site: Site;
-	initialSiteStatus: string;
+	initialSiteStatus: SiteStatus;
 	provider: Providers;
 	snapshotID: string;
 	encryptionPassword?: string;
@@ -181,6 +181,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 		initial: 'gettingBackupCredentials',
 		context: {
 			site: null,
+			initialSiteStatus: null,
 			provider: null,
 			snapshotID: null,
 			encryptionPassword: null,
