@@ -1,4 +1,3 @@
-import { ipcRenderer } from 'electron';
 import React, { useState } from 'react';
 import { Provider } from 'react-redux';
 import { TextButton, TableListRow, FlySelect } from '@getflywheel/local-components';
@@ -6,9 +5,9 @@ import { ipcAsync } from '@getflywheel/local/renderer';
 import type { SiteJSON } from '@getflywheel/local';
 import { startCase } from 'lodash';
 import { Providers } from './types';
-import { store, actions } from './renderer/store/store';
+import { store } from './renderer/store/store';
 import SiteInfoToolsSection from './renderer/components/siteinfotools/SiteInfoToolsSection';
-import { IPCEVENTS } from './constants';
+import { setupListeners } from './renderer/helpers/setupListeners';
 
 const titlize = (a: string) => startCase(a.toLowerCase());
 
@@ -17,29 +16,6 @@ interface RowProps<T> {
 	buttonText: string;
 	description?: string;
 }
-
-const setupListeners = () => {
-	const listeners = [
-		{
-			channel: IPCEVENTS.BACKUP_STARTED,
-			cb: (_) => {
-				store.dispatch(actions.setBackupRunningState(true));
-			},
-		},
-		{
-			channel: IPCEVENTS.BACKUP_COMPLETED,
-			cb: (_) => {
-				store.dispatch(actions.setBackupRunningState(false));
-			},
-		},
-	];
-
-	listeners.forEach(({ channel, cb }) => {
-		if (!ipcRenderer.listenerCount(channel)) {
-			ipcRenderer.on(channel, cb);
-		}
-	});
-};
 
 setupListeners();
 
