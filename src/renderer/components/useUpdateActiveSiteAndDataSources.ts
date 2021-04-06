@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { store, actions } from '../store/store';
 
-const updateActiveSiteAndDataSources = (siteID: string): void => useEffect(() => {
+const useUpdateActiveSiteAndDataSources = (siteID: string): void => useEffect(() => {
 	store.dispatch(actions.updateActiveSiteAndDataSources(siteID));
 
 	return () => {
@@ -9,4 +9,4 @@ const updateActiveSiteAndDataSources = (siteID: string): void => useEffect(() =>
 	};
 }, [siteID]);
 
-export default updateActiveSiteAndDataSources;
+export default useUpdateActiveSiteAndDataSources;
