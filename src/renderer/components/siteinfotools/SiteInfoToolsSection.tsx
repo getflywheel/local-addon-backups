@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Site } from '@getflywheel/local';
-import updateActiveSiteAndDataSources from '../updateActiveSiteAndDataSources';
+import useUpdateActiveSiteAndDataSources from '../useUpdateActiveSiteAndDataSources';
 import { useStoreSelector } from '../../store/store';
 import styles from './SiteInfoToolsSection.scss';
 import { ToolsHeader } from '../siteinfotools/ToolsHeader';
@@ -10,7 +10,7 @@ interface Props {
 }
 
 const SiteInfoToolsSection = ({ site }: Props) => {
-	updateActiveSiteAndDataSources(site.id);
+	useUpdateActiveSiteAndDataSources(site.id);
 
 	const { isLoadingEnabledProviders } = useStoreSelector((state) => state.providers);
 	const { snapshots } = useStoreSelector((state) => state.activeSite);

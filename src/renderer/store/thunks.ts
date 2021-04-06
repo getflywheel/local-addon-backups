@@ -23,14 +23,12 @@ const localStorageKey = 'local-addon-backups-activeProviders';
 			 * @param site
 			 * @param provider
 			 */
-			const huh = await ipcAsync(
+			return await ipcAsync(
 				'backups:backup-site',
 				state.activeSite.id,
 				rsyncProviderId,
 				description,
-			);
-
-			return huh;
+			) as null;
 		}
 		catch (error) {
 			if (!error.response) {
@@ -68,23 +66,24 @@ const localStorageKey = 'local-addon-backups-activeProviders';
  /**
  * Get selected provider's snapshots from hub for active site.
  */
-const getSnapshotForActiveSiteProviderHub = createAsyncThunk(
-	'getSnapshotForActiveSiteProviderHub',
-	async (siteId: string | null, { rejectWithValue, getState }) => {
-		const state = getState() as State;
+const getSnapshotsForActiveSiteProviderHub = createAsyncThunk(
+	'getSnapshotsForActiveSiteProviderHub',
+	async (_, { rejectWithValue, getState }) => {
+		const {
+			activeSite,
+			providers,
+		} = getState() as State;
 
 		try {
-			if (!siteId) {
+			if (!activeSite?.id) {
 				return null;
 			}
 
-			const snapshots: BackupSnapshot[] = await ipcAsync(
+			return await ipcAsync(
 				'backups:provider-snapshots',
-				siteId,
-				state.providers.activeProviders[state.activeSite.id],
-			);
-
-			return snapshots;
+				activeSite.id,
+				providers.activeProviders[activeSite.id],
+			) as BackupSnapshot[];
 		}
 		catch (error) {
 			if (!error.response) {
@@ -150,8 +149,8 @@ const setActiveProviderAndPersist = createAsyncThunk(
 /**
  * Persist changes to the active provider for the active site.
  */
- const updateActiveSiteAndDataSources = createAsyncThunk(
-	'updateActiveSiteAndDataSources',
+ const updateActiveSite = createAsyncThunk(
+	'updateActiveSite',
 	async (siteId: string | null, { dispatch, getState, rejectWithValue }) => {
 		try {
 			const { providers: { activeProviders } } = getState() as State;
@@ -159,11 +158,33 @@ const setActiveProviderAndPersist = createAsyncThunk(
 			// do only once per runtime, if unpopulated, as redux and local-storage stays in sync after that
 			// note: this call should have no other data depedencies (e.g. siteId, enabledProviders, etc)
 			!activeProviders && dispatch(initActiveProvidersFromLocalStorage());
+
+			return siteId;
+		}
+		catch (err) {
+			if (!err.response) {
+				throw err;
+			}
+
+			return rejectWithValue(err.response);
+		}
+	}
+);
+
+/**
+ * Chains together several thunks resulting from updating the active site.
+ */
+ const updateActiveSiteAndDataSources = createAsyncThunk(
+	'updateActiveSiteAndDataSources',
+	async (siteId: string | null, { dispatch, rejectWithValue }) => {
+		try {
+			// update active site details
+			await dispatch(updateActiveSite(siteId));
 			// (re)check for enabled providers on hub
 			// note: this call should have no other data depedencies (e.g. siteId, enabledProviders, etc)
 			await dispatch(getEnabledProvidersHub());
 			// get snapsshots given the site and provider
-			dispatch(getSnapshotForActiveSiteProviderHub(siteId));
+			dispatch(getSnapshotsForActiveSiteProviderHub());
 
 			return siteId;
 		}
@@ -181,7 +202,8 @@ export {
 	backupSite,
 	initActiveProvidersFromLocalStorage,
 	getEnabledProvidersHub,
-	getSnapshotForActiveSiteProviderHub,
+	getSnapshotsForActiveSiteProviderHub,
 	setActiveProviderAndPersist,
+	updateActiveSite,
 	updateActiveSiteAndDataSources,
 };
