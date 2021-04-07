@@ -6,7 +6,13 @@ import { useStoreSelector } from '../../store/store';
 import styles from './SiteInfoToolsSection.scss';
 import { ToolsHeader } from '../siteinfotools/ToolsHeader';
 import { ToolsContent } from '../siteinfotools/ToolsContent';
+import { ipcAsync } from '@getflywheel/local/renderer';
+import { selectors } from '../../store/selectors';
+import { Providers } from '../../../types';
 
+
+import { hubProviderToProvider } from '../../helpers/hubProviderToProvider';
+import { State } from '../../store/store';
 interface Props {
 	site: Site;
 }
@@ -27,6 +33,10 @@ const SiteInfoToolsSection = ({ site }: Props) => {
 			</div>
 		);
 	}
+
+	const testRestoreClone = (site: Site, newSiteName: string, activeSiteProvider: Providers, snapshotHash: string) => {
+		ipcAsync('restore-site-clone', site, newSiteName, activeSiteProvider, snapshotHash);
+	};
 
 	return (
 		<div className={styles.SiteInfoToolsSection}>

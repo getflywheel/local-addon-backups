@@ -19,6 +19,16 @@ interface RestoreFromBackupOptions {
 	restoreDir: string;
 }
 
+interface CloneFromBackupOptions {
+	destinationSite: Site;
+	baseSite: Site;
+	provider: Providers;
+	encryptionPassword: string;
+	snapshotHash: string;
+	restoreDir: string;
+}
+
+
 const bins = getOSBins();
 
 /**
@@ -253,3 +263,31 @@ export async function restoreBackup (options: RestoreFromBackupOptions) {
 		encryptionPassword,
 	});
 }
+
+/**
+ * Restore an rclone backup from a given provider into the path specified by options.siteTmpDir
+ * --exclude and --include can be used here to backup just a subset of the files from a given backup
+ * Restores
+ * @param options
+ */
+export async function cloneBackup (options: CloneFromBackupOptions) {
+	const { baseSite, provider, encryptionPassword, snapshotHash, restoreDir } = options;
+	const { localBackupRepoID } = getSiteDataFromDisk(baseSite.id);
+
+	const flags = [
+		'--json',
+		`--target ${restoreDir}`,
+		/**
+		 * @todo do not add this flag if restoring a backup to a brand new site within Local
+		 */
+		`--exclude ${metaDataFileName}`,
+	];
+
+	return execPromiseWithRcloneContext({
+		cmd: `${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} restore ${snapshotHash} ${flags.join(' ')} `,
+		site: baseSite,
+		provider,
+		encryptionPassword,
+	});
+}
+
