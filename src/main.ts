@@ -6,6 +6,11 @@ import { createBackup } from './main/services/backupService';
 import { restoreFromBackup } from './main/services/restoreService';
 import { getSiteDataFromDisk } from './main/utils';
 
+import { cloneFromBackup } from './main/services/cloneFromBackupService';
+import shortid from 'shortid';
+import path from 'path';
+
+const serviceContainer = LocalMain.getServiceContainer().cradle;
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function (context): void {
@@ -61,5 +66,37 @@ export default function (context): void {
 
 	LocalMain.addIpcAsyncListener('list-site-snapshots', async (siteId: Local.Site['id'], provider: Providers) => {
 		const site = LocalMain.SiteData.getSite(siteId);
+	});
+
+	LocalMain.addIpcAsyncListener('restore-site-clone', async (baseSite: Local.Site, newSiteName: string, provider: Providers, snapshotHash: string) => {
+		const dupID = shortid.generate();
+		const dupSite = new Local.Site(baseSite);
+
+		const localSitesDir = path.dirname(baseSite.path);
+
+		dupSite.id = dupID;
+		dupSite.name = newSiteName;
+		dupSite.domain = `${newSiteName}.local`;
+		dupSite.path = path.join(localSitesDir, newSiteName);
+
+		serviceContainer.siteData.addSite(dupSite.id, dupSite);
+
+		LocalMain.sendIPCEvent('selectSite', dupSite.id, true, true);
+
+		await serviceContainer.siteProvisioner.provision(dupSite);
+
+		const destinationSite = getSiteDataFromDisk(dupSite.id);
+
+		await cloneFromBackup({ baseSite, destinationSite, provider, snapshotHash });
+
+		console.log('Cloning completed');
+
+		await serviceContainer.siteProcessManager.start(destinationSite);
+
+		console.log('Site started');
+
+		await serviceContainer.changeSiteDomain.changeSiteDomainToHost(destinationSite);
+
+		console.log('Domain updated');
 	});
 }
