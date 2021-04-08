@@ -15,6 +15,7 @@ export const activeSiteSlice = createSlice({
 	name: 'activeSite',
 	initialState: {
 		id: null as string | null,
+		isLoadingSnapshots: false,
 		snapshots: null as BackupSnapshot[] | null,
 	},
 	reducers: {
@@ -24,19 +25,19 @@ export const activeSiteSlice = createSlice({
 	},
 	extraReducers: (builder) => {
 		builder.addCase(getSnapshotsForActiveSiteProviderHub.fulfilled, (state, { payload }) => {
-			state.snapshots = payload;
+			state.isLoadingSnapshots = false;
+			state.snapshots = payload ?? [];
 		});
-		builder.addCase(getSnapshotsForActiveSiteProviderHub.pending, (state, { payload }) => {
-			// todo - crum: handle pending
+		builder.addCase(getSnapshotsForActiveSiteProviderHub.pending, (state ) => {
+			state.isLoadingSnapshots = true;
 		});
-		builder.addCase(getSnapshotsForActiveSiteProviderHub.rejected, (_, action) => {
+		builder.addCase(getSnapshotsForActiveSiteProviderHub.rejected, (state, action) => {
+			state.isLoadingSnapshots = false;
 			// todo - crum: handle error
 			console.log('...rejected:', action.error);
 		});
 		builder.addCase(updateActiveSite.fulfilled, (state, { payload }) => {
 			state.id = payload;
-
-			console.log('updateActiveSite.fulfilled: ', payload);
 		});
 		builder.addCase(updateActiveSite.rejected, (_, action) => {
 			// todo - crum: handle error

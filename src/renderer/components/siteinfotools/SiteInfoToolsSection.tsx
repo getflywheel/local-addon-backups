@@ -4,6 +4,7 @@ import useUpdateActiveSiteAndDataSources from '../useUpdateActiveSiteAndDataSour
 import { useStoreSelector } from '../../store/store';
 import styles from './SiteInfoToolsSection.scss';
 import { ToolsHeader } from '../siteinfotools/ToolsHeader';
+import { ToolsContent } from '../siteinfotools/ToolsContent';
 
 interface Props {
 	site: Site;
@@ -13,7 +14,6 @@ const SiteInfoToolsSection = ({ site }: Props) => {
 	useUpdateActiveSiteAndDataSources(site.id);
 
 	const { isLoadingEnabledProviders } = useStoreSelector((state) => state.providers);
-	const { snapshots } = useStoreSelector((state) => state.activeSite);
 
 	/**
 	 * @todo sometimes the query to hub fails (like if the auth token has expired)
@@ -28,13 +28,7 @@ const SiteInfoToolsSection = ({ site }: Props) => {
 	return (
 		<div className={styles.SiteInfoToolsSection}>
 			<ToolsHeader site={site} />
-			<div className={styles.SiteInfoToolsSection_Content}>
-				{!snapshots?.length && (
-					<div className={styles.SiteInfoToolsSection_Content_Empty}>
-						There are no backups created for this site yet.
-					</div>
-				)}
-			</div>
+			<ToolsContent />
 		</div>
 	);
 };
