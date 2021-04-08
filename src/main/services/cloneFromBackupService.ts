@@ -13,8 +13,12 @@ import serviceState from './state';
 import { backupSQLDumpFile, IPCEVENTS } from '../../constants';
 import { formatHomePath } from '../../helpers/formatHomePath';
 
+import * as LocalMain from '@getflywheel/local/main';
+import * as Local from '@getflywheel/local';
+import shortid from 'shortid';
+
 const serviceContainer = getServiceContainer().cradle;
-const { localLogger, runSiteSQLCmd, importSQLFile, sendIPCEvent, siteProcessManager } = serviceContainer;
+const { localLogger, runSiteSQLCmd, importSQLFile, sendIPCEvent } = serviceContainer;
 
 const logger = localLogger.child({
 	thread: 'main',
@@ -23,8 +27,8 @@ const logger = localLogger.child({
 
 interface BackupMachineContext {
 	baseSite: Site;
-	destinationSite: Site;
-	initialSiteStatus: SiteStatus;
+	destinationSite?: Site;
+	initialSiteStatus?: SiteStatus;
 	provider: Providers;
 	snapshotHash: string;
 	encryptionPassword?: string;
@@ -32,15 +36,19 @@ interface BackupMachineContext {
 	localBackupRepoID?: string;
 	tmpDirData?: DirResult;
 	error?: string;
+	newSiteName: string;
 }
 
 interface BackupMachineSchema {
 	states: {
 		creatingTmpDir: GenericObject;
+		setupDestinationSite: GenericObject;
 		gettingBackupCredentials: GenericObject;
 		cloningBackup: GenericObject;
 		movingSiteFromTmpDir: GenericObject;
+		provisioningSite: GenericObject;
 		restoringDatabase: GenericObject;
+		searchReplaceDomain: GenericObject;
 		finished: GenericObject;
 		failed: GenericObject;
 	}
@@ -50,7 +58,6 @@ const getCredentials = async (context: BackupMachineContext) => {
 	const { baseSite } = context;
 	const { localBackupRepoID } = getSiteDataFromDisk(baseSite.id);
 	const { uuid, password, id } = await getBackupSite(localBackupRepoID);
-
 	return {
 		encryptionPassword: password,
 		localBackupRepoID: uuid,
@@ -58,9 +65,47 @@ const getCredentials = async (context: BackupMachineContext) => {
 	};
 };
 
+const setupDestinationSite = async (context: BackupMachineContext) => {
+	const { baseSite, newSiteName } = context;
+
+	const dupID = shortid.generate();
+	const dupSite = new Local.Site(baseSite);
+
+	const localSitesDir = path.dirname(baseSite.path);
+
+	dupSite.id = dupID;
+	dupSite.name = newSiteName;
+
+	//@todo - make sure new site name gets translated to a domain safe and path safe string
+	dupSite.domain = `${newSiteName}.local`;
+	dupSite.path = path.join(localSitesDir, newSiteName);
+
+	serviceContainer.siteData.addSite(dupSite.id, dupSite);
+
+	const destinationSite = getSiteDataFromDisk(dupSite.id);
+
+	LocalMain.sendIPCEvent('selectSite', dupSite.id, true, true);
+
+	LocalMain.sendIPCEvent('updateSiteStatus', destinationSite.id, 'provisioning');
+
+	LocalMain.sendIPCEvent('updateSiteMessage', destinationSite.id, 'Restoring your site backup');
+
+	return {
+		destinationSite,
+	};
+};
+
 const createTmpDir = async () => ({
 	tmpDirData: tmp.dirSync(),
 });
+
+const provisionSite = async (context: BackupMachineContext) => {
+	const { destinationSite } = context;
+
+	const siteToProvision = new Local.Site(destinationSite);
+
+	await serviceContainer.siteProvisioner.provision(siteToProvision);
+};
 
 const importDatabase = async (context: BackupMachineContext) => {
 	const { tmpDirData } = context;
@@ -96,6 +141,24 @@ const importDatabase = async (context: BackupMachineContext) => {
 		site,
 		query: `SET GLOBAL SQL_MODE='${existingSqlMode}';`,
 	});
+};
+
+const searchReplace = async (context: BackupMachineContext) => {
+	const { destinationSite } = context;
+
+	const siteToSearchReplace = new Local.Site(destinationSite);
+
+	await serviceContainer.siteProcessManager.restart(siteToSearchReplace);
+
+	LocalMain.sendIPCEvent('updateSiteStatus', destinationSite.id, 'provisioning');
+
+	LocalMain.sendIPCEvent('updateSiteMessage', destinationSite.id, 'Changing site domain');
+
+	await serviceContainer.siteDatabase.waitForDB(siteToSearchReplace);
+
+	await serviceContainer.changeSiteDomain.changeSiteDomainToHost(siteToSearchReplace);
+
+	await serviceContainer.siteProcessManager.restart(siteToSearchReplace);
 };
 
 const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
@@ -179,18 +242,33 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			localBackupRepoID: null,
 			tmpDirData: null,
 			error: null,
+			newSiteName: null,
 		},
 		states: {
 			gettingBackupCredentials: {
 				invoke: {
 					src: (context, event) => getCredentials(context),
 					onDone: {
-						target: 'creatingTmpDir',
+						target: 'setupDestinationSite',
 						actions: assign((context, { data: { encryptionPassword, backupSiteID, localBackupRepoID } }) => ({
 							encryptionPassword,
 							backupSiteID,
 							localBackupRepoID,
 						})),
+					},
+					onError: onErrorFactory(),
+				},
+			},
+			 setupDestinationSite: {
+				invoke: {
+					src: (context, event) => setupDestinationSite(context),
+					onDone: {
+						target: 'creatingTmpDir',
+						actions: assign(
+							{
+								destinationSite: (_, event) => event.data.destinationSite,
+							},
+						),
 					},
 					onError: onErrorFactory(),
 				},
@@ -223,6 +301,15 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 				invoke: {
 					src: (context, event) => moveSiteFromTmpDir(context),
 					onDone: {
+						target: 'provisioningSite',
+					},
+					onError: onErrorFactory(),
+				},
+			},
+			provisioningSite: {
+				invoke: {
+					src: (context) => provisionSite(context),
+					onDone: {
 						target: 'restoringDatabase',
 					},
 					onError: onErrorFactory(),
@@ -231,6 +318,15 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			restoringDatabase: {
 				invoke: {
 					src: (context) => importDatabase(context),
+					onDone: {
+						target: 'searchReplaceDomain',
+					},
+					onError: onErrorFactory(),
+				},
+			},
+			searchReplaceDomain: {
+				invoke: {
+					src: (context) => searchReplace(context),
 					onDone: {
 						target: 'finished',
 					},
@@ -266,18 +362,21 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
  * @param opts
  * @returns
  */
-export const cloneFromBackup = async (opts: { baseSite: Site; destinationSite: Site; provider: Providers; snapshotHash: string; }) => {
+export const cloneFromBackup = async (opts: {
+		baseSite: Site;
+		provider: Providers;
+		snapshotHash: string;
+		newSiteName: string;
+	}) => {
 	if (serviceState.inProgressStateMachine) {
 		logger.warn('Restore process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.');
 		return;
 	}
 
-	const { baseSite, destinationSite, provider, snapshotHash } = opts;
+	const { baseSite, provider, snapshotHash, newSiteName } = opts;
 
 	return new Promise((resolve) => {
-		const initialSiteStatus = siteProcessManager.getSiteStatus(destinationSite);
-
-		const machine = cloneMachine.withContext({ baseSite, destinationSite, provider, snapshotHash, initialSiteStatus });
+		const machine = cloneMachine.withContext({ baseSite, provider, snapshotHash, newSiteName });
 		const cloneFromBackupService = interpret(machine)
 			.onTransition((state) => {
 				sendIPCEvent(IPCEVENTS.BACKUP_STARTED);

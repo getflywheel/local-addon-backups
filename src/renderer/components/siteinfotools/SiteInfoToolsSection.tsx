@@ -35,7 +35,7 @@ const SiteInfoToolsSection = ({ site }: Props) => {
 	}
 
 	const testRestoreClone = (site: Site, newSiteName: string, activeSiteProvider: Providers, snapshotHash: string) => {
-		ipcAsync('restore-site-clone', site, newSiteName, activeSiteProvider, snapshotHash);
+		ipcAsync('backups:restore-site-clone', site, newSiteName, activeSiteProvider, snapshotHash);
 	};
 
 	return (
