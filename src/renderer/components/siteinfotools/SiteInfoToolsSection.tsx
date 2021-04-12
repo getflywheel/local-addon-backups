@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Site } from '@getflywheel/local';
+import { LoadingIndicator } from '@getflywheel/local-components';
 import useUpdateActiveSiteAndDataSources from '../useUpdateActiveSiteAndDataSources';
 import { useStoreSelector } from '../../store/store';
 import styles from './SiteInfoToolsSection.scss';
@@ -21,14 +22,16 @@ const SiteInfoToolsSection = ({ site }: Props) => {
 	 */
 	if (isLoadingEnabledProviders) {
 		return (
-			<span>loading...</span>
+			<div className={styles.SiteInfoToolsSection_LoadingCont}>
+				<LoadingIndicator color="Gray" dots={3} />
+			</div>
 		);
 	}
 
 	return (
 		<div className={styles.SiteInfoToolsSection}>
 			<ToolsHeader site={site} />
-			<ToolsContent />
+			<ToolsContent className={styles.SiteInfoToolsSection_Content}/>
 		</div>
 	);
 };

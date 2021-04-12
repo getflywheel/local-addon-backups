@@ -6,24 +6,14 @@
 	height: 100%;
 }
 
-.SiteInfoToolsSection_ProviderHeader {
-	display: grid;
-	grid-template-columns: [icon] 50px [provider-name] auto [action-button] 136px;
-	justify-items: left;
+.SiteInfoToolsSection_LoadingCont {
+	display: flex;
+	width: 100%;
+	height: 100%;
 	align-items: center;
-	padding: 30px 0;
+	justify-content: center;
 }
 
 .SiteInfoToolsSection_Content {
-	flex-grow: 1;
-	width: 100%;
-	height: 100%;
-	@include __theme-background($gray1 !important, $gray-dark-alt !important);
-}
-
-.SiteInfoToolsSection_Content_Empty {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	height: 100%;
+	flex: 1;
 }

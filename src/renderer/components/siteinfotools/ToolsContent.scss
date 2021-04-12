@@ -1,0 +1,7 @@
+@import '~@getflywheel/local-components/src/styles/_partials/index';
+
+.ToolsContent {
+	width: 100%;
+	height: 100%;
+	@include __theme-background($gray1 !important, $gray-dark-alt !important);
+}
