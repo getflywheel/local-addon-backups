@@ -1,6 +1,42 @@
 @import '~@getflywheel/local-components/src/styles/_partials/index';
 
-.SnapshotsTableList_Row {
+.SnapshotsTableList_LoadingCont,
+.SnapshotsTableList_EmptyCont {
 	display: flex;
-	margin: 0 10px;
+	width: 100%;
+	height: 100%;
+	align-items: center;
+	justify-content: center;
+}
+
+.SnapshotsTableList_VirtualTable {
+	:global(.VirtualTable_Row) {
+		padding: 0 20px;
+	}
+
+	:global(.VirtualTable_Cell) {
+		display: flex;
+		align-items: center;
+	}
+}
+
+.SnapshotsTableList_DateCell {
+	display: flex;
+	flex-direction: column;
+	line-height: 21px;
+}
+
+.SnapshotsTableList_DateCell_MonDayYear {
+	font-weight: $font-weight-500-medium;
+}
+
+.SnapshotsTableList_MoreDropdown {
+	display: block;
+	margin-left: auto; // right-align
+	margin-right: 20px;
+	padding: 10px 0 10px;
+}
+
+.SnapshotsTableList_MoreDropdown_Item_TextButton {
+	padding: 0;
 }

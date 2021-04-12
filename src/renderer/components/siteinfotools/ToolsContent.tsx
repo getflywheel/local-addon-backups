@@ -1,13 +1,21 @@
 import React from 'react';
-import styles from './SiteInfoToolsSection.scss';
+import styles from './ToolsContent.scss';
+import classnames from 'classnames';
 import { SnapshotsTableList } from './SnapshotsTableList';
 
-export const ToolsContent = () => {
+interface Props {
+	className: string;
+}
+
+export const ToolsContent = ({ className }: Props) => {
 	return (
-		<div className={styles.ToolsContent}>
-			<div className={styles.SiteInfoToolsSection_Content}>
-				<SnapshotsTableList />
-			</div>
+		<div
+			className={classnames(
+				className,
+				styles.ToolsContent,
+			)}
+		>
+			<SnapshotsTableList />
 		</div>
 	);
 }
