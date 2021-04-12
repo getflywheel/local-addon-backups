@@ -2,6 +2,7 @@
 const path = require('path');
 const nodeExternals = require('webpack-node-externals');
 const { merge } = require('webpack-merge');
+const packageJson = require('./package.json');
 // const glob = require('glob');
 /* eslint-enable @typescript-eslint/no-var-requires */
 
@@ -83,21 +84,22 @@ const configs = [
 					],
 				},
 				{
-					test: /\.s[ac]ss$/i,
+					test: /\.(css|scss)$/,
 					use: [
 						'style-loader',
 						{
 							loader: 'css-loader',
 							options: {
-								modules: true,
-								sourceMap: true,
 								importLoaders: 1,
-							},
+								modules: {
+									localIdentName: `${packageJson.name}_[local]_[hash:base64:5]_v${packageJson.version.replace(/\./g, '-')}`,
+								},
+							}
 						},
 						'resolve-url-loader',
 						'sass-loader',
 					],
-				  },
+				},
 			],
 		},
 		target: 'electron-renderer',
