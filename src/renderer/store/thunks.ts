@@ -125,7 +125,7 @@ const initActiveProvidersFromLocalStorage = createAsyncThunk(
  */
 const setActiveProviderAndPersist = createAsyncThunk(
 	'setActiveProviderAndPersist',
-	async (providerId: HubProviderRecord['id'], { rejectWithValue, getState }) => {
+	async (providerId: HubProviderRecord['id'], { getState, rejectWithValue }) => {
 		const state = getState() as State;
 		const activeProviders = {
 			...state.providers.activeProviders,
@@ -134,7 +134,31 @@ const setActiveProviderAndPersist = createAsyncThunk(
 
 		try {
 			localStorage.setItem(localStorageKey, JSON.stringify(activeProviders));
+
 			return activeProviders;
+		}
+		catch (err) {
+			if (!err.response) {
+				throw err;
+			}
+
+			return rejectWithValue(err.response);
+		}
+	}
+);
+
+/**
+ * Saga of dispatches to update active provider and retrieve its snapshots for the active site.
+ */
+ const setActiveProviderPersistAndUpdateSnapshots = createAsyncThunk(
+	'setActiveProviderPersistAndUpdateSnapshots',
+	async (providerId: HubProviderRecord['id'], { dispatch, rejectWithValue }) => {
+		try {
+			await dispatch(setActiveProviderAndPersist(providerId));
+			// asynchronous get snapshots given the site and provider
+			dispatch(getSnapshotsForActiveSiteProviderHub());
+
+			return null;
 		}
 		catch (err) {
 			if (!err.response) {
@@ -183,7 +207,7 @@ const setActiveProviderAndPersist = createAsyncThunk(
 			// (re)check for enabled providers on hub
 			// note: this call should have no other data depedencies (e.g. siteId, enabledProviders, etc)
 			await dispatch(getEnabledProvidersHub());
-			// get snapsshots given the site and provider
+			// get snapshots given the site and provider
 			dispatch(getSnapshotsForActiveSiteProviderHub());
 
 			return siteId;
@@ -204,6 +228,7 @@ export {
 	getEnabledProvidersHub,
 	getSnapshotsForActiveSiteProviderHub,
 	setActiveProviderAndPersist,
+	setActiveProviderPersistAndUpdateSnapshots,
 	updateActiveSite,
 	updateActiveSiteAndDataSources,
 };
