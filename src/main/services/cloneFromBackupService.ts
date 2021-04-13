@@ -7,7 +7,7 @@ import type { DirResult } from 'tmp';
 import fs from 'fs-extra';
 import { getSiteDataFromDisk, camelCaseToSentence } from '../utils';
 import { getBackupSite } from '../hubQueries';
-import { cloneBackup as cloneResticBackup } from '../cli';
+import { restoreBackup as restoreResticBackup } from '../cli';
 import type { Site, Providers, GenericObject } from '../../types';
 import serviceState from './state';
 import { backupSQLDumpFile, IPCEVENTS } from '../../constants';
@@ -178,14 +178,13 @@ const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 };
 
 const cloneBackup = async (context: BackupMachineContext) => {
-	const { destinationSite, baseSite, provider, encryptionPassword, snapshotHash, tmpDirData } = context;
+	const { baseSite, provider, encryptionPassword, snapshotHash, tmpDirData } = context;
 
-	await cloneResticBackup({
-		destinationSite,
-		baseSite,
+	await restoreResticBackup({
+		site: baseSite,
 		provider,
 		encryptionPassword,
-		snapshotHash,
+		snapshotID: snapshotHash,
 		restoreDir: tmpDirData.name,
 	});
 };

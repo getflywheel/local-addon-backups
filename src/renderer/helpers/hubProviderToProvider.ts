@@ -19,7 +19,7 @@ export const hubProviderToProvider = (hubProvider: HubOAuthProviders) => {
 };
 
 /**
-* This maps from HubProviderRecord to Providers
+* Maps a HubProviderRecord object to a Provider enum
 *
 * @param hubProvider
 */
