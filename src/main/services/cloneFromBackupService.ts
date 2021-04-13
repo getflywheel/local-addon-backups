@@ -1,6 +1,6 @@
 import path from 'path';
 import { Machine, interpret, assign } from 'xstate';
-import { getServiceContainer } from '@getflywheel/local/main';
+import { getServiceContainer, formatSiteNicename, formatHomePath } from '@getflywheel/local/main';
 import { Site as LocalSiteModel, SiteStatus } from '@getflywheel/local';
 import tmp from 'tmp';
 import type { DirResult } from 'tmp';
@@ -11,14 +11,13 @@ import { cloneBackup as cloneResticBackup } from '../cli';
 import type { Site, Providers, GenericObject } from '../../types';
 import serviceState from './state';
 import { backupSQLDumpFile, IPCEVENTS } from '../../constants';
-import { formatHomePath } from '../../helpers/formatHomePath';
 
 import * as LocalMain from '@getflywheel/local/main';
 import * as Local from '@getflywheel/local';
 import shortid from 'shortid';
 
 const serviceContainer = getServiceContainer().cradle;
-const { localLogger, runSiteSQLCmd, importSQLFile, sendIPCEvent } = serviceContainer;
+const { localLogger, runSiteSQLCmd, importSQLFile, sendIPCEvent, siteProcessManager } = serviceContainer;
 
 const logger = localLogger.child({
 	thread: 'main',
@@ -58,6 +57,7 @@ const getCredentials = async (context: BackupMachineContext) => {
 	const { baseSite } = context;
 	const { localBackupRepoID } = getSiteDataFromDisk(baseSite.id);
 	const { uuid, password, id } = await getBackupSite(localBackupRepoID);
+
 	return {
 		encryptionPassword: password,
 		localBackupRepoID: uuid,
@@ -68,6 +68,9 @@ const getCredentials = async (context: BackupMachineContext) => {
 const setupDestinationSite = async (context: BackupMachineContext) => {
 	const { baseSite, newSiteName } = context;
 
+	// make sure we can safely use the name in site path and domain
+	const formattedSiteName = formatSiteNicename(newSiteName);
+
 	const dupID = shortid.generate();
 	const dupSite = new Local.Site(baseSite);
 
@@ -76,9 +79,9 @@ const setupDestinationSite = async (context: BackupMachineContext) => {
 	dupSite.id = dupID;
 	dupSite.name = newSiteName;
 
-	//@todo - make sure new site name gets translated to a domain safe and path safe string
-	dupSite.domain = `${newSiteName}.local`;
-	dupSite.path = path.join(localSitesDir, newSiteName);
+
+	dupSite.domain = `${formattedSiteName}.local`;
+	dupSite.path = path.join(localSitesDir, formattedSiteName);
 
 	serviceContainer.siteData.addSite(dupSite.id, dupSite);
 
@@ -375,8 +378,10 @@ export const cloneFromBackup = async (opts: {
 
 	const { baseSite, provider, snapshotHash, newSiteName } = opts;
 
+	const initialSiteStatus = siteProcessManager.getSiteStatus(baseSite);
+
 	return new Promise((resolve) => {
-		const machine = cloneMachine.withContext({ baseSite, provider, snapshotHash, newSiteName });
+		const machine = cloneMachine.withContext({ baseSite, provider, snapshotHash, newSiteName, initialSiteStatus });
 		const cloneFromBackupService = interpret(machine)
 			.onTransition((state) => {
 				sendIPCEvent(IPCEVENTS.BACKUP_STARTED);

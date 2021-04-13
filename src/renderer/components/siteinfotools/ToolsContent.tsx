@@ -2,20 +2,21 @@ import React from 'react';
 import styles from './ToolsContent.scss';
 import classnames from 'classnames';
 import { SnapshotsTableList } from './SnapshotsTableList';
-
+import type { Site } from '@getflywheel/local';
 interface Props {
 	className: string;
+	site: Site;
 }
 
-export const ToolsContent = ({ className }: Props) => {
-	return (
-		<div
-			className={classnames(
-				className,
-				styles.ToolsContent,
-			)}
-		>
-			<SnapshotsTableList />
+export const ToolsContent = ({ className, site }: Props) => (
+	<div
+		className={classnames(
+			className,
+			styles.ToolsContent,
+		)}
+	>
+		<div className={styles.SiteInfoToolsSection_Content}>
+			<SnapshotsTableList site={site}/>
 		</div>
-	);
-}
+	</div>
+);

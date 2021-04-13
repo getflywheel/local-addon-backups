@@ -41,7 +41,10 @@ const SiteInfoToolsSection = ({ site }: Props) => {
 	return (
 		<div className={styles.SiteInfoToolsSection}>
 			<ToolsHeader site={site} />
-			<ToolsContent className={styles.SiteInfoToolsSection_Content}/>
+			<ToolsContent
+				className={styles.SiteInfoToolsSection_Content}
+				site={site}
+			/>
 		</div>
 	);
 };
