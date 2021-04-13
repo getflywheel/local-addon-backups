@@ -14,7 +14,6 @@ import { ipcAsync } from '@getflywheel/local/renderer';
 import DateUtils from '../../helpers/DateUtils';
 import type { Site } from '@getflywheel/local';
 import { createBackupCloneModal } from '../BackupRestoreCloneModal';
-import { Providers } from '../../../types';
 import { selectors } from '../../store/selectors';
 interface Props {
 	site: Site;
@@ -87,18 +86,6 @@ const renderTextButton = (label: React.ReactNode) => (
 	</TextButton>
 );
 
-const onCloneModalSubmit = (baseSite: Site, newSiteName: string, provider: Providers, snapshotHash: string) => {
-	console.log(baseSite, newSiteName, provider, snapshotHash, 'hello this is tyler');
-
-	ipcAsync(
-		'backups:restore-site-clone',
-		baseSite,
-		newSiteName,
-		provider,
-		snapshotHash,
-	);
-};
-
 const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubProviderRecord) => (
 	<FlyDropdown
 		caret={false}
@@ -115,7 +102,6 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 			content: renderTextButton('Clone site from backup'),
 			label: 'Clone site from backup',
 			onClick: () => createBackupCloneModal(
-				onCloneModalSubmit,
 				site,
 				snapshot,
 				provider,
@@ -191,4 +177,4 @@ export const SnapshotsTableList = ({ site }: Props) => {
 			/>
 		</div>
 	);
-}
+};
