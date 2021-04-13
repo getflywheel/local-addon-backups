@@ -5,12 +5,7 @@ import { getEnabledBackupProviders, getBackupReposByProviderID, getBackupSnapsho
 import { createBackup } from './main/services/backupService';
 import { restoreFromBackup } from './main/services/restoreService';
 import { getSiteDataFromDisk } from './main/utils';
-
 import { cloneFromBackup } from './main/services/cloneFromBackupService';
-import shortid from 'shortid';
-import path from 'path';
-
-const serviceContainer = LocalMain.getServiceContainer().cradle;
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function (context): void {

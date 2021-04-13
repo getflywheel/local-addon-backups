@@ -93,10 +93,8 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 		items={[{
 			color: 'none',
 			content: renderTextButton('Restore site to this backup'),
-			onClick: () => ipcAsync(
-				'backups:restore-site-clone',
-				snapshot.hash,
-			),
+			label: 'Restore site to this backup',
+			onClick: () => console.log('onClick Restore'),
 		}, {
 			color: 'none',
 			content: renderTextButton('Clone site from backup'),
