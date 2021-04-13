@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import {
 	FlyModal,
@@ -9,32 +9,38 @@ import {
 } from '@getflywheel/local-components';
 import type { Site } from '@getflywheel/local';
 import classnames from 'classnames';
-import { useStoreSelector } from '../store/store';
 import styles from './BackupInfoModal.scss';
 import { BackupSnapshot, HubProviderRecord, Providers } from '../../types';
-import { getFilteredSiteFiles, getIgnoreFilePath } from '../../helpers/ignoreFilesPattern';
-import { selectors } from '../store/selectors';
 import { hubProviderRecordToProvider } from '../helpers/hubProviderToProvider';
-
+import { ipcAsync } from '@getflywheel/local/renderer';
 
 interface ModalContentsProps {
-	submitAction: (baseSite: Site, newSiteName: string, provider: Providers, snapshotHash: string) => void;
 	site: Site;
 	snapshot: BackupSnapshot;
 	provider: Providers;
 }
 
+const onCloneModalSubmit = (baseSite: Site, newSiteName: string, provider: Providers, snapshotHash: string) => {
+	ipcAsync(
+		'backups:restore-site-clone',
+		baseSite,
+		newSiteName,
+		provider,
+		snapshotHash,
+	);
+};
+
 export const ModalContents = (props: ModalContentsProps) => {
 	const [inputSiteNameData, setSiteNameData] = useState('');
 
-	const { submitAction, site, snapshot, provider } = props;
+	const { site, snapshot, provider } = props;
 
 	const onInputChange = (event) => {
 		setSiteNameData(event.target.value);
 	};
 
 	const onModalSubmit = () => {
-		submitAction(site, inputSiteNameData, provider, snapshot.hash);
+		onCloneModalSubmit(site, inputSiteNameData, provider, snapshot.hash);
 		FlyModal.onRequestClose();
 	};
 
@@ -75,11 +81,11 @@ export const ModalContents = (props: ModalContentsProps) => {
 };
 
 export const createBackupCloneModal = (
-	submitAction: (baseSite: Site, newSiteName: string, provider: Providers, snapshotHash: string) => void,
 	site: Site,
 	snapshot: BackupSnapshot,
 	provider: HubProviderRecord,
 ) => new Promise((resolve) => {
+
 	const onSubmit = (checked) => {
 		FlyModal.onRequestClose();
 
@@ -94,7 +100,6 @@ export const createBackupCloneModal = (
 			className={classnames('FlyModal')}
 		>
 			<ModalContents
-				submitAction={submitAction}
 				site={site}
 				snapshot={snapshot}
 				provider={newProvider}
