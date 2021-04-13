@@ -9,9 +9,16 @@ import {
 	VirtualTable,
 } from '@getflywheel/local-components';
 import { useStoreSelector } from '../../store/store';
-import type { BackupSnapshot } from '../../../types';
+import type { BackupSnapshot, HubProviderRecord } from '../../../types';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import DateUtils from '../../helpers/DateUtils';
+import type { Site } from '@getflywheel/local';
+import { createBackupCloneModal } from '../BackupRestoreCloneModal';
+import { Providers } from '../../../types';
+import { selectors } from '../../store/selectors';
+interface Props {
+	site: Site;
+}
 
 type ColKey = keyof BackupSnapshot;
 
@@ -80,7 +87,19 @@ const renderTextButton = (label: React.ReactNode) => (
 	</TextButton>
 );
 
-const renderCellMoreMenu = (snapshot: BackupSnapshot) => (
+const onCloneModalSubmit = (baseSite: Site, newSiteName: string, provider: Providers, snapshotHash: string) => {
+	console.log(baseSite, newSiteName, provider, snapshotHash, 'hello this is tyler');
+
+	ipcAsync(
+		'backups:restore-site-clone',
+		baseSite,
+		newSiteName,
+		provider,
+		snapshotHash,
+	);
+};
+
+const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubProviderRecord) => (
 	<FlyDropdown
 		caret={false}
 		className={styles.SnapshotsTableList_MoreDropdown}
@@ -94,7 +113,13 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot) => (
 		}, {
 			color: 'none',
 			content: renderTextButton('Clone site from backup'),
-			onClick: () => console.log('onClick'),
+			label: 'Clone site from backup',
+			onClick: () => createBackupCloneModal(
+				onCloneModalSubmit,
+				site,
+				snapshot,
+				provider,
+			),
 		}, {
 			color: 'none',
 			content: renderTextButton('Edit backup description'),
@@ -107,13 +132,13 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot) => (
 );
 
 const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
-	const { colKey, cellData, isHeader } = dataArgs;
+	const { colKey, cellData, isHeader, extraData } = dataArgs;
 	const snapshot = dataArgs.rowData as BackupSnapshot;
 
 	switch (colKey) {
 		case headerIndexByColKey['description']: return isHeader ? 'Description' : cellData;
-		case headerIndexByColKey['moremenu']: return isHeader ? '' : renderCellMoreMenu(snapshot);
-		case headerIndexByColKey['updatedAt']: return isHeader ? 'Created' : renderDate(cellData);
+		case headerIndexByColKey['moremenu']: return isHeader ? '' : renderCellMoreMenu(snapshot, extraData.site, extraData.provider);
+		case headerIndexByColKey['updatedAt']: return isHeader ? 'Created' : new Date(cellData).toLocaleDateString();
 	}
 
 	return (
@@ -123,11 +148,12 @@ const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 	);
 };
 
-export const SnapshotsTableList = () => {
+export const SnapshotsTableList = ({ site }: Props) => {
 	const {
 		isLoadingSnapshots,
 		snapshots,
 	} = useStoreSelector((state) => state.activeSite);
+	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 
 	if (isLoadingSnapshots) {
 		return (
@@ -153,6 +179,10 @@ export const SnapshotsTableList = () => {
 				cellRenderer={renderCell}
 				className={styles.SnapshotsTableList_VirtualTable}
 				data={snapshots}
+				extraData={{
+					site,
+					provider: activeSiteProvider,
+				}}
 				headers={headers}
 				headersCapitalize={'none'}
 				headersWeight={500}
