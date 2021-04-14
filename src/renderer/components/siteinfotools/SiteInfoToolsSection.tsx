@@ -6,8 +6,6 @@ import { useStoreSelector } from '../../store/store';
 import styles from './SiteInfoToolsSection.scss';
 import { ToolsHeader } from '../siteinfotools/ToolsHeader';
 import { ToolsContent } from '../siteinfotools/ToolsContent';
-import { ipcAsync } from '@getflywheel/local/renderer';
-import { Providers } from '../../../types';
 interface Props {
 	site: Site;
 }
