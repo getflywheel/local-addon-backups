@@ -102,8 +102,9 @@ export const ProviderDropdown = () => {
 			</span>
 			<FlyDropdown
 				className={styles.ProviderDropdown}
-				position="bottom"
+				classNameList={styles.ProviderDropdown_List}
 				items={dropdownItems}
+				position="bottom"
 			>
 				{enabledProviders.length && activeSiteProvider
 					? (
