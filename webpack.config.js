@@ -3,9 +3,7 @@ const path = require('path');
 const nodeExternals = require('webpack-node-externals');
 const { merge } = require('webpack-merge');
 const packageJson = require('./package.json');
-// const glob = require('glob');
 /* eslint-enable @typescript-eslint/no-var-requires */
-
 
 const commonConf = {
 	context: path.resolve(__dirname, 'src'),
@@ -92,7 +90,7 @@ const configs = [
 							options: {
 								importLoaders: 1,
 								modules: {
-									localIdentName: `${packageJson.name}_[local]_[hash:base64:5]_v${packageJson.version.replace(/\./g, '-')}`,
+									localIdentName: `${packageJson.name}_[local]_[hash:base64:5]`,
 								},
 							}
 						},
