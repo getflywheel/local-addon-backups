@@ -100,6 +100,7 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot) => (
 			content: renderTextButton('Edit backup description'),
 			onClick: () => console.log('onClick'),
 		}]}
+		popperOptions={{ popperOffsetModifier: { offset: [15, 0] } } }
 	>
 		<DotsIcon />
 	</FlyDropdown>

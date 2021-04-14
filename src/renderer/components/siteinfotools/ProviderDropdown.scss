@@ -40,24 +40,17 @@
 			z-index: 8;
 		}
 	}
+}
 
-	ul {
-		// shift to right hack for overflow issue cutoff (need to eventually use React Portals)
-		$shiftRight: 30px;
+.ProviderDropdown_List {
+	> li {
+		$paddingVert: 10px;
+		padding: $paddingVert 20px;
 
-		margin-right: -$shiftRight;
-		margin-top: 10px;
-
-		&::before {
-			right: 11px + $shiftRight;
-		}
-
-		> li {
-			padding: 20px;
-
-			&:last-child:not(:first-child) {
-				@include theme-border-top;
-			}
+		&:last-child:not(:first-child) {
+			margin-top: $paddingVert;
+			padding-top: $paddingVert + 10px;
+			@include theme-border-top;
 		}
 	}
 }
