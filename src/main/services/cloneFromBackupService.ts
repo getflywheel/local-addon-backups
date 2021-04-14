@@ -219,17 +219,11 @@ const setErroredStatus = (context: BackupMachineContext) => {
 		message: `There was an error while restoring your backup.`,
 	});
 
-	// siteProcessManager.restart(destinationSite);
+	siteProcessManager.restart(destinationSite);
 };
 
 // eslint-disable-next-line new-cap
 const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
-	/**
-	 * - Does restic have a delete flag like rsync?
-	 * - Is there a better way that does require doubling disk footprint?
-	 * - keep ignored files present when restoring
-	 * - can we create a new temp database to import the backup dump? And then if successful then rename it and delete the original
-	 */
 	{
 		id: 'cloneFromBackup',
 		initial: 'gettingBackupCredentials',
