@@ -13,6 +13,7 @@ import styles from './BackupInfoModal.scss';
 import { BackupSnapshot, HubProviderRecord, Providers } from '../../types';
 import { hubProviderRecordToProvider } from '../helpers/hubProviderToProvider';
 import { ipcAsync } from '@getflywheel/local/renderer';
+import { IPCASYNC_EVENTS } from '../../constants';
 
 interface ModalContentsProps {
 	site: Site;
@@ -22,7 +23,7 @@ interface ModalContentsProps {
 
 const onCloneModalSubmit = (baseSite: Site, newSiteName: string, provider: Providers, snapshotHash: string) => {
 	ipcAsync(
-		'backups:restore-site-clone',
+		IPCASYNC_EVENTS.CLONE_BACKUP,
 		baseSite,
 		newSiteName,
 		provider,

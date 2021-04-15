@@ -4,6 +4,7 @@ import { State } from './store';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import { selectors } from './selectors';
 import { hubProviderToProvider } from '../helpers/hubProviderToProvider';
+import { IPCASYNC_EVENTS } from '../../constants';
 
 const localStorageKey = 'local-addon-backups-activeProviders';
 
@@ -24,7 +25,7 @@ const localStorageKey = 'local-addon-backups-activeProviders';
 			 * @param provider
 			 */
 			return await ipcAsync(
-				'backups:backup-site',
+				IPCASYNC_EVENTS.START_BACKUP,
 				state.activeSite.id,
 				rsyncProviderId,
 				description,
@@ -49,7 +50,7 @@ const localStorageKey = 'local-addon-backups-activeProviders';
 		const state = getState() as State;
 
 		try {
-			const providers: HubProviderRecord[] = await ipcAsync('backups:enabled-providers');
+			const providers: HubProviderRecord[] = await ipcAsync(IPCASYNC_EVENTS.GET_ENABLED_PROVIDERS);
 
 			return providers;
 		}
@@ -80,7 +81,7 @@ const getSnapshotsForActiveSiteProviderHub = createAsyncThunk(
 			}
 
 			return await ipcAsync(
-				'backups:provider-snapshots',
+				IPCASYNC_EVENTS.GET_SITE_PROVIDER_BACKUPS,
 				activeSite.id,
 				providers.activeProviders[activeSite.id],
 			) as BackupSnapshot[];

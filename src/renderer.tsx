@@ -8,6 +8,7 @@ import { Providers } from './types';
 import { store } from './renderer/store/store';
 import SiteInfoToolsSection from './renderer/components/siteinfotools/SiteInfoToolsSection';
 import { setupListeners } from './renderer/helpers/setupListeners';
+import { IPCASYNC_EVENTS } from './constants';
 
 const titlize = (a: string) => startCase(a.toLowerCase());
 
@@ -106,8 +107,8 @@ export default function (context): void {
 		{
 			onClick: async () => {
 				console.log(
-					await ipcAsync('backups:enabled-providers'),
-				)
+					await ipcAsync(IPCASYNC_EVENTS.GET_ENABLED_PROVIDERS),
+				);
 			},
 			buttonText: 'enabled providers',
 			description: 'get the old enabled providers',
