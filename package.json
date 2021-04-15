@@ -74,7 +74,7 @@
   },
   "dependencies": {
     "@electron/remote": "^1.1.0",
-    "@getflywheel/local-components": "^15.7.2",
+    "@getflywheel/local-components": "^16.0.0",
     "@reduxjs/toolkit": "^1.5.0",
     "classnames": "^2.2.6",
     "dateformat": "^3.0.3",
