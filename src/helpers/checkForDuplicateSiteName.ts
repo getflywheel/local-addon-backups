@@ -6,30 +6,20 @@ const {
 } = serviceContainer;
 
 export const checkForDuplicateSiteName = async (siteName: string, formattedSiteName: string) => {
-	const siteDomains = [];
-	const siteNames = [];
 	const coolSitedata = siteData.getSites();
 	const newSiteDomain = `${formattedSiteName}.local`;
-
-	for (const site of Object.values(coolSitedata)) {
-		siteDomains.push(site.domain);
-		siteNames.push(site.name);
-	}
 
 	let matchesExistingDomains = false;
 	let matchesExistingNames = false;
 
-	siteDomains.forEach((domain) => {
-		if (domain === newSiteDomain) {
+	for (const site of Object.values(coolSitedata)) {
+		if (site.domain === newSiteDomain) {
 			matchesExistingDomains = true;
 		}
-	});
-
-	siteNames.forEach((name) => {
-		if (name === siteName) {
+		if (site.name === siteName) {
 			matchesExistingNames = true;
 		}
-	});
+	}
 
 	if (matchesExistingNames || matchesExistingDomains) {
 		return true;
