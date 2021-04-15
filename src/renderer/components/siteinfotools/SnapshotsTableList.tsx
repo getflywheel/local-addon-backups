@@ -10,7 +10,6 @@ import {
 } from '@getflywheel/local-components';
 import { useStoreSelector } from '../../store/store';
 import type { BackupSnapshot, HubProviderRecord } from '../../../types';
-import { ipcAsync } from '@getflywheel/local/renderer';
 import DateUtils from '../../helpers/DateUtils';
 import type { Site } from '@getflywheel/local';
 import { createBackupCloneModal } from '../BackupRestoreCloneModal';
@@ -39,16 +38,16 @@ const headerIndexByColKey = headers.reduce(
 );
 
 const formatDateTimeAmPm = (date: Date): string => {
-	var hours = date.getHours();
-	var minutes: number | string = date.getMinutes();
-	var ampm = hours >= 12 ? 'p.m.' : 'a.m.';
+	let hours = date.getHours();
+	let minutes: number | string = date.getMinutes();
+	const ampm = hours >= 12 ? 'p.m.' : 'a.m.';
 	hours = hours % 12;
 	hours = hours ? hours : 12; // the hour '0' should be '12'
 	minutes = minutes < 10 ? '0' + minutes : minutes;
-	var strTime = hours + ':' + minutes + ' ' + ampm;
+	const strTime = hours + ':' + minutes + ' ' + ampm;
 
 	return strTime;
-}
+};
 
 const formatDate = (updatedAt: string) => {
 	const date = new Date(updatedAt);
@@ -57,7 +56,7 @@ const formatDate = (updatedAt: string) => {
 		DateUtils.format(date.getTime(), 'mon', 'd', 'yyyy', ' '),
 		formatDateTimeAmPm(date),
 	];
-}
+};
 
 const renderDate = (updatedAt: string) => {
 	const [monDayYear, time] = formatDate(updatedAt);
@@ -71,8 +70,8 @@ const renderDate = (updatedAt: string) => {
 				{ time }
 			</div>
 		</div>
-	)
-}
+	);
+};
 
 const renderTextButton = (label: React.ReactNode) => (
 	<TextButton
@@ -117,12 +116,13 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 
 const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 	const { colKey, cellData, isHeader, extraData } = dataArgs;
+	const { site, provider } = extraData;
 	const snapshot = dataArgs.rowData as BackupSnapshot;
 
 	switch (colKey) {
 		case headerIndexByColKey['description']: return isHeader ? 'Description' : cellData;
-		case headerIndexByColKey['moremenu']: return isHeader ? '' : renderCellMoreMenu(snapshot, extraData.site, extraData.provider);
-		case headerIndexByColKey['updatedAt']: return isHeader ? 'Created' : new Date(cellData).toLocaleDateString();
+		case headerIndexByColKey['moremenu']: return isHeader ? '' : renderCellMoreMenu(snapshot, site, provider);
+		case headerIndexByColKey['updatedAt']: return isHeader ? 'Created' : renderDate(cellData);
 	}
 
 	return (

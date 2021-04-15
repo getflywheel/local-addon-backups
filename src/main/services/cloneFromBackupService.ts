@@ -1,7 +1,7 @@
 import path from 'path';
 import { Machine, interpret, assign } from 'xstate';
 import { getServiceContainer, formatSiteNicename, formatHomePath } from '@getflywheel/local/main';
-import { Site as LocalSiteModel, SiteStatus } from '@getflywheel/local';
+import { Site as LocalSiteModel } from '@getflywheel/local';
 import tmp from 'tmp';
 import type { DirResult } from 'tmp';
 import fs from 'fs-extra';
@@ -17,7 +17,16 @@ import * as Local from '@getflywheel/local';
 import shortid from 'shortid';
 
 const serviceContainer = getServiceContainer().cradle;
-const { localLogger, runSiteSQLCmd, importSQLFile, sendIPCEvent, siteProcessManager } = serviceContainer;
+const {
+	localLogger,
+	runSiteSQLCmd,
+	importSQLFile,
+	sendIPCEvent,
+	siteProcessManager,
+	changeSiteDomain,
+	siteData,
+	siteDatabase,
+} = serviceContainer;
 
 const logger = localLogger.child({
 	thread: 'main',
@@ -27,7 +36,6 @@ const logger = localLogger.child({
 interface BackupMachineContext {
 	baseSite: Site;
 	destinationSite?: Site;
-	initialSiteStatus?: SiteStatus;
 	provider: Providers;
 	snapshotHash: string;
 	encryptionPassword?: string;
@@ -83,7 +91,7 @@ const setupDestinationSite = async (context: BackupMachineContext) => {
 	dupSite.domain = `${formattedSiteName}.local`;
 	dupSite.path = path.join(localSitesDir, formattedSiteName);
 
-	serviceContainer.siteData.addSite(dupSite.id, dupSite);
+	siteData.addSite(dupSite.id, dupSite);
 
 	const destinationSite = getSiteDataFromDisk(dupSite.id);
 
@@ -107,7 +115,7 @@ const provisionSite = async (context: BackupMachineContext) => {
 
 	const siteToProvision = new Local.Site(destinationSite);
 
-	await serviceContainer.siteProvisioner.provision(siteToProvision);
+	await siteProvisioner.provision(siteToProvision);
 };
 
 const importDatabase = async (context: BackupMachineContext) => {
@@ -151,17 +159,15 @@ const searchReplace = async (context: BackupMachineContext) => {
 
 	const siteToSearchReplace = new Local.Site(destinationSite);
 
-	await serviceContainer.siteProcessManager.restart(siteToSearchReplace);
-
 	LocalMain.sendIPCEvent('updateSiteStatus', destinationSite.id, 'provisioning');
 
 	LocalMain.sendIPCEvent('updateSiteMessage', destinationSite.id, 'Changing site domain');
 
-	await serviceContainer.siteDatabase.waitForDB(siteToSearchReplace);
+	await siteDatabase.waitForDB(siteToSearchReplace);
 
-	await serviceContainer.changeSiteDomain.changeSiteDomainToHost(siteToSearchReplace);
+	await changeSiteDomain.changeSiteDomainToHost(siteToSearchReplace);
 
-	await serviceContainer.siteProcessManager.restart(siteToSearchReplace);
+	await siteProcessManager.restart(siteToSearchReplace);
 };
 
 const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
@@ -207,19 +213,20 @@ const onErrorFactory = () => ({
 });
 
 const setErroredStatus = (context: BackupMachineContext) => {
-	const { initialSiteStatus, destinationSite } = context;
-	sendIPCEvent('updateSiteStatus', destinationSite.id, initialSiteStatus);
+	const { destinationSite, baseSite } = context;
+
+	sendIPCEvent('deleteSite', { destinationSite, trashFiles: true });
+	sendIPCEvent('goToRoute', `/main/site-info/${baseSite.id}`);
 
 	sendIPCEvent('showSiteBanner', {
-		siteID: destinationSite.id,
-		id: 'site-errored-backup',
+		siteID: baseSite.id,
+		id: 'site-errored-backup-cloning',
 		variant: 'error',
 		icon: 'warning',
-		title: 'Backup errored!',
-		message: `There was an error while restoring your backup.`,
+		title: 'Cloning from backup errored!',
+		message: `There was an error while restoring your backup. Check your Local log for more details.`,
 	});
 
-	siteProcessManager.restart(destinationSite);
 };
 
 // eslint-disable-next-line new-cap
@@ -230,7 +237,6 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 		context: {
 			baseSite: null,
 			destinationSite: null,
-			initialSiteStatus: null,
 			provider: null,
 			snapshotHash: null,
 			encryptionPassword: null,
@@ -371,10 +377,8 @@ export const cloneFromBackup = async (opts: {
 
 	const { baseSite, provider, snapshotHash, newSiteName } = opts;
 
-	const initialSiteStatus = siteProcessManager.getSiteStatus(baseSite);
-
 	return new Promise((resolve) => {
-		const machine = cloneMachine.withContext({ baseSite, provider, snapshotHash, newSiteName, initialSiteStatus });
+		const machine = cloneMachine.withContext({ baseSite, provider, snapshotHash, newSiteName });
 		const cloneFromBackupService = interpret(machine)
 			.onTransition((state) => {
 				sendIPCEvent(IPCEVENTS.BACKUP_STARTED);
