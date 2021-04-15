@@ -1,6 +1,4 @@
-import path from 'path';
 import { exec } from 'child_process';
-import fs from 'fs-extra';
 import { isString } from 'lodash';
 import { formatHomePath, getServiceContainer } from '@getflywheel/local/main';
 import getOSBins from './getOSBins';

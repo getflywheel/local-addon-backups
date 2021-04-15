@@ -1,6 +1,6 @@
 import path from 'path';
 import { Machine, interpret, assign } from 'xstate';
-import { getServiceContainer } from '@getflywheel/local/main';
+import { getServiceContainer, formatHomePath } from '@getflywheel/local/main';
 import { Site as LocalSiteModel, SiteStatus } from '@getflywheel/local';
 import tmp from 'tmp';
 import type { DirResult } from 'tmp';
@@ -12,7 +12,6 @@ import type { Site, Providers, GenericObject } from '../../types';
 import serviceState from './state';
 import { backupSQLDumpFile, IPCEVENTS } from '../../constants';
 import { getFilteredSiteFiles } from '../../helpers/ignoreFilesPattern';
-import { formatHomePath } from '../../helpers/formatHomePath';
 
 const serviceContainer = getServiceContainer().cradle;
 const { localLogger, runSiteSQLCmd, importSQLFile, sendIPCEvent, siteProcessManager } = serviceContainer;

@@ -11,10 +11,11 @@ import { restoreBackup as restoreResticBackup } from '../cli';
 import type { Site, Providers, GenericObject } from '../../types';
 import serviceState from './state';
 import { backupSQLDumpFile, IPCEVENTS } from '../../constants';
-
 import * as LocalMain from '@getflywheel/local/main';
 import * as Local from '@getflywheel/local';
 import shortid from 'shortid';
+import { checkForDuplicateSiteName } from '../../helpers/checkForDuplicateSiteName';
+import { dialog } from 'electron';
 
 const serviceContainer = getServiceContainer().cradle;
 const {
@@ -26,6 +27,7 @@ const {
 	changeSiteDomain,
 	siteData,
 	siteDatabase,
+	siteProvisioner,
 } = serviceContainer;
 
 const logger = localLogger.child({
@@ -61,6 +63,8 @@ interface BackupMachineSchema {
 	}
 }
 
+const siteDomainTakenError = 'Site name is already taken by another site!';
+
 const getCredentials = async (context: BackupMachineContext) => {
 	const { baseSite } = context;
 	const { localBackupRepoID } = getSiteDataFromDisk(baseSite.id);
@@ -78,6 +82,13 @@ const setupDestinationSite = async (context: BackupMachineContext) => {
 
 	// make sure we can safely use the name in site path and domain
 	const formattedSiteName = formatSiteNicename(newSiteName);
+
+	const duplicateSiteName = checkForDuplicateSiteName(newSiteName, formattedSiteName);
+
+	if (duplicateSiteName) {
+		dialog.showErrorBox('Invalid Site Name', `${newSiteName} is already taken by another site. Please choose a different name.`);
+		throw new Error(siteDomainTakenError);
+	}
 
 	const dupID = shortid.generate();
 	const dupSite = new Local.Site(baseSite);
@@ -203,6 +214,15 @@ const removeTmpDir = async (context: BackupMachineContext) => {
 	tmpDirData.removeCallback();
 };
 
+const onBaseSiteErrorFactory = () => ({
+	target: 'failed',
+	actions: [
+		'setErrorOnContext',
+		'logError',
+		'setErroredBaseSite',
+	],
+});
+
 const onErrorFactory = () => ({
 	target: 'failed',
 	actions: [
@@ -211,6 +231,21 @@ const onErrorFactory = () => ({
 		'setErroredStatus',
 	],
 });
+
+const setErroredBaseSite = (context: BackupMachineContext) => {
+	const { baseSite } = context;
+
+	sendIPCEvent('goToRoute', `/main/site-info/${baseSite.id}`);
+
+	sendIPCEvent('showSiteBanner', {
+		siteID: baseSite.id,
+		id: 'site-errored-backup-cloning',
+		variant: 'error',
+		icon: 'warning',
+		title: 'Cloning errored!',
+		message: `There was an error while cloning your backup!`,
+	});
+};
 
 const setErroredStatus = (context: BackupMachineContext) => {
 	const { destinationSite, baseSite } = context;
@@ -258,7 +293,7 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 							localBackupRepoID,
 						})),
 					},
-					onError: onErrorFactory(),
+					onError: onBaseSiteErrorFactory(),
 				},
 			},
 			 setupDestinationSite: {
@@ -272,7 +307,7 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 							},
 						),
 					},
-					onError: onErrorFactory(),
+					onError: onBaseSiteErrorFactory(),
 				},
 			},
 			/**
@@ -354,6 +389,7 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 				logger.error(event.data);
 			},
 			setErroredStatus,
+			setErroredBaseSite,
 		},
 	},
 );
