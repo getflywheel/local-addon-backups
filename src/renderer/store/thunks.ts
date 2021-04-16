@@ -11,7 +11,7 @@ const localStorageKey = 'local-addon-backups-activeProviders';
 /**
  * Request to backup site to Hub.
  */
- const backupSite = createAsyncThunk(
+const backupSite = createAsyncThunk(
 	'backupSite',
 	async (description:string, { rejectWithValue, getState }) => {
 		const state = getState() as State;
@@ -30,16 +30,46 @@ const localStorageKey = 'local-addon-backups-activeProviders';
 				rsyncProviderId,
 				description,
 			) as null;
-		}
-		catch (error) {
+		} catch (error) {
 			if (!error.response) {
 				throw error;
 			}
 
 			return rejectWithValue(error.response);
 		}
-	}
- );
+	},
+);
+
+/**
+ * Request to restore backup from to site from Hub.
+ */
+const restoreSite = createAsyncThunk(
+	'restoreSite',
+	async (snapshotID: string, { rejectWithValue, getState }) => {
+		const state = getState() as State;
+		const rsyncProviderId = hubProviderToProvider(selectors.selectActiveProvider(state)?.id);
+		try {
+			/**
+			 * Light convenience wrapper around ipcAsync to backup a site
+			 *
+			 * @param site
+			 * @param provider
+			 */
+			return await ipcAsync(
+				IPCASYNC_EVENTS.RESTORE_BACKUP,
+				state.activeSite.id,
+				rsyncProviderId,
+				snapshotID,
+			) as null;
+		} catch (error) {
+			if (!error.response) {
+				throw error;
+			}
+
+			return rejectWithValue(error.response);
+		}
+	},
+);
 
 /**
  * Get provider data from Hub.
@@ -225,6 +255,7 @@ const setActiveProviderAndPersist = createAsyncThunk(
 
 export {
 	backupSite,
+	restoreSite,
 	initActiveProvidersFromLocalStorage,
 	getEnabledProvidersHub,
 	getSnapshotsForActiveSiteProviderHub,

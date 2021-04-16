@@ -99,7 +99,6 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 					<BackupRestoreContents
 						site={site}
 						snapshot={snapshot}
-						provider={provider}
 					/>
 				),
 			),
