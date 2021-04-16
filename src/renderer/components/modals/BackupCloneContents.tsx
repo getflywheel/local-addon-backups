@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import ReactDOM from 'react-dom';
 import {
 	FlyModal,
 	Title,
@@ -8,17 +7,16 @@ import {
 	BasicInput,
 } from '@getflywheel/local-components';
 import type { Site } from '@getflywheel/local';
-import classnames from 'classnames';
 import styles from './BackupInfoModal.scss';
-import { BackupSnapshot, HubProviderRecord, Providers } from '../../types';
-import { hubProviderRecordToProvider } from '../helpers/hubProviderToProvider';
+import { BackupSnapshot, HubProviderRecord, Providers } from '../../../types';
+import { hubProviderRecordToProvider } from '../../helpers/hubProviderToProvider';
 import { ipcAsync } from '@getflywheel/local/renderer';
-import { IPCASYNC_EVENTS } from '../../constants';
+import { IPCASYNC_EVENTS } from '../../../constants';
 
 interface ModalContentsProps {
 	site: Site;
 	snapshot: BackupSnapshot;
-	provider: Providers;
+	provider: HubProviderRecord;
 }
 
 const onCloneModalSubmit = (baseSite: Site, newSiteName: string, provider: Providers, snapshotHash: string) => {
@@ -31,17 +29,19 @@ const onCloneModalSubmit = (baseSite: Site, newSiteName: string, provider: Provi
 	);
 };
 
-export const ModalContents = (props: ModalContentsProps) => {
+export const BackupCloneContents = (props: ModalContentsProps) => {
 	const [inputSiteNameData, setSiteNameData] = useState('');
 
 	const { site, snapshot, provider } = props;
+
+	const providerRecordConvertedToProvider = hubProviderRecordToProvider(provider);
 
 	const onInputChange = (event) => {
 		setSiteNameData(event.target.value);
 	};
 
 	const onModalSubmit = () => {
-		onCloneModalSubmit(site, inputSiteNameData, provider, snapshot.hash);
+		onCloneModalSubmit(site, inputSiteNameData, providerRecordConvertedToProvider, snapshot.hash);
 		FlyModal.onRequestClose();
 	};
 
@@ -80,32 +80,3 @@ export const ModalContents = (props: ModalContentsProps) => {
 		</div>
 	);
 };
-
-export const createBackupCloneModal = (
-	site: Site,
-	snapshot: BackupSnapshot,
-	provider: HubProviderRecord,
-) => new Promise((resolve) => {
-
-	const onSubmit = (checked) => {
-		FlyModal.onRequestClose();
-
-		resolve(checked);
-	};
-
-	const newProvider = hubProviderRecordToProvider(provider);
-
-	ReactDOM.render(
-		<FlyModal
-			contentLabel='Back up site'
-			className={classnames('FlyModal')}
-		>
-			<ModalContents
-				site={site}
-				snapshot={snapshot}
-				provider={newProvider}
-			/>
-		</FlyModal>,
-		document.getElementById('popup-container'),
-	);
-});
