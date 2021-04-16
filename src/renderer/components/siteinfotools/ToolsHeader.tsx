@@ -6,7 +6,8 @@ import { PrimaryButton } from '@getflywheel/local-components';
 import { actions, store, useStoreSelector } from '../../store/store';
 import { launchBrowserToHubBackups } from '../../helpers/launchBrowser';
 import { selectors } from '../../store/selectors';
-import { createBackupModal } from '../BackupInfoModal';
+import { createModal } from '../createModal';
+import { BackupContents } from '../modals/BackupContents';
 
 interface Props {
 	site: Site;
@@ -30,7 +31,15 @@ export const ToolsHeader = (props: Props) => {
 				? (
 					<PrimaryButton
 						disabled={!activeSiteProvider || backupRunning}
-						onClick={() => createBackupModal(backupSite, site, snapshots)}
+						onClick={() => createModal(
+							() => (
+								<BackupContents
+									submitAction={backupSite}
+									site={site}
+									snapshots={snapshots}
+								/>
+							),
+						)}
 						privateOptions={{
 							padding: 'm',
 						}}

@@ -12,7 +12,9 @@ import { useStoreSelector } from '../../store/store';
 import type { BackupSnapshot, HubProviderRecord } from '../../../types';
 import DateUtils from '../../helpers/DateUtils';
 import type { Site } from '@getflywheel/local';
-import { createBackupCloneModal } from '../BackupRestoreCloneModal';
+import { BackupCloneContents } from '../modals/BackupCloneContents';
+import { BackupRestoreContents } from '../modals/BackupRestoreContents';
+import { createModal } from '../createModal';
 import { selectors } from '../../store/selectors';
 interface Props {
 	site: Site;
@@ -92,16 +94,26 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 		items={[{
 			color: 'none',
 			content: renderTextButton('Restore site to this backup'),
-			label: 'Restore site to this backup',
-			onClick: () => console.log('onClick Restore'),
+			onClick: () => createModal(
+				() => (
+					<BackupRestoreContents
+						site={site}
+						snapshot={snapshot}
+						provider={provider}
+					/>
+				),
+			),
 		}, {
 			color: 'none',
 			content: renderTextButton('Clone site from backup'),
-			label: 'Clone site from backup',
-			onClick: () => createBackupCloneModal(
-				site,
-				snapshot,
-				provider,
+			onClick: () => createModal(
+				() => (
+					<BackupCloneContents
+						site={site}
+						snapshot={snapshot}
+						provider={provider}
+					/>
+				),
 			),
 		}, {
 			color: 'none',

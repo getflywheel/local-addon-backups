@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
 import {
 	FlyModal,
 	Title,
@@ -8,25 +7,22 @@ import {
 	BasicInput,
 } from '@getflywheel/local-components';
 import type { Site } from '@getflywheel/local';
-import classnames from 'classnames';
 import getSize from 'get-folder-size';
-
-import styles from './BackupInfoModal.scss';
-import { BackupSnapshot } from '../../types';
-import { getFilteredSiteFiles, getIgnoreFilePath } from '../../helpers/ignoreFilesPattern';
+import styles from './BackupContents.scss';
+import { BackupSnapshot } from '../../../types';
+import { getFilteredSiteFiles, getIgnoreFilePath } from '../../../helpers/ignoreFilesPattern';
 
 const remote = require('@electron/remote');
 
 const { shell } = remote;
 
-
-interface ModalContentsProps {
+export interface ModalContentsProps {
 	submitAction: (description) => void;
 	site: Site;
 	snapshots: BackupSnapshot[];
 }
 
-const ModalContents = (props: ModalContentsProps) => {
+export const BackupContents = (props: ModalContentsProps) => {
 	const { submitAction, site, snapshots } = props;
 
 	const [siteSizeInMB, setSiteSizeInMB] = useState(0);
@@ -108,29 +104,3 @@ const ModalContents = (props: ModalContentsProps) => {
 			</div>
 		</div>);
 };
-
-export const createBackupModal = (
-	submitAction: (description) => void,
-	site: Site,
-	snapshots: BackupSnapshot[],
-) => new Promise((resolve) => {
-	const onSubmit = (checked) => {
-		FlyModal.onRequestClose();
-
-		resolve(checked);
-	};
-
-	ReactDOM.render(
-		<FlyModal
-			contentLabel='Back up site'
-			className={classnames('FlyModal')}
-		>
-			<ModalContents
-				submitAction={submitAction}
-				site={site}
-				snapshots={snapshots}
-			/>
-		</FlyModal>,
-		document.getElementById('popup-container'),
-	);
-});
