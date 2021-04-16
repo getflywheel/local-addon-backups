@@ -282,7 +282,6 @@ export const restoreFromBackup = async (opts: { site: Site; provider: Providers;
 	}
 
 	const { site, provider, snapshotID } = opts;
-
 	return new Promise((resolve) => {
 		const initialSiteStatus = siteProcessManager.getSiteStatus(site);
 

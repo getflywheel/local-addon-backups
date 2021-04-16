@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { FlyModal } from '@getflywheel/local-components';
-
 import classnames from 'classnames';
 
 export const createModal = (

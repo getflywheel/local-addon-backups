@@ -1,55 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
 	FlyModal,
 	Title,
 	PrimaryButton,
 	TextButton,
-	BasicInput,
 } from '@getflywheel/local-components';
 import type { Site } from '@getflywheel/local';
-import getSize from 'get-folder-size';
-import styles from './BackupInfoModal.scss';
+import styles from './BackupContents.scss';
 import { BackupSnapshot } from '../../../types';
-import { getFilteredSiteFiles, getIgnoreFilePath } from '../../../helpers/ignoreFilesPattern';
-
-const remote = require('@electron/remote');
-
-const { shell } = remote;
-
+import { actions, store } from '../../store/store';
 export interface ModalContentsProps {
-	submitAction?: (description) => void;
-	site?: Site;
-	snapshots?: BackupSnapshot[];
-	snapshot?: BackupSnapshot;
+	site: Site;
+	snapshot: BackupSnapshot;
 }
 
 export const BackupRestoreContents = (props: ModalContentsProps) => {
-	const { submitAction, site, snapshots } = props;
+	const { site, snapshot } = props;
 
-	const [siteSizeInMB, setSiteSizeInMB] = useState(0);
-	const [inputDescriptionData, setInputData] = useState('');
-
-	useEffect(() => {
-		const fetchSiteSizeInMB = async () => {
-			const filesToEstimate = getFilteredSiteFiles(site);
-			let siteSize = 0;
-
-			filesToEstimate.forEach(async (dir) => {
-				await getSize(dir, (err, size: number) => {
-					siteSize += (size / 1024 / 1024);
-					setSiteSizeInMB(siteSize);
-				});
-			});
-		};
-		fetchSiteSizeInMB();
-	}, []);
-
-	const onInputChange = (event) => {
-		setInputData(event.target.value);
-	};
-
-	const onModalSubmit = () => {
-		submitAction(inputDescriptionData);
+	const onModalSubmit = (snapshotID: string) => {
+		store.dispatch(actions.restoreSite(snapshotID));
 		FlyModal.onRequestClose();
 	};
 
@@ -64,9 +33,10 @@ export const BackupRestoreContents = (props: ModalContentsProps) => {
 				<Title size="m" className="align-left">Backup details</Title>
 
 				<Title size="s" style={{ paddingBottom: 15, paddingTop: 15 }}>Created at:</Title>
-
+				<p style={{ marginTop: 7 }}>{snapshot.updatedAt}</p>
 
 				<Title size="s" style={{ paddingTop: 15 }}>Description:</Title>
+				<p style={{ marginTop: 7 }}>{snapshot.status}</p>
 
 
 			</div>
@@ -83,7 +53,7 @@ export const BackupRestoreContents = (props: ModalContentsProps) => {
 
 				<PrimaryButton
 					style={{ marginTop: 0 }}
-					onClick={() => onModalSubmit()}
+					onClick={() => onModalSubmit(snapshot.hash)}
 				>
 					Restore Backup
 				</PrimaryButton>

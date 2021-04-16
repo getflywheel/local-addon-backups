@@ -7,7 +7,7 @@ import {
 	BasicInput,
 } from '@getflywheel/local-components';
 import type { Site } from '@getflywheel/local';
-import styles from './BackupInfoModal.scss';
+import styles from './BackupContents.scss';
 import { BackupSnapshot, HubProviderRecord, Providers } from '../../../types';
 import { hubProviderRecordToProvider } from '../../helpers/hubProviderToProvider';
 import { ipcAsync } from '@getflywheel/local/renderer';

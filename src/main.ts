@@ -6,10 +6,10 @@ import { createBackup } from './main/services/backupService';
 import { restoreFromBackup } from './main/services/restoreService';
 import { getSiteDataFromDisk } from './main/utils';
 import { cloneFromBackup } from './main/services/cloneFromBackupService';
-import {  IPCASYNC_EVENTS } from './constants';
+import { IPCASYNC_EVENTS } from './constants';
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export default function (context): void {
+export default function (): void {
 	const listenerConfigs = [
 		{
 			channel: IPCASYNC_EVENTS.GET_ENABLED_PROVIDERS,
@@ -44,10 +44,9 @@ export default function (context): void {
 		},
 		{
 			channel: IPCASYNC_EVENTS.RESTORE_BACKUP,
-			callback: async (opts: { siteID: Site['id']; provider: Providers; snapshotID: string }) => {
-				const { siteID, ...rest } = opts;
+			callback: async (siteID: Site['id'], provider: Providers, snapshotID: string) => {
 				const site = getSiteDataFromDisk(siteID);
-				return restoreFromBackup({ site, ...rest });
+				return restoreFromBackup({ site, provider, snapshotID });
 			},
 		},
 		{
