@@ -161,4 +161,25 @@
 
 		return this.monthFullNames[index];
 	}
+
+	static formatDateTimeAmPm = (date: Date): string => {
+		let hours = date.getHours();
+		let minutes: number | string = date.getMinutes();
+		const ampm = hours >= 12 ? 'p.m.' : 'a.m.';
+		hours = hours % 12;
+		hours = hours ? hours : 12; // the hour '0' should be '12'
+		minutes = minutes < 10 ? '0' + minutes : minutes;
+		const strTime = hours + ':' + minutes + ' ' + ampm;
+
+		return strTime;
+	};
+
+	static formatDate = (updatedAt: string) => {
+		const date = new Date(updatedAt);
+
+		return [
+			DateUtils.format(date.getTime(), 'mon', 'd', 'yyyy', ' '),
+			DateUtils.formatDateTimeAmPm(date),
+		];
+	};
 }

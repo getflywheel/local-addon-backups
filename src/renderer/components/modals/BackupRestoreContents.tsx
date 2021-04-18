@@ -9,6 +9,7 @@ import type { Site } from '@getflywheel/local';
 import styles from './BackupContents.scss';
 import { BackupSnapshot } from '../../../types';
 import { actions, store } from '../../store/store';
+import DateUtils from '../../helpers/DateUtils';
 export interface ModalContentsProps {
 	site: Site;
 	snapshot: BackupSnapshot;
@@ -17,10 +18,16 @@ export interface ModalContentsProps {
 export const BackupRestoreContents = (props: ModalContentsProps) => {
 	const { site, snapshot } = props;
 
+	const { description } = snapshot.configObject;
+
 	const onModalSubmit = (snapshotID: string) => {
 		store.dispatch(actions.restoreSite(snapshotID));
 		FlyModal.onRequestClose();
 	};
+
+	const snapshotDateToString = snapshot.updatedAt.toString();
+
+	const [monDayYear, time] = DateUtils.formatDate(snapshotDateToString);
 
 	return (
 		<div>
@@ -32,13 +39,15 @@ export const BackupRestoreContents = (props: ModalContentsProps) => {
 
 				<Title size="m" className="align-left">Backup details</Title>
 
-				<Title size="s" style={{ paddingBottom: 15, paddingTop: 15 }}>Created at:</Title>
-				<p style={{ marginTop: 7 }}>{snapshot.updatedAt}</p>
+				<Title size="s" style={{ paddingTop: 10 }}>Created at:</Title>
+				<p>{monDayYear} {time} UTC</p>
 
-				<Title size="s" style={{ paddingTop: 15 }}>Description:</Title>
-				<p style={{ marginTop: 7 }}>{snapshot.status}</p>
-
-
+				{description &&
+					<>
+						<Title size="s" style={{ paddingTop: 10 }}>Description:</Title>
+						<p>{description}</p>
+					</>
+				}
 			</div>
 			<hr />
 
