@@ -70,6 +70,8 @@ export interface BackupSnapshot {
 	 * @todo find out if this can be typed with Date since Hub types this as DateTime
 	 */
 	updatedAt?: number;
+	config?: string;
+	configObject?: GenericObject;
 }
 
 export interface RcloneConfig {
