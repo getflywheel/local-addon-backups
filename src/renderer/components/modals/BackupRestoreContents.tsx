@@ -37,14 +37,14 @@ export const BackupRestoreContents = (props: ModalContentsProps) => {
 			<hr />
 			<div className={styles.AlignLeft}>
 
-				<Title size="m" className="align-left">Backup details</Title>
+				<Title size="m" className="align-left" container={{ margin: 'm 0' }}>Backup details</Title>
 
-				<Title size="s" style={{ paddingTop: 10 }}>Created at:</Title>
+				<Title size="s">Created at:</Title>
 				<p>{monDayYear} {time} UTC</p>
 
 				{description &&
 					<>
-						<Title size="s" style={{ paddingTop: 10 }}>Description:</Title>
+						<Title size="s" style={{ paddingTop: 20 }}>Description:</Title>
 						<p>{description}</p>
 					</>
 				}
