@@ -54,8 +54,8 @@ const renderTextButton = (label: React.ReactNode, value: React.ReactNode, deacti
 
 const renderDropdownConnectItem = (label?: string) => renderTextButton(
 	label,
-	<LoginIconExternalLinkSvg className={styles.TextButtonExternal_Svg} />
-)
+	<LoginIconExternalLinkSvg className={styles.TextButtonExternal_Svg} />,
+);
 
 const renderDropdownProviderItem = (provider?: HubProviderRecord, isActiveProvider?: boolean, ) => renderTextButton(
 	provider?.name,
@@ -86,11 +86,10 @@ export const ProviderDropdown = () => {
 			content: renderDropdownConnectItem('Add or Manage Provider'),
 			onClick: launchBrowserToHubBackups,
 		});
-	}
-	else {
+	} else {
 		dropdownItems.push({
 			color: 'none',
-			content: renderDropdownConnectItem(),
+			content: renderDropdownConnectItem('Connect Provider'),
 			onClick: launchBrowserToHubBackups,
 		});
 	}
@@ -113,7 +112,7 @@ export const ProviderDropdown = () => {
 							{activeSiteProvider.name}
 						</>
 					)
-					: "no provider"
+					: 'no provider'
 				}
 			</FlyDropdown>
 		</div>
