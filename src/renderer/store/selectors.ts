@@ -21,8 +21,29 @@ const selectActiveProvider = createSelector(
 );
 
 /**
+ * List of snapshots prepended with any currently backing up details.
+ */
+const selectSnapshotsPlusBackingupPlaceholder = createSelector(
+	[
+		(state: State) => state.activeSite.snapshots,
+		(state: State) => state.activeSite.backingUpMeta,
+	],
+	(snapshots, backingUpMeta) => {
+		if (backingUpMeta) {
+			return ([
+				backingUpMeta.snapshot,
+				...snapshots ?? [],
+			]);
+		}
+
+		return snapshots ?? [];
+	},
+);
+
+/**
  * Organized export of available selectors.
  */
 export const selectors = {
 	selectActiveProvider,
+	selectSnapshotsPlusBackingupPlaceholder,
 };

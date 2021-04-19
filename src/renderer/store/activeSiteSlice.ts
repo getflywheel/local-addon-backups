@@ -4,6 +4,7 @@ import {
 } from '@reduxjs/toolkit';
 import { BackupSnapshot } from '../../types';
 import {
+	backupSite,
 	getSnapshotsForActiveSiteProviderHub,
 	updateActiveSite,
 } from './thunks';
@@ -15,6 +16,12 @@ export const activeSiteSlice = createSlice({
 	name: 'activeSite',
 	initialState: {
 		id: null as string | null,
+		/** if currently backing up this is the meta/placeholder data else null since nothing is in progress **/
+		backingUpMeta: null as {
+			isInProgress: boolean,
+			isError: boolean,
+			snapshot: BackupSnapshot,
+		} | null,
 		isLoadingSnapshots: false,
 		snapshots: null as BackupSnapshot[] | null,
 	},
@@ -24,12 +31,50 @@ export const activeSiteSlice = createSlice({
 		},
 	},
 	extraReducers: (builder) => {
+		builder.addCase(backupSite.fulfilled, (state) => {
+			state.backingUpMeta = {
+				...state.backingUpMeta,
+				...{
+					isInProgress: false,
+					isError: false,
+				},
+			};
+		});
+		builder.addCase(backupSite.pending, (state, { meta }) => {
+			state.backingUpMeta = {
+				snapshot: {
+					configObject: {
+						description: meta.arg,
+					},
+					hash: 'placeholder-hash',
+					id: -1,
+					repoID: -1,
+					status: 'started',
+				},
+				isInProgress: true,
+				isError: false,
+			};
+		});
+		builder.addCase(backupSite.rejected, (state) => {
+			state.backingUpMeta = {
+				...state.backingUpMeta,
+				...{
+					isInProgress: false,
+					isError: true,
+				},
+			};
+		});
 		builder.addCase(getSnapshotsForActiveSiteProviderHub.fulfilled, (state, { payload }) => {
 			state.isLoadingSnapshots = false;
 			state.snapshots = payload ?? [];
 		});
-		builder.addCase(getSnapshotsForActiveSiteProviderHub.pending, (state ) => {
+		builder.addCase(getSnapshotsForActiveSiteProviderHub.pending, (state) => {
 			state.isLoadingSnapshots = true;
+
+			if (state.backingUpMeta) {
+				// clear out since we're not backing up right now
+				state.backingUpMeta = null;
+			}
 		});
 		builder.addCase(getSnapshotsForActiveSiteProviderHub.rejected, (state, action) => {
 			state.isLoadingSnapshots = false;

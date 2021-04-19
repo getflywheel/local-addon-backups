@@ -5,6 +5,7 @@ import {
 	FlyDropdown,
 	IVirtualTableCellRendererDataArgs,
 	LoadingIndicator,
+	Spinner,
 	TextButton,
 	VirtualTable,
 } from '@getflywheel/local-components';
@@ -39,7 +40,17 @@ const headerIndexByColKey = headers.reduce(
 	{} as {[key in ColKey]: number},
 );
 
-const renderDate = (updatedAt: string) => {
+const renderDate = (updatedAt: string, snapshot: BackupSnapshot) => {
+	if (snapshot.status === 'started') {
+		return (
+			<div>
+				<Spinner className={styles.SnapshotsTableList_DateCell_Spinner}>
+					In progress
+				</Spinner>
+			</div>
+		);
+	}
+
 	const [monDayYear, time] = DateUtils.formatDate(updatedAt);
 
 	return (
@@ -112,7 +123,7 @@ const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 	switch (colKey) {
 		case headerIndexByColKey['configObject']: return isHeader ? 'Description' : cellData.description;
 		case headerIndexByColKey['moremenu']: return isHeader ? '' : renderCellMoreMenu(snapshot, site, provider);
-		case headerIndexByColKey['updatedAt']: return isHeader ? 'Created' : renderDate(cellData);
+		case headerIndexByColKey['updatedAt']: return isHeader ? 'Created' : renderDate(cellData, snapshot);
 	}
 
 	return (
@@ -125,9 +136,9 @@ const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 export const SnapshotsTableList = ({ site }: Props) => {
 	const {
 		isLoadingSnapshots,
-		snapshots,
 	} = useStoreSelector((state) => state.activeSite);
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
+	const snapshotsPlusBackingupPlaceholder = useStoreSelector(selectors.selectSnapshotsPlusBackingupPlaceholder);
 
 	if (isLoadingSnapshots) {
 		return (
@@ -137,7 +148,7 @@ export const SnapshotsTableList = ({ site }: Props) => {
 		);
 	}
 
-	if (!snapshots?.length) {
+	if (!snapshotsPlusBackingupPlaceholder?.length) {
 		return (
 			<div className={styles.SnapshotsTableList_EmptyCont}>
 				<span>
@@ -155,7 +166,7 @@ export const SnapshotsTableList = ({ site }: Props) => {
 			<VirtualTable
 				cellRenderer={renderCell}
 				className={styles.SnapshotsTableList_VirtualTable}
-				data={snapshots}
+				data={snapshotsPlusBackingupPlaceholder}
 				extraData={{
 					site,
 					provider: activeSiteProvider,
