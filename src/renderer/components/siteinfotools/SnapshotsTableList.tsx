@@ -141,7 +141,10 @@ export const SnapshotsTableList = ({ site }: Props) => {
 		return (
 			<div className={styles.SnapshotsTableList_EmptyCont}>
 				<span>
-					There are no backups created for this site yet.
+					{activeSiteProvider
+						? `There are no backups created on ${activeSiteProvider.name} for this site yet.`
+						: 'There are no backups created for this site yet.'
+					}
 				</span>
 			</div>
 		);
