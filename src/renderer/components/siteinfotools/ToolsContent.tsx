@@ -15,8 +15,6 @@ export const ToolsContent = ({ className, site }: Props) => (
 			styles.ToolsContent,
 		)}
 	>
-		<div className={styles.SiteInfoToolsSection_Content}>
-			<SnapshotsTableList site={site}/>
-		</div>
+		<SnapshotsTableList site={site}/>
 	</div>
 );
