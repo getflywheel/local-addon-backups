@@ -27,6 +27,20 @@
 	line-height: 21px;
 }
 
+.SnapshotsTableList_DateCell_Spinner {
+	font-weight: $font-weight-500-medium;
+
+	svg {
+		width: 11px;
+		height: 13px;
+		margin: 0 10px 0 0;
+
+		path {
+			fill: $gray75;
+		}
+	}
+}
+
 .SnapshotsTableList_DateCell_MonDayYear {
 	font-weight: $font-weight-500-medium;
 }
