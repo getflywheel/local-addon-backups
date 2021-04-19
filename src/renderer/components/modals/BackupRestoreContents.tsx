@@ -1,4 +1,5 @@
 import React from 'react';
+import classnames from 'classnames';
 import {
 	FlyModal,
 	Title,
@@ -35,7 +36,10 @@ export const BackupRestoreContents = (props: ModalContentsProps) => {
 			<p style={{ marginTop: 7 }}>We’ll roll back your site to the selected backup. Please note your site will be locked until the backup has finished being restored.</p>
 
 			<hr />
-			<div className={styles.AlignLeft}>
+			<div className={classnames(
+				styles.AlignLeft,
+				styles.RestoreModalContents,
+			)}>
 
 				<Title size="m" className="align-left" container={{ margin: 'm 0' }}>Backup details</Title>
 
