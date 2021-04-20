@@ -48,6 +48,13 @@ interface BackupMachineSchema {
 
 const getCredentials = async (context: BackupMachineContext) => {
 	const { site } = context;
+
+	sendIPCEvent('updateSiteStatus', site.id, 'restoring_backup');
+
+	sendIPCEvent('selectSite', site.id, true, true);
+
+	sendIPCEvent('updateSiteMessage', site.id, 'Restoring backup');
+
 	const { localBackupRepoID } = getSiteDataFromDisk(site.id);
 	const { uuid, password, id } = await getBackupSite(localBackupRepoID);
 
@@ -124,13 +131,6 @@ const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 
 const restoreBackup = async (context: BackupMachineContext) => {
 	const { site, provider, encryptionPassword, snapshotID, tmpDirData } = context;
-
-	sendIPCEvent('updateSiteStatus', site.id, 'restoring_backup');
-
-	sendIPCEvent('updateSiteMessage', site.id, {
-		label: 'Restoring backup...',
-		stripes: true,
-	});
 
 	await restoreResticBackup({
 		site,
