@@ -19,26 +19,22 @@ export const activeSiteSlice = createSlice({
 		/** if currently backing up this is the meta/placeholder data else null since nothing is in progress **/
 		backingUpMeta: null as {
 			isInProgress: boolean,
-			isError: boolean,
 			snapshot: BackupSnapshot,
 		} | null,
 		isLoadingSnapshots: false,
 		snapshots: null as BackupSnapshot[] | null,
 	},
 	reducers: {
+		dismissError: (state) => {
+			state.backingUpMeta = null;
+		},
 		setActiveSiteID: (state, action: PayloadAction<string>) => {
 			state.id = action.payload;
 		},
 	},
 	extraReducers: (builder) => {
 		builder.addCase(backupSite.fulfilled, (state) => {
-			state.backingUpMeta = {
-				...state.backingUpMeta,
-				...{
-					isInProgress: false,
-					isError: false,
-				},
-			};
+			state.backingUpMeta = null;
 		});
 		builder.addCase(backupSite.pending, (state, { meta }) => {
 			state.backingUpMeta = {
@@ -52,15 +48,18 @@ export const activeSiteSlice = createSlice({
 					status: 'started',
 				},
 				isInProgress: true,
-				isError: false,
 			};
 		});
 		builder.addCase(backupSite.rejected, (state) => {
 			state.backingUpMeta = {
-				...state.backingUpMeta,
+				...{
+					snapshot: {
+						...state.backingUpMeta.snapshot,
+						status: 'errored',
+					},
+				},
 				...{
 					isInProgress: false,
-					isError: true,
 				},
 			};
 		});

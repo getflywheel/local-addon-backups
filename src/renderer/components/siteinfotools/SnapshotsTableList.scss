@@ -27,13 +27,28 @@
 	line-height: 21px;
 }
 
+.SnapshotsTableList_DateCell_WarningCont {
+	display: flex;
+	align-items: center;
+	color: $red;
+	font-weight: $font-weight-500-medium;
+
+	svg {
+		margin-right: 5px;
+
+		path {
+			fill: $red;
+		}
+	}
+}
+
 .SnapshotsTableList_DateCell_Spinner {
 	font-weight: $font-weight-500-medium;
 
 	svg {
 		width: 11px;
 		height: 13px;
-		margin: 0 10px 0 0;
+		margin: 0 5px 0 0 !important;
 
 		path {
 			fill: $gray75;
