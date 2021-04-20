@@ -76,7 +76,7 @@ async function execPromise (cmd: string, site: Site, env: { [key: string]: strin
 					...env,
 					PATH: `${bins.binDir}:${process.env.PATH}`,
 				},
-				cwd: formatHomePath(site.path),
+				cwd: `${formatHomePath(site.path)}`,
 			},
 			(error, stdout, stderr) => {
 				/**
@@ -164,7 +164,7 @@ export async function initRepo ({ provider, encryptionPassword, localBackupRepoI
 		];
 
 		return await execPromiseWithRcloneContext({
-			cmd: `${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} init ${flags.join(' ')}`,
+			cmd: `'${bins.restic}' ${makeRepoFlag(provider, localBackupRepoID)} init ${flags.join(' ')}`,
 			site,
 			provider,
 			encryptionPassword,
@@ -218,7 +218,7 @@ Fatal: wrong password or no key found
 		/**
 		 * This passes "." as the path since we cwd of the shell to the site
 		 */
-		cmd: `${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} ${flags.join(' ')} backup .`,
+		cmd: `'${bins.restic}' ${makeRepoFlag(provider, localBackupRepoID)} ${flags.join(' ')} backup .`,
 		site,
 		provider,
 		encryptionPassword,
@@ -245,7 +245,7 @@ export async function restoreBackup (options: RestoreFromBackupOptions) {
 	];
 
 	return execPromiseWithRcloneContext({
-		cmd: `${bins.restic} ${makeRepoFlag(provider, localBackupRepoID)} restore ${snapshotID} ${flags.join(' ')} `,
+		cmd: `'${bins.restic}' ${makeRepoFlag(provider, localBackupRepoID)} restore ${snapshotID} ${flags.join(' ')} `,
 		site,
 		provider,
 		encryptionPassword,
