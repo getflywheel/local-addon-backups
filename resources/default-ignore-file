@@ -30,5 +30,3 @@ wp-content/upgrade
 wp-content/cache
 
 .yarn
-
-logs

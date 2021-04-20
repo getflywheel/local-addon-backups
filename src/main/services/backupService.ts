@@ -55,7 +55,7 @@ interface BackupMachineSchema {
 }
 
 const createDatabaseSnapshot = async (context: BackupMachineContext) => {
-	const { site, initialSiteStatus } = context;
+	const { site } = context;
 
 	sendIPCEvent('updateSiteStatus', site.id, 'exporting_db');
 
@@ -355,7 +355,6 @@ export const createBackup = async (site: Site, provider: Providers, description:
 				sendIPCEvent(IPCEVENTS.BACKUP_STARTED);
 				const status = camelCaseToSentence(state.value as string);
 				logger.info(`${status} [site id: ${site.id}]`);
-				sendIPCEvent('updateSiteStatus', site.id, status);
 			})
 			.onDone(() => backupService.stop())
 			.onStop(() => {
