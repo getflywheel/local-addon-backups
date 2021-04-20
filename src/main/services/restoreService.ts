@@ -125,6 +125,13 @@ const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 const restoreBackup = async (context: BackupMachineContext) => {
 	const { site, provider, encryptionPassword, snapshotID, tmpDirData } = context;
 
+	sendIPCEvent('updateSiteStatus', site.id, 'restoring_backup');
+
+	sendIPCEvent('updateSiteMessage', site.id, {
+		label: 'Restoring backup...',
+		stripes: true,
+	});
+
 	await restoreResticBackup({
 		site,
 		provider,
@@ -135,11 +142,20 @@ const restoreBackup = async (context: BackupMachineContext) => {
 };
 
 const removeTmpDir = async (context: BackupMachineContext) => {
-	const { tmpDirData } = context;
+	const { tmpDirData, site } = context;
 
 	// removeCallback will error if the tmp directory is not empty
 	fs.emptyDirSync(tmpDirData.name);
 	tmpDirData.removeCallback();
+
+	sendIPCEvent('showSiteBanner', {
+		siteID: site.id,
+		variant: 'success',
+		icon: false,
+		id: 'site-backup-restored',
+		title: 'Backup restore completed!',
+		message: `The restore for ${site.name} has been successfully completed.`,
+	});
 };
 
 const onErrorFactory = () => ({
@@ -292,13 +308,7 @@ export const restoreFromBackup = async (opts: { site: Site; provider: Providers;
 				sendIPCEvent(IPCEVENTS.BACKUP_STARTED);
 
 				const actionLabel = camelCaseToSentence(state.value as string);
-				logger.info(actionLabel);
-
-				sendIPCEvent('updateSiteStatus', site.id, state.value);
-				sendIPCEvent('updateSiteMessage', site.id, {
-					label: actionLabel,
-					stripes: true,
-				});
+				logger.info(`${actionLabel} [site id: ${site.id}]`);
 			})
 			.onDone(() => restoreService.stop())
 			.onStop(() => {
@@ -310,6 +320,8 @@ export const restoreFromBackup = async (opts: { site: Site; provider: Providers;
 				siteProcessManager.restart(siteModel);
 
 				sendIPCEvent(IPCEVENTS.BACKUP_COMPLETED);
+
+				sendIPCEvent('updateSiteStatus', site.id, initialSiteStatus);
 
 				if (error) {
 					resolve({ error });
