@@ -100,3 +100,16 @@ export enum RestoreStates {
 	finished = 'finished',
 	failed = 'failed',
 }
+
+export enum CloneFromBackupStates {
+	creatingTmpDir = 'creatingTmpDir',
+	setupDestinationSite = 'setupDestinationSite',
+	gettingBackupCredentials = 'gettingBackupCredentials',
+	cloningBackup = 'cloningBackup',
+	movingSiteFromTmpDir = 'movingSiteFromTmpDir',
+	provisioningSite = 'provisioningSite',
+	restoringDatabase = 'restoringDatabase',
+	searchReplaceDomain = 'searchReplaceDomain',
+	finished = 'finished',
+	failed = 'failed',
+}

@@ -9,6 +9,7 @@ import { getSiteDataFromDisk, camelCaseToSentence } from '../utils';
 import { getBackupSite } from '../hubQueries';
 import { restoreBackup as restoreResticBackup } from '../cli';
 import type { Site, Providers, GenericObject } from '../../types';
+import { CloneFromBackupStates } from '../../types';
 import serviceState from './state';
 import { backupSQLDumpFile, IPCEVENTS } from '../../constants';
 import * as LocalMain from '@getflywheel/local/main';
@@ -50,16 +51,16 @@ interface BackupMachineContext {
 
 interface BackupMachineSchema {
 	states: {
-		creatingTmpDir: GenericObject;
-		setupDestinationSite: GenericObject;
-		gettingBackupCredentials: GenericObject;
-		cloningBackup: GenericObject;
-		movingSiteFromTmpDir: GenericObject;
-		provisioningSite: GenericObject;
-		restoringDatabase: GenericObject;
-		searchReplaceDomain: GenericObject;
-		finished: GenericObject;
-		failed: GenericObject;
+		[CloneFromBackupStates.creatingTmpDir]: GenericObject;
+		[CloneFromBackupStates.setupDestinationSite]: GenericObject;
+		[CloneFromBackupStates.gettingBackupCredentials]: GenericObject;
+		[CloneFromBackupStates.cloningBackup]: GenericObject;
+		[CloneFromBackupStates.movingSiteFromTmpDir]: GenericObject;
+		[CloneFromBackupStates.provisioningSite]: GenericObject;
+		[CloneFromBackupStates.restoringDatabase]: GenericObject;
+		[CloneFromBackupStates.searchReplaceDomain]: GenericObject;
+		[CloneFromBackupStates.finished]: GenericObject;
+		[CloneFromBackupStates.failed]: GenericObject;
 	}
 }
 
@@ -224,7 +225,7 @@ const onBaseSiteErrorFactory = () => ({
 });
 
 const onErrorFactory = () => ({
-	target: 'failed',
+	target: [CloneFromBackupStates.failed],
 	actions: [
 		'setErrorOnContext',
 		'logError',
@@ -268,7 +269,7 @@ const setErroredStatus = (context: BackupMachineContext) => {
 const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 	{
 		id: 'cloneFromBackup',
-		initial: 'gettingBackupCredentials',
+		initial: CloneFromBackupStates.gettingBackupCredentials,
 		context: {
 			baseSite: null,
 			destinationSite: null,
@@ -282,11 +283,11 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			newSiteName: null,
 		},
 		states: {
-			gettingBackupCredentials: {
+			[CloneFromBackupStates.gettingBackupCredentials]: {
 				invoke: {
 					src: (context, event) => getCredentials(context),
 					onDone: {
-						target: 'setupDestinationSite',
+						target: CloneFromBackupStates.setupDestinationSite,
 						actions: assign((context, { data: { encryptionPassword, backupSiteID, localBackupRepoID } }) => ({
 							encryptionPassword,
 							backupSiteID,
@@ -296,11 +297,11 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onError: onBaseSiteErrorFactory(),
 				},
 			},
-			 setupDestinationSite: {
+			 [CloneFromBackupStates.setupDestinationSite]: {
 				invoke: {
 					src: (context, event) => setupDestinationSite(context),
 					onDone: {
-						target: 'creatingTmpDir',
+						target: CloneFromBackupStates.creatingTmpDir,
 						actions: assign(
 							{
 								destinationSite: (_, event) => event.data.destinationSite,
@@ -313,11 +314,11 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			/**
 			 * @todo refactor this into an action or something else since createTmpDir technically does not need to be async
 			 */
-			creatingTmpDir: {
+			[CloneFromBackupStates.creatingTmpDir]: {
 				invoke: {
 					src: (context, event) => createTmpDir(),
 					onDone: {
-						target: 'cloningBackup',
+						target: CloneFromBackupStates.cloningBackup,
 						actions: assign({
 							tmpDirData: (_, event) => event.data.tmpDirData,
 						}),
@@ -325,56 +326,56 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onError: onErrorFactory(),
 				},
 			},
-			cloningBackup: {
+			[CloneFromBackupStates.cloningBackup]: {
 				invoke: {
 					src: (context, event) => cloneBackup(context),
 					onDone: {
-						target: 'movingSiteFromTmpDir',
+						target: CloneFromBackupStates.movingSiteFromTmpDir,
 					},
 					onError: onErrorFactory(),
 				},
 			},
-			movingSiteFromTmpDir: {
+			[CloneFromBackupStates.movingSiteFromTmpDir]: {
 				invoke: {
 					src: (context, event) => moveSiteFromTmpDir(context),
 					onDone: {
-						target: 'provisioningSite',
+						target: CloneFromBackupStates.provisioningSite,
 					},
 					onError: onErrorFactory(),
 				},
 			},
-			provisioningSite: {
+			[CloneFromBackupStates.provisioningSite]: {
 				invoke: {
 					src: (context) => provisionSite(context),
 					onDone: {
-						target: 'restoringDatabase',
+						target: CloneFromBackupStates.restoringDatabase,
 					},
 					onError: onErrorFactory(),
 				},
 			},
-			restoringDatabase: {
+			[CloneFromBackupStates.restoringDatabase]: {
 				invoke: {
 					src: (context) => importDatabase(context),
 					onDone: {
-						target: 'searchReplaceDomain',
+						target: CloneFromBackupStates.searchReplaceDomain,
 					},
 					onError: onErrorFactory(),
 				},
 			},
-			searchReplaceDomain: {
+			[CloneFromBackupStates.searchReplaceDomain]: {
 				invoke: {
 					src: (context) => searchReplace(context),
 					onDone: {
-						target: 'finished',
+						target: CloneFromBackupStates.finished,
 					},
 					onError: onErrorFactory(),
 				},
 			},
-			finished: {
+			[CloneFromBackupStates.finished]: {
 				type: 'final',
 				entry: 'removeTmpDir',
 			},
-			failed: {
+			[CloneFromBackupStates.failed]: {
 				type: 'final',
 			},
 		},
