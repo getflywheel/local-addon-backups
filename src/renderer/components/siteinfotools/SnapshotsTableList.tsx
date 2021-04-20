@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from './SnapshotsTableList.scss';
 import {
+	CircleWarnIcon,
 	DotsIcon,
 	FlyDropdown,
 	IVirtualTableCellRendererDataArgs,
@@ -9,7 +10,7 @@ import {
 	TextButton,
 	VirtualTable,
 } from '@getflywheel/local-components';
-import { useStoreSelector } from '../../store/store';
+import { actions, store, useStoreSelector } from '../../store/store';
 import type { BackupSnapshot, HubProviderRecord } from '../../../types';
 import DateUtils from '../../helpers/DateUtils';
 import type { Site } from '@getflywheel/local';
@@ -31,15 +32,6 @@ const headers: React.ComponentProps<typeof VirtualTable>['headers'] = [
 	{ key: 'moremenu', value: '', className: styles.SnapshotsTableList_Column_More },
 ];
 
-// protected _headers = [
-// 	{ key: 'locked', value: '', className: styles.MagicSyncViewer_Column_Locked },
-// 	{ key: 'selected', value: 'Is Selected', className: styles.MagicSyncViewer_Column_Selected },
-// 	{ key: 'filename', value: 'Filename', className: styles.MagicSyncViewer_Column_Filename },
-// 	{ key: 'localInfoStatus', value: 'Local', className: styles.MagicSyncViewer_Column_LocalDate },
-// 	{ key: 'gtlt', value: '', className: styles.MagicSyncViewer_Column_DateIcons },
-// 	{ key: 'remoteSiteInfoStatus', value: 'tbd', className: styles.MagicSyncViewer_Column_RemoteSiteDate },
-// ];
-
 const renderDate = (updatedAt: string, snapshot: BackupSnapshot) => {
 	if (snapshot.status === 'started') {
 		return (
@@ -47,6 +39,14 @@ const renderDate = (updatedAt: string, snapshot: BackupSnapshot) => {
 				<Spinner className={styles.SnapshotsTableList_DateCell_Spinner}>
 					In progress
 				</Spinner>
+			</div>
+		);
+	} if (snapshot.status === 'errored') {
+		return (
+			<div
+				className={styles.SnapshotsTableList_DateCell_WarningCont}>
+				<CircleWarnIcon />
+				Failed
 			</div>
 		);
 	}
@@ -77,43 +77,74 @@ const renderTextButton = (label: React.ReactNode) => (
 	</TextButton>
 );
 
-const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubProviderRecord) => (
-	<FlyDropdown
-		caret={false}
-		className={styles.SnapshotsTableList_MoreDropdown}
-		items={[{
-			color: 'none',
-			content: renderTextButton('Restore site to this backup'),
-			onClick: () => createModal(
-				() => (
-					<BackupRestoreContents
-						site={site}
-						snapshot={snapshot}
-					/>
+const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubProviderRecord) => {
+	const items: React.ComponentProps<typeof FlyDropdown>['items'] = [];
+
+	switch(snapshot.status) {
+		case 'started':
+		case 'running':
+			break;
+		case 'errored':
+			items.push({
+				color: 'none',
+				content: renderTextButton('Retry'),
+				onClick: () => store.dispatch(actions.backupSite(snapshot.configObject.description)),
+			});
+			items.push({
+				color: 'none',
+				content: renderTextButton('Dismiss'),
+				onClick: () => store.dispatch(actions.dismissError()),
+			});
+			break;
+		case 'complete':
+		default:
+			items.push({
+				color: 'none',
+				content: renderTextButton('Restore site to this backup'),
+				onClick: () => createModal(
+					() => (
+						<BackupRestoreContents
+							site={site}
+							snapshot={snapshot}
+						/>
+					),
 				),
-			),
-		}, {
-			color: 'none',
-			content: renderTextButton('Clone site from backup'),
-			onClick: () => createModal(
-				() => (
-					<BackupCloneContents
-						site={site}
-						snapshot={snapshot}
-						provider={provider}
-					/>
+			});
+			items.push({
+				color: 'none',
+				content: renderTextButton('Clone site from backup'),
+				onClick: () => createModal(
+					() => (
+						<BackupCloneContents
+							site={site}
+							snapshot={snapshot}
+							provider={provider}
+						/>
+					),
 				),
-			),
-		}, {
-			color: 'none',
-			content: renderTextButton('Edit backup description'),
-			onClick: () => console.log('onClick'),
-		}]}
-		popperOptions={{ popperOffsetModifier: { offset: [15, 0] } } }
-	>
-		<DotsIcon />
-	</FlyDropdown>
-);
+			});
+			items.push({
+				color: 'none',
+				content: renderTextButton('Edit backup description'),
+				onClick: () => console.log('onClick'), // todo - crum
+			});
+	}
+
+	if (!items.length) {
+		return null;
+	}
+
+	return (
+		<FlyDropdown
+			caret={false}
+			className={styles.SnapshotsTableList_MoreDropdown}
+			items={items}
+			popperOptions={{popperOffsetModifier: {offset: [15, 0]}}}
+		>
+			<DotsIcon/>
+		</FlyDropdown>
+	);
+};
 
 const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 	const { colKey, cellData, isHeader, extraData } = dataArgs;
