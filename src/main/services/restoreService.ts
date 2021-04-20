@@ -176,7 +176,7 @@ const setErroredStatus = (context: BackupMachineContext) => {
 		id: 'site-errored-backup',
 		variant: 'error',
 		icon: 'warning',
-		title: 'Backup errored!',
+		title: 'Restore errored!',
 		message: `There was an error while restoring your backup.`,
 	});
 
