@@ -45,6 +45,20 @@
 	font-weight: $font-weight-500-medium;
 }
 
+.SnapshotsTableList_Column_Created {
+	flex: 0 0 140px;
+}
+
+.SnapshotsTableList_Column_Description {
+	flex: 1 1 400px;
+	min-width: 200px;
+	margin-right: 20px;
+}
+
+.SnapshotsTableList_Column_More {
+	flex: 0 0 60px;
+}
+
 .SnapshotsTableList_MoreDropdown {
 	display: block;
 	margin-left: auto; // right-align

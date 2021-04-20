@@ -17,28 +17,28 @@ import { BackupCloneContents } from '../modals/BackupCloneContents';
 import { BackupRestoreContents } from '../modals/BackupRestoreContents';
 import { createModal } from '../createModal';
 import { selectors } from '../../store/selectors';
+
 interface Props {
 	site: Site;
 }
-
-type ColKey = keyof BackupSnapshot;
 
 /**
  * The columns defined in order and with the intended header text.
  */
 const headers: React.ComponentProps<typeof VirtualTable>['headers'] = [
-	'updatedAt',
-	'configObject',
-	'moremenu',
+	{ key: 'updatedAt', value: 'Created', className: styles.SnapshotsTableList_Column_Created },
+	{ key: 'configObject', value: 'Description', className: styles.SnapshotsTableList_Column_Description },
+	{ key: 'moremenu', value: '', className: styles.SnapshotsTableList_Column_More },
 ];
 
-const headerIndexByColKey = headers.reduce(
-	(acc, value, index) => {
-		acc[value as string] = index;
-		return acc;
-	},
-	{} as {[key in ColKey]: number},
-);
+// protected _headers = [
+// 	{ key: 'locked', value: '', className: styles.MagicSyncViewer_Column_Locked },
+// 	{ key: 'selected', value: 'Is Selected', className: styles.MagicSyncViewer_Column_Selected },
+// 	{ key: 'filename', value: 'Filename', className: styles.MagicSyncViewer_Column_Filename },
+// 	{ key: 'localInfoStatus', value: 'Local', className: styles.MagicSyncViewer_Column_LocalDate },
+// 	{ key: 'gtlt', value: '', className: styles.MagicSyncViewer_Column_DateIcons },
+// 	{ key: 'remoteSiteInfoStatus', value: 'tbd', className: styles.MagicSyncViewer_Column_RemoteSiteDate },
+// ];
 
 const renderDate = (updatedAt: string, snapshot: BackupSnapshot) => {
 	if (snapshot.status === 'started') {
@@ -120,10 +120,14 @@ const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 	const { site, provider } = extraData;
 	const snapshot = dataArgs.rowData as BackupSnapshot;
 
+	if (isHeader) {
+		return cellData;
+	}
+
 	switch (colKey) {
-		case headerIndexByColKey['configObject']: return isHeader ? 'Description' : cellData.description;
-		case headerIndexByColKey['moremenu']: return isHeader ? '' : renderCellMoreMenu(snapshot, site, provider);
-		case headerIndexByColKey['updatedAt']: return isHeader ? 'Created' : renderDate(cellData, snapshot);
+		case 'configObject': return cellData.description;
+		case 'moremenu': return renderCellMoreMenu(snapshot, site, provider);
+		case 'updatedAt': return renderDate(cellData, snapshot);
 	}
 
 	return (
