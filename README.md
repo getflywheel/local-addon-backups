@@ -1,4 +1,4 @@
-# Local Backups Add-on
+# Local Cloud Backups Add-on
 
 A [Local](https://localwp.com/) add on for backing up sites to a personal storage platform. This repository hosts the source code; if you simply want to use the add-on, download the latest version of local from [the release page](https://localwp.com/releases/) and install the add-on within the app.
 

@@ -1,6 +1,6 @@
 {
   "name": "local-addon-backups",
-  "productName": "Local Backups",
+  "productName": "Local Cloud Backups",
   "version": "1.0.0",
   "author": "Local Team",
   "keywords": [
@@ -9,7 +9,7 @@
   "bgColor": "#51bb7b",
   "icon": "icon.svg",
   "slug": "local-addon-backups",
-  "description": "A quick start to your amazing addon!",
+  "description": "The future of Cloud Backups in Local is here!",
   "renderer": "lib/renderer.js",
   "main": "lib/main.js",
   "repository": {

@@ -48,7 +48,7 @@ export const BackupCloneContents = (props: ModalContentsProps) => {
 	return (
 		<div>
 			<Title size="l" container={{ margin: 'm 0' }}>Create a clone of "{site.name}"</Title>
-			<p style={{ marginTop: 7 }}>We’ll create a new site that is an exact clone of your site at the time this backup was created.</p>
+			<p style={{ marginTop: 7 }}>We’ll create a new site that is an exact clone of your site at the time this Cloud Backup was created.</p>
 
 			<hr />
 

@@ -32,8 +32,8 @@ export const BackupRestoreContents = (props: ModalContentsProps) => {
 
 	return (
 		<div>
-			<Title size="l" container={{ margin: 'm 0' }}>Restore backup to "{site.name}"</Title>
-			<p style={{ marginTop: 7 }}>We’ll roll back your site to the selected backup. Please note your site will be locked until the backup has finished being restored.</p>
+			<Title size="l" container={{ margin: 'm 0' }}>Restore Cloud Backup to "{site.name}"</Title>
+			<p style={{ marginTop: 7 }}>We’ll roll back your site to the selected Cloud Backup. Please note your site will be locked until the backup has finished being restored.</p>
 
 			<hr />
 			<div className={classnames(
@@ -41,7 +41,9 @@ export const BackupRestoreContents = (props: ModalContentsProps) => {
 				styles.RestoreModalContents,
 			)}>
 
-				<Title size="m" className="align-left" container={{ margin: 'm 0' }}>Backup details</Title>
+				<Title size="m" className="align-left" container={{ margin: 'm 0' }}>
+					Cloud Backup details
+				</Title>
 
 				<Title size="s">Created at:</Title>
 				<p>{monDayYear} {time} UTC</p>
@@ -68,7 +70,7 @@ export const BackupRestoreContents = (props: ModalContentsProps) => {
 					style={{ marginTop: 0 }}
 					onClick={() => onModalSubmit(snapshot.hash)}
 				>
-					Restore Backup
+					Restore Cloud Backup
 				</PrimaryButton>
 			</div>
 		</div>);
