@@ -21,7 +21,7 @@ export default function (context): void {
 	hooks.addFilter('siteInfoToolsItem', (items) => {
 		items.push({
 			path: '/localBackups',
-			menuItem: 'Backups',
+			menuItem: 'Cloud Backups',
 			render: ({ site }) => (
 				<SiteInfoToolsSectionHOC site={site} />
 			),

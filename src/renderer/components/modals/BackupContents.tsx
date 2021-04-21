@@ -65,7 +65,7 @@ export const BackupContents = (props: ModalContentsProps) => {
 			<div className={styles.AlignLeft}>
 				{ !snapshots?.length &&
 				<div>
-					<Title size="m" className="align-left">Estimated size of first backup: {siteSizeInMB.toFixed(2)} MB</Title>
+					<Title size="m" className="align-left">Estimated size of first Cloud Backup: {siteSizeInMB.toFixed(2)} MB</Title>
 					<p style={{ marginTop: 7 }}>For large sites, backing up your site for the first time can take up to hours to complete. Your site will be locked while the database is backed up.</p>
 				</div>
 				}
@@ -99,7 +99,7 @@ export const BackupContents = (props: ModalContentsProps) => {
 					style={{ marginTop: 0 }}
 					onClick={() => onModalSubmit()}
 				>
-					Start Backup
+					Start Cloud Backup
 				</PrimaryButton>
 			</div>
 		</div>);

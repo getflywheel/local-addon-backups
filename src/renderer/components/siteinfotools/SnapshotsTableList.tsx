@@ -100,7 +100,7 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 		default:
 			items.push({
 				color: 'none',
-				content: renderTextButton('Restore site to this backup'),
+				content: renderTextButton('Restore site to this Cloud Backup'),
 				onClick: () => createModal(
 					() => (
 						<BackupRestoreContents
@@ -112,7 +112,7 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 			});
 			items.push({
 				color: 'none',
-				content: renderTextButton('Clone site from backup'),
+				content: renderTextButton('Clone site from Cloud Backup'),
 				onClick: () => createModal(
 					() => (
 						<BackupCloneContents
@@ -125,7 +125,7 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 			});
 			items.push({
 				color: 'none',
-				content: renderTextButton('Edit backup description'),
+				content: renderTextButton('Edit description'),
 				onClick: () => console.log('onClick'), // todo - crum
 			});
 	}
@@ -188,8 +188,8 @@ export const SnapshotsTableList = ({ site }: Props) => {
 			<div className={styles.SnapshotsTableList_EmptyCont}>
 				<span>
 					{activeSiteProvider
-						? `There are no backups created on ${activeSiteProvider.name} for this site yet.`
-						: 'There are no backups created for this site yet.'
+						? `There are no Cloud Backups created on ${activeSiteProvider.name} for this site yet.`
+						: 'There are no Cloud Backups created for this site yet.'
 					}
 				</span>
 			</div>
