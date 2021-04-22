@@ -5,6 +5,7 @@ import { ipcAsync } from '@getflywheel/local/renderer';
 import { selectors } from './selectors';
 import { hubProviderToProvider } from '../helpers/hubProviderToProvider';
 import { IPCASYNC_EVENTS } from '../../constants';
+import dispatchAsyncThunk from './helpers/dispatchAsyncUnwrapped.js';
 
 const localStorageKey = 'local-addon-backups-activeProviders';
 
@@ -188,7 +189,7 @@ const setActiveProviderPersistAndUpdateSnapshots = createAsyncThunk(
 	'setActiveProviderPersistAndUpdateSnapshots',
 	async (providerId: HubProviderRecord['id'], { dispatch, rejectWithValue }) => {
 		try {
-			await dispatch(setActiveProviderAndPersist(providerId));
+			await dispatchAsyncThunk(setActiveProviderAndPersist(providerId));
 			// asynchronous get snapshots given the site and provider
 			dispatch(getSnapshotsForActiveSiteProviderHub());
 
@@ -214,7 +215,7 @@ const updateActiveSite = createAsyncThunk(
 			const { providers: { activeProviders } } = getState() as State;
 
 			// do only once per runtime, if unpopulated, as redux and local-storage stays in sync after that
-			// note: this call should have no other data depedencies (e.g. siteId, enabledProviders, etc)
+			// note: this call should have no other data dependencies (e.g. siteId, enabledProviders, etc)
 			!activeProviders && dispatch(initActiveProvidersFromLocalStorage());
 
 			return siteId;
@@ -237,10 +238,10 @@ const updateActiveSiteAndDataSources = createAsyncThunk(
 	async (siteId: string | null, { dispatch, rejectWithValue }) => {
 		try {
 			// update active site details
-			await dispatch(updateActiveSite(siteId));
+			await dispatchAsyncThunk(updateActiveSite(siteId));
 			// (re)check for enabled providers on hub
-			// note: this call should have no other data depedencies (e.g. siteId, enabledProviders, etc)
-			await dispatch(getEnabledProvidersHub());
+			// note: this call should have no other data dependencies (e.g. siteId, enabledProviders, etc)
+			await dispatchAsyncThunk(getEnabledProvidersHub());
 			// get snapshots given the site and provider
 			dispatch(getSnapshotsForActiveSiteProviderHub());
 
