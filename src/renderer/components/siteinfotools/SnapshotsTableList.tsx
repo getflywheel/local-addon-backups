@@ -126,7 +126,7 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 			items.push({
 				color: 'none',
 				content: renderTextButton('Edit description'),
-				onClick: () => console.log('onClick'), // todo - crum
+				onClick: () => console.log('onClick'),
 			});
 	}
 

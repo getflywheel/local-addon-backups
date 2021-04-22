@@ -1,10 +1,12 @@
+@import '~@getflywheel/local-components/src/styles/_partials/index';
+
 .FlyModal {
 	background-color: blue;
 }
 
 .AlignLeft {
 	text-align: left !important;
-	color: #5D5E5E;
+	@include theme-color-gray-else-gray25;
 }
 
 .RestoreModalContents p {

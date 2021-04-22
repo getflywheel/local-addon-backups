@@ -4,14 +4,16 @@
 	display: flex;
 	flex-direction: column;
 	height: 100%;
+	@include __theme-background($gray1 !important, $gray-dark-alt !important);
 }
 
 .SiteInfoToolsSection_LoadingCont {
 	display: flex;
-	width: 100%;
-	height: 100%;
+	flex-direction: column;
 	align-items: center;
 	justify-content: center;
+	width: 100%;
+	height: 100%;
 }
 
 .SiteInfoToolsSection_Content {

@@ -7,7 +7,7 @@
 	height: 100%;
 	align-items: center;
 	justify-content: center;
-	color: $gray;
+	@include theme-color-gray-else-gray25;
 }
 
 .SnapshotsTableList_VirtualTable {

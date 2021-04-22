@@ -6,6 +6,8 @@ import { selectors } from './selectors';
 import { hubProviderToProvider } from '../helpers/hubProviderToProvider';
 import { IPCASYNC_EVENTS } from '../../constants';
 import dispatchAsyncThunk from './helpers/dispatchAsyncUnwrapped.js';
+import { showSiteBanner } from '../helpers/showSiteBanner';
+import { clearSiteBanner } from '../helpers/clearSiteBanner';
 
 const localStorageKey = 'local-addon-backups-activeProviders';
 
@@ -20,6 +22,9 @@ const getSnapshotsForActiveSiteProviderHub = createAsyncThunk(
 			providers,
 		} = getState() as State;
 
+		// clear out any previous banner caused by this thunk
+		clearSiteBanner(activeSite.id, getSnapshotsForActiveSiteProviderHub.typePrefix);
+
 		try {
 			if (!activeSite?.id) {
 				return null;
@@ -30,8 +35,16 @@ const getSnapshotsForActiveSiteProviderHub = createAsyncThunk(
 				activeSite.id,
 				providers.activeProviders[activeSite.id],
 			) as BackupSnapshot[];
-		}
-		catch (error) {
+		} catch (error) {
+			showSiteBanner({
+				icon: 'warning',
+				id: getSnapshotsForActiveSiteProviderHub.typePrefix,
+				message: `There was an issue retrieving your site's list of backups.`,
+				siteID: activeSite.id,
+				title: 'Cloud Backups Error',
+				variant: 'error',
+			});
+
 			if (!error.response) {
 				throw error;
 			}
@@ -114,13 +127,23 @@ const restoreSite = createAsyncThunk(
  */
 const getEnabledProvidersHub = createAsyncThunk(
 	'getEnabledProvidersHub',
-	async (_, { rejectWithValue }) => {
-		try {
-			const providers: HubProviderRecord[] = await ipcAsync(IPCASYNC_EVENTS.GET_ENABLED_PROVIDERS);
+	async (_, { getState, rejectWithValue }) => {
+		const siteId = (getState() as State).activeSite.id;
+		// clear out any previous banner caused by this thunk
+		clearSiteBanner(siteId, getEnabledProvidersHub.typePrefix);
 
-			return providers;
-		}
-		catch (error) {
+		try {
+			return await ipcAsync(IPCASYNC_EVENTS.GET_ENABLED_PROVIDERS) as HubProviderRecord[];
+		} catch (error) {
+			showSiteBanner({
+				icon: 'warning',
+				id: getEnabledProvidersHub.typePrefix,
+				message: 'There was an issue retrieving your backup providers.',
+				siteID: siteId,
+				title: 'Cloud Backups Error',
+				variant: 'error',
+			});
+
 			if (!error.response) {
 				throw error;
 			}
@@ -144,8 +167,7 @@ const initActiveProvidersFromLocalStorage = createAsyncThunk(
 				...state.providers.activeProviders,
 				...JSON.parse(window.localStorage.getItem(localStorageKey)),
 			};
-		}
-		catch (error) {
+		} catch (error) {
 			if (!error.response) {
 				throw error;
 			}
@@ -171,8 +193,7 @@ const setActiveProviderAndPersist = createAsyncThunk(
 			localStorage.setItem(localStorageKey, JSON.stringify(activeProviders));
 
 			return activeProviders;
-		}
-		catch (err) {
+		} catch (err) {
 			if (!err.response) {
 				throw err;
 			}
@@ -194,8 +215,7 @@ const setActiveProviderPersistAndUpdateSnapshots = createAsyncThunk(
 			dispatch(getSnapshotsForActiveSiteProviderHub());
 
 			return null;
-		}
-		catch (err) {
+		} catch (err) {
 			if (!err.response) {
 				throw err;
 			}
@@ -219,8 +239,7 @@ const updateActiveSite = createAsyncThunk(
 			!activeProviders && dispatch(initActiveProvidersFromLocalStorage());
 
 			return siteId;
-		}
-		catch (err) {
+		} catch (err) {
 			if (!err.response) {
 				throw err;
 			}
@@ -231,7 +250,7 @@ const updateActiveSite = createAsyncThunk(
 );
 
 /**
- * Chains together several thunks resulting from updating the active site.
+ * Chains together several thunks resulting from updating the active site that updates the providers and snapshots.
  */
 const updateActiveSiteAndDataSources = createAsyncThunk(
 	'updateActiveSiteAndDataSources',
@@ -246,13 +265,14 @@ const updateActiveSiteAndDataSources = createAsyncThunk(
 			dispatch(getSnapshotsForActiveSiteProviderHub());
 
 			return siteId;
-		}
-		catch (err) {
-			if (!err.response) {
-				throw err;
+		} catch (error) {
+			// Note: error banners are handled in the individual thunks therefore not here
+
+			if (!error.response) {
+				throw error;
 			}
 
-			return rejectWithValue(err.response);
+			return rejectWithValue(error.response);
 		}
 	},
 );

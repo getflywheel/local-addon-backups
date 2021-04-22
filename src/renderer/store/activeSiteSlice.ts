@@ -21,6 +21,7 @@ export const activeSiteSlice = createSlice({
 			isInProgress: boolean,
 			snapshot: BackupSnapshot,
 		} | null,
+		hasErrorLoadingSnapshots: false,
 		isLoadingSnapshots: false,
 		snapshots: null as BackupSnapshot[] | null,
 	},
@@ -69,23 +70,19 @@ export const activeSiteSlice = createSlice({
 		});
 		builder.addCase(getSnapshotsForActiveSiteProviderHub.pending, (state) => {
 			state.isLoadingSnapshots = true;
+			state.hasErrorLoadingSnapshots = false;
 
 			if (state.backingUpMeta) {
 				// clear out since we're not backing up right now
 				state.backingUpMeta = null;
 			}
 		});
-		builder.addCase(getSnapshotsForActiveSiteProviderHub.rejected, (state, action) => {
+		builder.addCase(getSnapshotsForActiveSiteProviderHub.rejected, (state) => {
 			state.isLoadingSnapshots = false;
-			// todo - crum: handle error
-			console.log('...rejected:', action.error);
+			state.hasErrorLoadingSnapshots = true;
 		});
 		builder.addCase(updateActiveSite.fulfilled, (state, { payload }) => {
 			state.id = payload;
-		});
-		builder.addCase(updateActiveSite.rejected, (_, action) => {
-			// todo - crum: handle error
-			console.log('...rejected:', action.error);
 		});
 	},
 });
