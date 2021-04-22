@@ -1,7 +1,10 @@
+@import '~@getflywheel/local-components/src/styles/_partials/index';
+
 .ToolsHeaders {
 	display: flex;
 	flex-direction: row;
 	justify-content: space-between;
 	align-items: center;
 	padding: 20px;
+	@include theme-background-white-else-graydark;
 }
