@@ -204,6 +204,7 @@ const cloneBackup = async (context: BackupMachineContext) => {
 		encryptionPassword,
 		snapshotID: snapshotHash,
 		restoreDir: tmpDirData.name,
+		restoringToNewSite: true,
 	});
 };
 

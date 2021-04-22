@@ -15,6 +15,7 @@ interface RestoreFromBackupOptions {
 	encryptionPassword: string;
 	snapshotID: string;
 	restoreDir: string;
+	restoringToNewSite?: boolean;
 }
 
 const bins = getOSBins();
@@ -232,17 +233,17 @@ Fatal: wrong password or no key found
  * @param options
  */
 export async function restoreBackup (options: RestoreFromBackupOptions) {
-	const { site, provider, encryptionPassword, snapshotID, restoreDir } = options;
+	const { site, provider, encryptionPassword, snapshotID, restoreDir, restoringToNewSite } = options;
 	const { localBackupRepoID } = getSiteDataFromDisk(site.id);
 
 	const flags = [
 		'--json',
 		`--target ${restoreDir}`,
-		/**
-		 * @todo do not add this flag if restoring a backup to a brand new site within Local
-		 */
-		`--exclude ${metaDataFileName}`,
 	];
+
+	if (!restoringToNewSite) {
+		flags.push(`--exclude ${metaDataFileName}`);
+	}
 
 	return execPromiseWithRcloneContext({
 		cmd: `"${bins.restic}" ${makeRepoFlag(provider, localBackupRepoID)} restore ${snapshotID} ${flags.join(' ')} `,
