@@ -86,7 +86,8 @@ export enum BackupStates {
 	creatingBackupSite = 'creatingBackupSite',
 	creatingBackupRepo = 'creatingBackupRepo',
 	initingResticRepo = 'initingResticRepo',
-	creatingSnapshot = 'creatingSnapshot',
+	creatingHubSnapshot = 'creatingHubSnapshot',
+	creatingResticSnapshot = 'creatingResticSnapshot',
 	finished = 'finished',
 	failed = 'failed',
 }
