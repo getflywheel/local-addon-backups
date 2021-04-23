@@ -116,6 +116,29 @@ export async function createBackupRepo (queryArgs: { backupSiteID: number; local
 	};
 }
 
+export async function deleteBackupRepoRecord (queryArgs: { backupSiteID: number, backupRepoId: number; }) {
+	const { backupSiteID, backupRepoId } = queryArgs;
+
+	const { data } = await localHubClient.mutate({
+		mutation: gql`
+			mutation deleteBackupRepoRecord($backupSiteID: Int!, $backupRepoID: Int!) {
+				deleteBackupRepoRecord(
+					site_id: $backupSiteID,
+					id: $backupRepoID,
+				) {
+					success
+				}
+			}
+		`,
+		variables: {
+			siteID: backupSiteID,
+			backupRepoID: backupRepoId,
+		},
+	});
+
+	return data?.deleteBackupRepoRecord.success;
+}
+
 export async function getBackupReposByProviderID (provider: HubOAuthProviders): Promise<BackupRepo[]> {
 	const { data } = await localHubClient.query({
 		query: gql`
@@ -150,7 +173,7 @@ export async function getEnabledBackupProviders (): Promise<HubProviderRecord[]>
 					id
 					name
 				}
-			}	
+			}
 		`,
 	});
 
@@ -191,7 +214,7 @@ export async function updateBackupSnapshot (queryArgs: { snapshotID: number, res
 					repo_id
 					hash
 				}
-			}	
+			}
 		`,
 		variables: {
 			snapshotID,
@@ -204,6 +227,25 @@ export async function updateBackupSnapshot (queryArgs: { snapshotID: number, res
 	return { ...rest, repoID };
 }
 
+export async function deleteBackupSnapshotRecord (queryArgs: { snapshotID: number }) {
+	const { snapshotID } = queryArgs;
+
+	const { data } = await localHubClient.mutate({
+		mutation: gql`
+			mutation deleteBackupSnapshotRecord($snapshotID: Int!) {
+				deleteBackupSnapshotRecord(id: $snapshotID) {
+					success
+				}
+			}
+		`,
+		variables: {
+			snapshotID,
+		},
+	});
+
+	return data?.deleteBackupSnapshotRecord.success;
+}
+
 export async function getBackupSnapshot (snapshotID: number) {
 	const { data } = await localHubClient.query({
 		query: gql`
@@ -213,7 +255,7 @@ export async function getBackupSnapshot (snapshotID: number) {
 					repo_id
 					hash
 				}
-			}	
+			}
 		`,
 		variables: { snapshotID },
 	});
@@ -221,33 +263,6 @@ export async function getBackupSnapshot (snapshotID: number) {
 	const { repo_id: repoID, ...rest } = data?.backupSnapshots?.[0];
 	return { ...rest, repoID };
 }
-
-/**
- * Filtering the query by repo_id appears to be broken atm. Saving this until we fix that up on the Hub side
- */
-// export async function getBackupSnapshots (repoID: number): Promise<BackupSnapshot[]> {
-// 	const { data } = await localHubClient.query({
-// 		query: gql`
-// 			query backupSnapshots($repoID: Int) {
-// 				backupSnapshots(repo_id: $repoID) {
-// 					id
-// 					repo_id
-// 					hash
-// 					updated_at
-// 				}
-// 			}
-// 		`,
-// 		variables: { repoID },
-// 	});
-//
-// 	const s = data?.backupSnapshots?.map(({ repo_id: repoID, updated_at: updatedAt, ...rest }) => ({
-// 		...rest,
-// 		repoID,
-// 		updatedAt,
-// 	}));
-//
-// 	return s;
-// }
 
 export async function getBackupSnapshots (): Promise<BackupSnapshot[]> {
 	const { data } = await localHubClient.query({

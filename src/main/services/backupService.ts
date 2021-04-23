@@ -10,9 +10,11 @@ import {
 	createBackupRepo,
 	createBackupSnapshot,
 	updateBackupSnapshot,
+	deleteBackupRepoRecord,
+	deleteBackupSnapshotRecord,
 } from '../hubQueries';
-import { initRepo, createSnapshot as createResticSnapshot } from '../cli';
-import type { Site, Providers, GenericObject, SiteMetaData } from '../../types';
+import { initRepo, createSnapshot as createProviderSnapshot } from '../cli';
+import type { Site, Providers, GenericObject, SiteMetaData, BackupSnapshot } from '../../types';
 import { metaDataFileName, backupSQLDumpFile, IPCEVENTS } from '../../constants';
 import { BackupStates } from '../../types';
 import serviceState from './state';
@@ -38,6 +40,7 @@ interface BackupMachineContext {
 	encryptionPassword?: string;
 	backupSiteID?: number;
 	backupRepoID?: number;
+	snapshot?: BackupSnapshot;
 	localBackupRepoID?: string;
 	error?: string;
 }
@@ -48,7 +51,8 @@ interface BackupMachineSchema {
 		[BackupStates.creatingBackupSite]: GenericObject;
 		[BackupStates.creatingBackupRepo]: GenericObject;
 		[BackupStates.initingResticRepo]: GenericObject;
-		[BackupStates.creatingSnapshot]: GenericObject;
+		[BackupStates.creatingHubSnapshot]: GenericObject;
+		[BackupStates.creatingResticSnapshot]: GenericObject;
 		[BackupStates.finished]: GenericObject;
 		[BackupStates.failed]: GenericObject;
 	}
@@ -137,12 +141,15 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 	};
 };
 
-/**
- * @todo If this fails, we need to delete the backup repo on the Hub side
- */
 const initResticRepo = async (context: BackupMachineContext) => {
 	const { provider, localBackupRepoID, encryptionPassword, site } = context;
 	await initRepo({ provider, localBackupRepoID, encryptionPassword, site });
+};
+
+const deleteHubRepoRecord = async (context: BackupMachineContext) => {
+	const { backupRepoID, backupSiteID } = context;
+	console.log('fired deleteHubRepoRecord');
+	await deleteBackupRepoRecord({ backupSiteID, backupRepoId: backupRepoID });
 };
 
 /**
@@ -162,28 +169,39 @@ export const parseSnapshotIDFromStdOut = (output: string) => {
 	return resticSnapshotHash;
 };
 
-/**
- * @todo remove backup snapshot on the Hub side if restic call fails
- */
-const createSnapshot = async (context: BackupMachineContext) => {
-	const { site, provider, encryptionPassword, backupRepoID, localBackupRepoID, description, initialSiteStatus } = context;
+const createHubSnapshot = async (context: BackupMachineContext) => {
+	const { site, backupRepoID, localBackupRepoID, description } = context;
+	const { name, services, mysql } = site;
+	const metaData: SiteMetaData = { name, services, mysql, localBackupRepoID, description };
+
+	return await createBackupSnapshot(backupRepoID, metaData);
+};
+
+const createResticSnapshot = async (context: BackupMachineContext) => {
+	const {
+		site,
+		provider,
+		encryptionPassword,
+		localBackupRepoID,
+		description,
+		initialSiteStatus,
+		snapshot,
+	} = context;
 	const { name, services, mysql } = site;
 	const metaData: SiteMetaData = { name, services, mysql, localBackupRepoID, description };
 	const metaDataFilePath = path.join(formatHomePath(site.path), metaDataFileName);
 
-	const snapshot = await createBackupSnapshot(backupRepoID, metaData);
 	await updateBackupSnapshot({ snapshotID: snapshot.id, status: 'started' });
 
 	fs.removeSync(metaDataFilePath);
 	fs.writeFileSync(metaDataFilePath, JSON.stringify(metaData));
 
 	const [res] = await Promise.all([
-		createResticSnapshot(site, provider, encryptionPassword),
+		createProviderSnapshot(site, provider, encryptionPassword),
 		updateBackupSnapshot({ snapshotID: snapshot.id, status: 'running' }),
 	]);
 
 	const resticSnapshotHash = parseSnapshotIDFromStdOut(res);
-
 	fs.removeSync(metaDataFilePath);
 
 	await updateBackupSnapshot({ snapshotID: snapshot.id, resticSnapshotHash, status: 'complete' });
@@ -200,12 +218,19 @@ const createSnapshot = async (context: BackupMachineContext) => {
 	});
 };
 
-const onErrorFactory = () => ({
+const deleteHubSnapshotRecord = async (context: BackupMachineContext) => {
+	const { snapshot } = context;
+	console.log('fired deleteHubSnapshotRecord');
+	await deleteBackupSnapshotRecord({ snapshotID: snapshot.id });
+};
+
+const onErrorFactory = (additionalActions = []) => ({
 	target: BackupStates.failed,
 	actions: [
 		'setErrorOnContext',
 		'logError',
 		'setErroredStatus',
+		...additionalActions,
 	],
 });
 
@@ -221,8 +246,6 @@ const setErroredStatus = (context: BackupMachineContext) => {
 		title: 'Backup errored!',
 		message: `There was an error while completing your backup.`,
 	});
-
-	siteProcessManager.restart(site);
 };
 
 const assignBackupRepoIDToContext = assign({
@@ -276,7 +299,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					src: (context, event) => maybeCreateBackupRepo(context),
 					onDone: [
 						{
-							target: BackupStates.creatingSnapshot,
+							target: BackupStates.creatingHubSnapshot,
 							actions: assignBackupRepoIDToContext,
 							cond: (context, event) => event.data.backupRepoAlreadyExists,
 						},
@@ -293,18 +316,30 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 				invoke: {
 					src: (context, event) => initResticRepo(context),
 					onDone: {
-						target: BackupStates.creatingSnapshot,
+						target: BackupStates.creatingHubSnapshot,
+					},
+					onError: onErrorFactory([deleteHubRepoRecord]),
+				},
+			},
+			[BackupStates.creatingHubSnapshot]: {
+				invoke: {
+					src: (context, event) => createHubSnapshot(context),
+					onDone: {
+						target: BackupStates.creatingResticSnapshot,
+						actions: assign({
+							snapshot: (_, event) => event.data,
+						}),
 					},
 					onError: onErrorFactory(),
 				},
 			},
-			[BackupStates.creatingSnapshot]: {
+			[BackupStates.creatingResticSnapshot]: {
 				invoke: {
-					src: (context, event) => createSnapshot(context),
+					src: (context, event) => createResticSnapshot(context),
 					onDone: {
 						target: BackupStates.finished,
 					},
-					onError: onErrorFactory(),
+					onError: onErrorFactory([deleteHubSnapshotRecord]),
 				},
 			},
 			[BackupStates.finished]: {
@@ -320,7 +355,8 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			maybeCreateBackupSite,
 			maybeCreateBackupRepo,
 			initResticRepo,
-			createSnapshot,
+			createHubSnapshot,
+			createResticSnapshot,
 			// event.error exists when taking the invoke.onError branch in a given state
 			setErrorOnContext: assign((context, event) => ({
 				error: event.data,
@@ -362,7 +398,6 @@ export const createBackup = async (site: Site, provider: Providers, description:
 				// eslint-disable-next-line no-underscore-dangle
 				const { error } = backupService._state;
 
-				siteProcessManager.restart(site);
 				sendIPCEvent(IPCEVENTS.BACKUP_COMPLETED);
 
 				if (error) {
