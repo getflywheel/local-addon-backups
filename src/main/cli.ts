@@ -180,7 +180,7 @@ export async function initRepo ({ provider, encryptionPassword, localBackupRepoI
 			return;
 		}
 
-		logger.error(err);
+		throw new Error(err);
 	}
 }
 

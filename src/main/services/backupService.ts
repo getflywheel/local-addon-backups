@@ -143,13 +143,13 @@ const maybeCreateBackupRepo = async (context: BackupMachineContext) => {
 
 const initResticRepo = async (context: BackupMachineContext) => {
 	const { provider, localBackupRepoID, encryptionPassword, site } = context;
-	await initRepo({ provider, localBackupRepoID, encryptionPassword, site });
+	return await initRepo({ provider, localBackupRepoID, encryptionPassword, site });
 };
 
 const deleteHubRepoRecord = async (context: BackupMachineContext) => {
 	const { backupRepoID, backupSiteID } = context;
-	console.log('fired deleteHubRepoRecord');
-	await deleteBackupRepoRecord({ backupSiteID, backupRepoId: backupRepoID });
+
+	await deleteBackupRepoRecord({ backupSiteID, backupRepoID });
 };
 
 /**
@@ -220,7 +220,7 @@ const createResticSnapshot = async (context: BackupMachineContext) => {
 
 const deleteHubSnapshotRecord = async (context: BackupMachineContext) => {
 	const { snapshot } = context;
-	console.log('fired deleteHubSnapshotRecord');
+
 	await deleteBackupSnapshotRecord({ snapshotID: snapshot.id });
 };
 
