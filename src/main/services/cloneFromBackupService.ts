@@ -216,25 +216,17 @@ const removeTmpDir = async (context: BackupMachineContext) => {
 	tmpDirData.removeCallback();
 };
 
-const onBaseSiteErrorFactory = () => ({
-	target: 'failed',
-	actions: [
-		'setErrorOnContext',
-		'logError',
-		'setErroredBaseSite',
-	],
-});
-
-const onErrorFactory = () => ({
-	target: [CloneFromBackupStates.failed],
+const onErrorFactory = (additionalActions = []) => ({
+	target: CloneFromBackupStates.failed,
 	actions: [
 		'setErrorOnContext',
 		'logError',
 		'setErroredStatus',
+		...additionalActions,
 	],
 });
 
-const setErroredBaseSite = (context: BackupMachineContext) => {
+const setErroredStatus = (context: BackupMachineContext) => {
 	const { baseSite } = context;
 
 	sendIPCEvent('goToRoute', `/main/site-info/${baseSite.id}`);
@@ -244,26 +236,15 @@ const setErroredBaseSite = (context: BackupMachineContext) => {
 		id: 'site-errored-backup-cloning',
 		variant: 'error',
 		icon: 'warning',
-		title: 'Cloning errored!',
-		message: `There was an error while cloning your backup!`,
+		title: 'There was an error while cloning your backup!',
+		message: `There was an error while cloning your backup. Check your Local log for more details.`,
 	});
+
 };
 
-const setErroredStatus = (context: BackupMachineContext) => {
-	const { destinationSite, baseSite } = context;
-
+const deleteNewCloneSite = (context: BackupMachineContext) => {
+	const { destinationSite } = context;
 	sendIPCEvent('deleteSite', { destinationSite, trashFiles: true });
-	sendIPCEvent('goToRoute', `/main/site-info/${baseSite.id}`);
-
-	sendIPCEvent('showSiteBanner', {
-		siteID: baseSite.id,
-		id: 'site-errored-backup-cloning',
-		variant: 'error',
-		icon: 'warning',
-		title: 'Cloning from backup errored!',
-		message: `There was an error while restoring your backup. Check your Local log for more details.`,
-	});
-
 };
 
 // eslint-disable-next-line new-cap
@@ -295,7 +276,7 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 							localBackupRepoID,
 						})),
 					},
-					onError: onBaseSiteErrorFactory(),
+					onError: onErrorFactory([deleteNewCloneSite]),
 				},
 			},
 			 [CloneFromBackupStates.setupDestinationSite]: {
@@ -309,7 +290,7 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 							},
 						),
 					},
-					onError: onBaseSiteErrorFactory(),
+					onError: onErrorFactory([deleteNewCloneSite]),
 				},
 			},
 			/**

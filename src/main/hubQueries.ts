@@ -116,8 +116,8 @@ export async function createBackupRepo (queryArgs: { backupSiteID: number; local
 	};
 }
 
-export async function deleteBackupRepoRecord (queryArgs: { backupSiteID: number, backupRepoId: number; }) {
-	const { backupSiteID, backupRepoId } = queryArgs;
+export async function deleteBackupRepoRecord (queryArgs: { backupSiteID: number, backupRepoID: number; }) {
+	const { backupSiteID, backupRepoID } = queryArgs;
 
 	const { data } = await localHubClient.mutate({
 		mutation: gql`
@@ -131,8 +131,8 @@ export async function deleteBackupRepoRecord (queryArgs: { backupSiteID: number,
 			}
 		`,
 		variables: {
-			siteID: backupSiteID,
-			backupRepoID: backupRepoId,
+			backupSiteID,
+			backupRepoID,
 		},
 	});
 
