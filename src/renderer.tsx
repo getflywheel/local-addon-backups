@@ -1,11 +1,19 @@
 import React from 'react';
 import { Provider } from 'react-redux';
+import { ApolloProvider } from '@apollo/client';
 import { RestoreStates, BackupStates } from './types';
 import { store } from './renderer/store/store';
 import SiteInfoToolsSection from './renderer/components/siteinfotools/SiteInfoToolsSection';
 import { setupListeners } from './renderer/helpers/setupListeners';
+import { client } from './renderer/localClient/localGraphQLClient';
 
 setupListeners();
+
+const withApolloProvider = (Component) => (props) => (
+	<ApolloProvider client={client}>
+		<Component {...props} />
+	</ApolloProvider>
+);
 
 const withStoreProvider = (Component) => (props) => (
 	<Provider store={store}>
@@ -16,7 +24,7 @@ const withStoreProvider = (Component) => (props) => (
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function (context): void {
 	const { hooks } = context;
-	const SiteInfoToolsSectionHOC = withStoreProvider(SiteInfoToolsSection);
+	const SiteInfoToolsSectionHOC = withApolloProvider(withStoreProvider(SiteInfoToolsSection));
 
 	hooks.addFilter('siteInfoToolsItem', (items) => {
 		items.push({
