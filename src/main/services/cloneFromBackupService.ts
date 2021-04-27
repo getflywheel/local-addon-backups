@@ -372,7 +372,7 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 				logger.error(event.data);
 			},
 			setErroredStatus,
-			setErroredBaseSite,
+			deleteNewCloneSite,
 		},
 	},
 );
