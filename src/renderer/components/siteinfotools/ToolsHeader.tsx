@@ -14,6 +14,16 @@ interface Props {
 export const ToolsHeader = (props: Props) => {
 	const { site } = props;
 	const { enabledProviders } = useStoreSelector((state) => state.providers);
+	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
+	const { snapshots } = useStoreSelector((state) => state.activeSite);
+	const { backupIsRunning } = useStoreSelector((state) => state.director);
+	const backupSite = (description: string) => {
+		store.dispatch(actions.backupSite({
+			description,
+			siteId: site.id,
+			siteName: site.name,
+		}));
+	};
 
 	return (
 		<div className={styles.ToolsHeaders}>

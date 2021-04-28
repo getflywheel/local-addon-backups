@@ -18,6 +18,7 @@ import type { Site, Providers, GenericObject, SiteMetaData, BackupSnapshot } fro
 import { metaDataFileName, backupSQLDumpFile, IPCEVENTS } from '../../constants';
 import { BackupStates } from '../../types';
 import serviceState from './state';
+import { createIpcAsyncError, createIpcAsyncResult, IpcAsyncResponse } from '../../helpers/createIpcAsyncResponse';
 
 const serviceContainer = getServiceContainer().cradle;
 const {
@@ -207,15 +208,6 @@ const createResticSnapshot = async (context: BackupMachineContext) => {
 	await updateBackupSnapshot({ snapshotID: snapshot.id, resticSnapshotHash, status: 'complete' });
 
 	sendIPCEvent('updateSiteStatus', site.id, initialSiteStatus);
-
-	sendIPCEvent('showSiteBanner', {
-		siteID: site.id,
-		variant: 'success',
-		icon: false,
-		id: 'site-backed-up',
-		title: 'Backup complete!',
-		message: `${site.name} has been successfully backed up.`,
-	});
 };
 
 const deleteHubSnapshotRecord = async (context: BackupMachineContext) => {
@@ -238,14 +230,6 @@ const setErroredStatus = (context: BackupMachineContext) => {
 	const { initialSiteStatus, site } = context;
 	sendIPCEvent('updateSiteStatus', site.id, initialSiteStatus);
 
-	sendIPCEvent('showSiteBanner', {
-		siteID: site.id,
-		id: 'site-errored-backup',
-		variant: 'error',
-		icon: 'warning',
-		title: 'Backup errored!',
-		message: `There was an error while completing your backup.`,
-	});
 };
 
 const assignBackupRepoIDToContext = assign({
@@ -282,7 +266,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			[BackupStates.creatingBackupSite]: {
 				invoke: {
 					id: 'maybeCreateBackupSite',
-					src: (context, event) => maybeCreateBackupSite(context),
+					src: (context) => maybeCreateBackupSite(context),
 					onDone: {
 						target: BackupStates.creatingBackupRepo,
 						actions: assign({
@@ -296,7 +280,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			},
 			[BackupStates.creatingBackupRepo]: {
 				invoke: {
-					src: (context, event) => maybeCreateBackupRepo(context),
+					src: (context) => maybeCreateBackupRepo(context),
 					onDone: [
 						{
 							target: BackupStates.creatingHubSnapshot,
@@ -314,7 +298,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			},
 			[BackupStates.initingResticRepo]: {
 				invoke: {
-					src: (context, event) => initResticRepo(context),
+					src: (context) => initResticRepo(context),
 					onDone: {
 						target: BackupStates.creatingHubSnapshot,
 					},
@@ -323,7 +307,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			},
 			[BackupStates.creatingHubSnapshot]: {
 				invoke: {
-					src: (context, event) => createHubSnapshot(context),
+					src: (context) => createHubSnapshot(context),
 					onDone: {
 						target: BackupStates.creatingResticSnapshot,
 						actions: assign({
@@ -335,7 +319,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			},
 			[BackupStates.creatingResticSnapshot]: {
 				invoke: {
-					src: (context, event) => createResticSnapshot(context),
+					src: (context) => createResticSnapshot(context),
 					onDone: {
 						target: BackupStates.finished,
 					},
@@ -359,7 +343,10 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			createResticSnapshot,
 			// event.error exists when taking the invoke.onError branch in a given state
 			setErrorOnContext: assign((context, event) => ({
-				error: event.data,
+				error: JSON.stringify({
+					message: event.data.toString(),
+					type: event.type,
+				}),
 			})),
 			// event.error exists when taking the invoke.onError branch in a given state
 			logError: (context, error) => {
@@ -375,12 +362,16 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
  *
  * @param site
  * @param provider
+ * @param description
  */
-// eslint-disable-next-line arrow-body-style
-export const createBackup = async (site: Site, provider: Providers, description: string) => {
+export const createBackup = (site: Site, provider: Providers, description: string): Promise<IpcAsyncResponse> => {
 	if (serviceState.inProgressStateMachine) {
 		logger.warn('Backup process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.');
-		return;
+
+		return Promise.resolve(createIpcAsyncError(
+			'Backup process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.',
+			site.id,
+		));
 	}
 
 	return new Promise((resolve) => {
@@ -389,6 +380,7 @@ export const createBackup = async (site: Site, provider: Providers, description:
 		const backupService = interpret(backupMachine.withContext({ site, provider, description, initialSiteStatus }))
 			.onTransition((state) => {
 				sendIPCEvent(IPCEVENTS.BACKUP_STARTED);
+
 				const status = camelCaseToSentence(state.value as string);
 				logger.info(`${status} [site id: ${site.id}]`);
 			})
@@ -396,17 +388,19 @@ export const createBackup = async (site: Site, provider: Providers, description:
 			.onStop(() => {
 				serviceState.inProgressStateMachine = null;
 				// eslint-disable-next-line no-underscore-dangle
-				const { error } = backupService._state;
+				const { error } = backupService._state.context;
 
+				// todo - crum this is duplicate logic that should be handled by return result/error
 				sendIPCEvent(IPCEVENTS.BACKUP_COMPLETED);
 
 				if (error) {
-					resolve({ error });
+					resolve(createIpcAsyncError(JSON.parse(error), site.id));
+					return;
 				}
 
 				siteProcessManager.restart(site);
 
-				resolve(null);
+				resolve(createIpcAsyncResult(null, site.id));
 			});
 
 		serviceState.inProgressStateMachine = backupService;

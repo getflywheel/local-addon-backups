@@ -15,10 +15,13 @@ export const StartBackupButton = (props: Props) => {
 	const { site } = props;
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 	const { snapshots } = useStoreSelector((state) => state.activeSite);
-	const backupRunning = store.getState().backupInProgress.backupRunning;
-
+	const { backupIsRunning } = useStoreSelector((state) => state.director);
 	const backupSite = (description: string) => {
-		store.dispatch(actions.backupSite(description));
+		store.dispatch(actions.backupSite({
+			description,
+			siteId: site.id,
+			siteName: site.name,
+		}));
 	};
 
 	const siteStatus = getSiteStatus(site);
@@ -29,11 +32,11 @@ export const StartBackupButton = (props: Props) => {
 		tooltipContent = <>Please select a provider for your backup</>;
 	}
 
-	if (backupRunning) {
+	if (backupIsRunning) {
 		tooltipContent = <>Another backup or restore is already in progress</>;
 	}
 
-	const buttonDisabled = !activeSiteProvider || backupRunning || siteStatus !== 'running';
+	const buttonDisabled = !activeSiteProvider || backupIsRunning || siteStatus !== 'running';
 
 	if (buttonDisabled) {
 		return (
