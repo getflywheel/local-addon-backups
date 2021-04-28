@@ -20,7 +20,6 @@ export default function (): void {
 			callback: async (siteId: Local.Site['id'], provider: Providers, description: string) => {
 				const siteJSON = LocalMain.SiteData.getSite(siteId);
 				const site = new Local.Site(siteJSON);
-
 				return createBackup(site, provider, description);
 			},
 		},
@@ -62,13 +61,5 @@ export default function (): void {
 
 	listenerConfigs.forEach(({ channel, callback }) => {
 		LocalMain.addIpcAsyncListener(channel, callback);
-	});
-
-	LocalMain.addIpcAsyncListener('start-site-backup', async (siteId: Local.Site['id'], provider: Providers) => {
-		const site = LocalMain.SiteData.getSite(siteId);
-	});
-
-	LocalMain.addIpcAsyncListener('list-site-snapshots', async (siteId: Local.Site['id'], provider: Providers) => {
-		const site = LocalMain.SiteData.getSite(siteId);
 	});
 }

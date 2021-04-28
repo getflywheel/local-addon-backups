@@ -90,12 +90,27 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 			items.push({
 				color: 'none',
 				content: renderTextButton('Retry', () => false),
-				onClick: () => store.dispatch(actions.backupSite(snapshot.configObject.description)),
+				onClick: () => store.dispatch(actions.backupSite({
+					description: snapshot.configObject.description,
+					siteId: site.id,
+					siteName: site.name,
+				})),
 			});
 			items.push({
 				color: 'none',
 				content: renderTextButton('Dismiss', () => false),
-				onClick: () => store.dispatch(actions.dismissError()),
+				onClick: () => store.dispatch(actions.dismissBackupAttempt()),
+				content: renderTextButton('Retry', () => false),
+				onClick: () => store.dispatch(actions.backupSite({
+					description: snapshot.configObject.description,
+					siteId: site.id,
+					siteName: site.name,
+				})),
+			});
+			items.push({
+				color: 'none',
+				content: renderTextButton('Dismiss', () => false),
+				onClick: () => store.dispatch(actions.dismissBackupAttempt()),
 			});
 			break;
 		case 'complete':

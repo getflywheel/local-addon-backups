@@ -1,13 +1,13 @@
 import { createSelector } from '@reduxjs/toolkit';
-import { State } from './store';
+import { AppState } from './store';
 
 /**
  * The selected/active provider derived from the current active site and known providers.
  */
 const selectActiveProvider = createSelector(
 	[
-		(state: State) => state.activeSite.id,
-		(state: State) => state.providers,
+		(state: AppState) => state.activeSite.id,
+		(state: AppState) => state.providers,
 	],
 	(activeSiteID, { activeProviders, enabledProviders }) => {
 		if (!activeSiteID || !enabledProviders || !activeProviders) {
@@ -25,18 +25,19 @@ const selectActiveProvider = createSelector(
  */
 const selectSnapshotsPlusBackingupPlaceholder = createSelector(
 	[
-		(state: State) => state.activeSite.snapshots,
-		(state: State) => state.activeSite.backingUpMeta,
+		(state: AppState) => state.activeSite,
+		(state: AppState) => state.director,
 	],
-	(snapshots, backingUpMeta) => {
-		if (backingUpMeta) {
+	(activeSite, director) => {
+		// prepend placeholder snapshot only if the backup is for the active site
+		if (director.backupSnapshotPlaceholder && activeSite.id === director.backupSiteId) {
 			return ([
-				backingUpMeta.snapshot,
-				...snapshots ?? [],
+				director.backupSnapshotPlaceholder,
+				...activeSite.snapshots ?? [],
 			]);
 		}
 
-		return snapshots ?? [];
+		return activeSite.snapshots ?? [];
 	},
 );
 

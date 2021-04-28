@@ -1,6 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import type { BackupSnapshot, HubProviderRecord } from '../../types';
-import { State } from './store';
+import { AppThunkApiConfig, AppState } from './store';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import { selectors } from './selectors';
 import { hubProviderToProvider } from '../helpers/hubProviderToProvider';
@@ -8,6 +8,7 @@ import { IPCASYNC_EVENTS } from '../../constants';
 import dispatchAsyncThunk from './helpers/dispatchAsyncUnwrapped.js';
 import { showSiteBanner } from '../helpers/showSiteBanner';
 import { clearSiteBanner } from '../helpers/clearSiteBanner';
+import { IpcAsyncResponse } from '../../helpers/createIpcAsyncResponse';
 
 const localStorageKey = 'local-addon-backups-activeProviders';
 
@@ -20,7 +21,7 @@ const getSnapshotsForActiveSiteProviderHub = createAsyncThunk(
 		const {
 			activeSite,
 			providers,
-		} = getState() as State;
+		} = getState() as AppState;
 
 		// clear out any previous banner caused by this thunk
 		clearSiteBanner(activeSite.id, getSnapshotsForActiveSiteProviderHub.typePrefix);
@@ -57,37 +58,62 @@ const getSnapshotsForActiveSiteProviderHub = createAsyncThunk(
 /**
  * Request to backup site to Hub.
  */
-const backupSite = createAsyncThunk(
+const backupSite = createAsyncThunk<
+	null, // types return here and for extraReducers fulfilled
+	{ description: string, siteId: string, siteName: string }, // types function signature and extraReducers meta 'arg'
+	AppThunkApiConfig<null> // types rejected return here and for extraReducers rejected
+>(
 	'backupSite',
-	async (description:string, { dispatch, getState, rejectWithValue }) => {
-		const state = getState() as State;
+	async (
+		{
+			description,
+			siteId,
+			siteName,
+		}, {
+			dispatch,
+			getState,
+			rejectWithValue,
+		},
+	) => {
+		const thunkName = backupSite.typePrefix;
+		const state = getState();
 		const rsyncProviderId = hubProviderToProvider(selectors.selectActiveProvider(state)?.id);
 
-		try {
-			/**
-			 * Light convenience wrapper around ipcAsync to backup a site
-			 *
-			 * @param site
-			 * @param provider
-			 */
-			const result = await ipcAsync(
-				IPCASYNC_EVENTS.START_BACKUP,
-				state.activeSite.id,
-				rsyncProviderId,
-				description,
-			) as null;
+		// clear out any previous banner caused by this thunk
+		clearSiteBanner(siteId, thunkName);
 
-			// asynchronous refresh snapshots
-			dispatch(getSnapshotsForActiveSiteProviderHub());
+		const response = await ipcAsync(
+			IPCASYNC_EVENTS.START_BACKUP,
+			state.activeSite.id,
+			rsyncProviderId,
+			description,
+		) as IpcAsyncResponse<null>;
 
-			return result;
-		} catch (error) {
-			if (!error.response) {
-				throw error;
-			}
+		if (response.error) {
+			showSiteBanner({
+				siteID: siteId,
+				id: thunkName,
+				variant: 'error',
+				icon: 'warning',
+				title: 'Cloud Backup failed!',
+				message: `There was an error while completing your backup.`,
+			});
 
-			return rejectWithValue(error.response);
+			return rejectWithValue(null);
 		}
+
+		showSiteBanner({
+			siteID: siteId,
+			variant: 'success',
+			id: thunkName,
+			title: 'Cloud Backup complete!',
+			message: `${siteName} has been successfully backed up.`,
+		});
+
+		// asynchronous refresh snapshots (don't await)
+		dispatch(getSnapshotsForActiveSiteProviderHub());
+
+		return null;
 	},
 );
 
@@ -97,7 +123,7 @@ const backupSite = createAsyncThunk(
 const restoreSite = createAsyncThunk(
 	'restoreSite',
 	async (snapshotID: string, { rejectWithValue, getState }) => {
-		const state = getState() as State;
+		const state = getState() as AppState;
 		const rsyncProviderId = hubProviderToProvider(selectors.selectActiveProvider(state)?.id);
 		try {
 			/**
@@ -128,7 +154,7 @@ const restoreSite = createAsyncThunk(
 const getEnabledProvidersHub = createAsyncThunk(
 	'getEnabledProvidersHub',
 	async (_, { getState, rejectWithValue }) => {
-		const siteId = (getState() as State).activeSite.id;
+		const siteId = (getState() as AppState).activeSite.id;
 		// clear out any previous banner caused by this thunk
 		clearSiteBanner(siteId, getEnabledProvidersHub.typePrefix);
 
@@ -159,7 +185,7 @@ const getEnabledProvidersHub = createAsyncThunk(
 const initActiveProvidersFromLocalStorage = createAsyncThunk(
 	'initActiveProvidersFromLocalStorage',
 	async (_, { rejectWithValue, getState }) => {
-		const state = getState() as State;
+		const state = getState() as AppState;
 
 		try {
 			// merge in-memory active providers with those from local-storage
@@ -183,7 +209,7 @@ const initActiveProvidersFromLocalStorage = createAsyncThunk(
 const setActiveProviderAndPersist = createAsyncThunk(
 	'setActiveProviderAndPersist',
 	async (providerId: HubProviderRecord['id'], { getState, rejectWithValue }) => {
-		const state = getState() as State;
+		const state = getState() as AppState;
 		const activeProviders = {
 			...state.providers.activeProviders,
 			[state.activeSite.id]: providerId,
@@ -232,7 +258,7 @@ const updateActiveSite = createAsyncThunk(
 	'updateActiveSite',
 	async (siteId: string | null, { dispatch, getState, rejectWithValue }) => {
 		try {
-			const { providers: { activeProviders } } = getState() as State;
+			const { providers: { activeProviders } } = getState() as AppState;
 
 			// do only once per runtime, if unpopulated, as redux and local-storage stays in sync after that
 			// note: this call should have no other data dependencies (e.g. siteId, enabledProviders, etc)

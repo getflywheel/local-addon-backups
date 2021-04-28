@@ -7,12 +7,14 @@ export const setupListeners = () => {
 		{
 			channel: IPCEVENTS.BACKUP_STARTED,
 			cb: (_) => {
+				// todo - crum: remove once new `currentBackup` state is being used for create, clone, and restore actions
 				store.dispatch(actions.setBackupRunningState(true));
 			},
 		},
 		{
 			channel: IPCEVENTS.BACKUP_COMPLETED,
 			cb: (_) => {
+				// todo - crum: remove once new `currentBackup` state is being used for create, clone, and restore actions
 				store.dispatch(actions.setBackupRunningState(false));
 			},
 		},

@@ -23,12 +23,21 @@ export const store = configureStore({
 	reducer: {
 		activeSite: activeSiteSlice.reducer,
 		providers: providersSlice.reducer,
-		backupInProgress: directorSlice.reducer,
+		director: directorSlice.reducer,
 	},
 });
 
 /**
  * Redux store typings.
  */
-export type State = ReturnType<typeof store.getState>;
-export const useStoreSelector = useSelector as TypedUseSelectorHook<State>;
+export type AppState = ReturnType<typeof store.getState>;
+
+export type AppDispatch = typeof store.dispatch;
+
+export const useStoreSelector = useSelector as TypedUseSelectorHook<AppState>;
+
+export type AppThunkApiConfig<R = any> = {
+	dispatch: AppDispatch;
+	rejectValue: R;
+	state: AppState;
+};
