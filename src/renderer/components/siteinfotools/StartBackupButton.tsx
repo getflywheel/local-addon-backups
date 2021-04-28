@@ -1,13 +1,11 @@
 import React from 'react';
 import type { Site } from '@getflywheel/local';
 import { PrimaryButton, Tooltip } from '@getflywheel/local-components';
-import { useQuery, useSubscription } from '@apollo/client';
+import { getSiteStatus } from '../../helpers/getSiteStatus';
 import { actions, store, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
 import { createModal } from '../createModal';
 import { BackupContents } from '../modals/BackupContents';
-import { GET_SITE } from '../../localClient/queries';
-import { SITE_STATUS_CHANGED } from '../../localClient/subscriptions';
 
 interface Props {
 	site: Site;
@@ -23,17 +21,7 @@ export const StartBackupButton = (props: Props) => {
 		store.dispatch(actions.backupSite(description));
 	};
 
-	const { data: siteQueryData } = useQuery(GET_SITE, {
-		variables: { siteID: site.id },
-	});
-
-	const { data: siteStatusSubscriptionData } = useSubscription(SITE_STATUS_CHANGED);
-
-	const subscriptionResult = siteStatusSubscriptionData?.siteStatusChanged;
-
-	const siteStatus = subscriptionResult?.id === site.id
-		? subscriptionResult?.status
-		: siteQueryData?.site.status;
+	const siteStatus = getSiteStatus(site);
 
 	let tooltipContent = <>Please start site to create a backup</>;
 
