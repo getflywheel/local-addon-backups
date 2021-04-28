@@ -16,7 +16,7 @@ const selectActiveProvider = createSelector(
 
 		const activeSiteProviderId = activeProviders[activeSiteID];
 
-		return enabledProviders.find((provider) => provider.id === activeSiteProviderId);
+		return enabledProviders?.find((provider) => provider.id === activeSiteProviderId);
 	},
 );
 

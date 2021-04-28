@@ -28,7 +28,7 @@ export const ToolsHeader = (props: Props) => {
 	return (
 		<div className={styles.ToolsHeaders}>
 			<ProviderDropdown />
-			{enabledProviders.length
+			{enabledProviders?.length
 				? (
 					<StartBackupButton site={site} />
 				)
