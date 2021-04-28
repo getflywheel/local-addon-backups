@@ -5,12 +5,13 @@ import {
 	PrimaryButton,
 	TextButton,
 	BasicInput,
+	Spinner,
 } from '@getflywheel/local-components';
 import type { Site } from '@getflywheel/local';
-import getSize from 'get-folder-size';
 import styles from './BackupContents.scss';
 import { BackupSnapshot } from '../../../types';
-import { getFilteredSiteFiles, getIgnoreFilePath } from '../../../helpers/ignoreFilesPattern';
+import { fetchSiteSizeInMB } from './fetchSiteSizeInMB';
+import { getIgnoreFilePath } from '../../../helpers/ignoreFilesPattern';
 
 const remote = require('@electron/remote');
 
@@ -29,18 +30,12 @@ export const BackupContents = (props: ModalContentsProps) => {
 	const [inputDescriptionData, setInputData] = useState('');
 
 	useEffect(() => {
-		const fetchSiteSizeInMB = async () => {
-			const filesToEstimate = getFilteredSiteFiles(site);
-			let siteSize = 0;
-
-			filesToEstimate.forEach(async (dir) => {
-				await getSize(dir, (err, size: number) => {
-					siteSize += (size / 1024 / 1024);
-					setSiteSizeInMB(siteSize);
-				});
-			});
+		const setDiskSize = async () => {
+			const siteSize = await fetchSiteSizeInMB(site);
+			setSiteSizeInMB(siteSize);
 		};
-		fetchSiteSizeInMB();
+
+		setDiskSize();
 	}, []);
 
 	const onInputChange = (event) => {
@@ -65,7 +60,15 @@ export const BackupContents = (props: ModalContentsProps) => {
 			<div className={styles.AlignLeft}>
 				{ !snapshots?.length &&
 				<div>
-					<Title size="m" className="align-left">Estimated size of first Cloud Backup: {siteSizeInMB.toFixed(2)} MB</Title>
+					<Title size="m" className="align-left">
+						Estimated size of first Cloud Backup:
+
+						{ siteSizeInMB !== 0
+							? ` ${siteSizeInMB.toFixed(2)} MB`
+							: <Spinner className={styles.CustomSpinnerStyles}/>
+						}
+					</Title>
+
 					<p style={{ marginTop: 7 }}>For large sites, backing up your site for the first time can take up to hours to complete. Your site will be locked while the database is backed up.</p>
 				</div>
 				}
