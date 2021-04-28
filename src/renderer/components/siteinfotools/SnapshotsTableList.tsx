@@ -65,8 +65,9 @@ const renderDate = (updatedAt: string, snapshot: BackupSnapshot) => {
 	);
 };
 
-const renderTextButton = (label: React.ReactNode) => (
+const renderTextButton = (label: React.ReactNode, isDisabled: () => boolean) => (
 	<TextButton
+		disabled={isDisabled()}
 		className={styles.SnapshotsTableList_MoreDropdown_Item_TextButton}
 		privateOptions={{
 			fontWeight: 'medium',
@@ -87,12 +88,12 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 		case 'errored':
 			items.push({
 				color: 'none',
-				content: renderTextButton('Retry'),
+				content: renderTextButton('Retry', () => false),
 				onClick: () => store.dispatch(actions.backupSite(snapshot.configObject.description)),
 			});
 			items.push({
 				color: 'none',
-				content: renderTextButton('Dismiss'),
+				content: renderTextButton('Dismiss', () => false),
 				onClick: () => store.dispatch(actions.dismissError()),
 			});
 			break;
@@ -100,7 +101,7 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 		default:
 			items.push({
 				color: 'none',
-				content: renderTextButton('Restore site to this Cloud Backup'),
+				content: renderTextButton('Restore site to this Cloud Backup', () => store.getState().backupInProgress.backupRunning),
 				onClick: () => createModal(
 					() => (
 						<BackupRestoreContents
@@ -112,7 +113,7 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 			});
 			items.push({
 				color: 'none',
-				content: renderTextButton('Clone site from Cloud Backup'),
+				content: renderTextButton('Clone site from Cloud Backup', () => store.getState().backupInProgress.backupRunning),
 				onClick: () => createModal(
 					() => (
 						<BackupCloneContents
@@ -125,7 +126,7 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 			});
 			items.push({
 				color: 'none',
-				content: renderTextButton('Edit description'),
+				content: renderTextButton('Edit description', () => false),
 				onClick: () => console.log('onClick'),
 			});
 	}
