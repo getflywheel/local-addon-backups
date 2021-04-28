@@ -14,7 +14,7 @@ export const providersSlice = createSlice({
 		/** Lookup table of active provider ids for each given site */
 		activeProviders: null as ActiveProvidersLookup | null,
 		/** List of providers from Hub that can be used for all sites */
-		enabledProviders: [] as HubProviderRecord[],
+		enabledProviders: [] as HubProviderRecord[] | null,
 		/** Whether loading the providers resulted in an error */
 		hasErrorLoadingEnabledProviders: false,
 		/** Whether list of enabled providers from Hub is loading */

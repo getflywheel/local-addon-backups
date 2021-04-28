@@ -72,7 +72,7 @@ export const ProviderDropdown = () => {
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 	const dropdownItems: React.ComponentProps<typeof FlyDropdown>['items'] = [];
 
-	if (enabledProviders.length) {
+	if (enabledProviders?.length) {
 		enabledProviders.forEach((provider) => {
 			dropdownItems.push({
 				color: 'none',
@@ -105,7 +105,7 @@ export const ProviderDropdown = () => {
 				items={dropdownItems}
 				position="bottom"
 			>
-				{enabledProviders.length && activeSiteProvider
+				{enabledProviders?.length && activeSiteProvider
 					? (
 						<>
 							{renderProviderIcon(activeSiteProvider)}
