@@ -67,6 +67,7 @@ const renderDate = (updatedAt: string, snapshot: BackupSnapshot) => {
 
 const renderTextButton = (label: React.ReactNode, isDisabled: () => boolean) => (
 	<TextButton
+		style={{ pointerEvents: store.getState().backupInProgress.backupRunning ? 'none' : 'auto' }}
 		disabled={isDisabled()}
 		className={styles.SnapshotsTableList_MoreDropdown_Item_TextButton}
 		privateOptions={{
@@ -81,7 +82,7 @@ const renderTextButton = (label: React.ReactNode, isDisabled: () => boolean) => 
 const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubProviderRecord) => {
 	const items: React.ComponentProps<typeof FlyDropdown>['items'] = [];
 
-	switch(snapshot.status) {
+	switch (snapshot.status) {
 		case 'started':
 		case 'running':
 			break;
@@ -102,27 +103,31 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 			items.push({
 				color: 'none',
 				content: renderTextButton('Restore site to this Cloud Backup', () => store.getState().backupInProgress.backupRunning),
-				onClick: () => createModal(
-					() => (
-						<BackupRestoreContents
-							site={site}
-							snapshot={snapshot}
-						/>
+				onClick: store.getState().backupInProgress.backupRunning
+					? () => undefined
+					: () => createModal(
+						() => (
+							<BackupRestoreContents
+								site={site}
+								snapshot={snapshot}
+							/>
+						),
 					),
-				),
 			});
 			items.push({
 				color: 'none',
 				content: renderTextButton('Clone site from Cloud Backup', () => store.getState().backupInProgress.backupRunning),
-				onClick: () => createModal(
-					() => (
-						<BackupCloneContents
-							site={site}
-							snapshot={snapshot}
-							provider={provider}
-						/>
+				onClick: store.getState().backupInProgress.backupRunning
+					? () => undefined
+					: () => createModal(
+						() => (
+							<BackupCloneContents
+								site={site}
+								snapshot={snapshot}
+								provider={provider}
+							/>
+						),
 					),
-				),
 			});
 			items.push({
 				color: 'none',
@@ -140,7 +145,7 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 			caret={false}
 			className={styles.SnapshotsTableList_MoreDropdown}
 			items={items}
-			popperOptions={{popperOffsetModifier: {offset: [15, 0]}}}
+			popperOptions={{ popperOffsetModifier: { offset: [15, 0] } }}
 		>
 			<DotsIcon/>
 		</FlyDropdown>
