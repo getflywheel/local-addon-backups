@@ -15,7 +15,7 @@ export const directorSlice = createSlice({
 		backupRunning: false as boolean,
 		/** whether backups is currently running (limited to 1) **/
 		backupIsRunning: false as boolean,
-		/** The site id for the currently running backup **/
+		/** the site id for the currently running backup **/
 		backupSiteId: null as string | null,
 		/** a placeholder for the snapshot so it can be shown in the UI as either in-progress or having failed **/
 		backupSnapshotPlaceholder: null as BackupSnapshot | null,
