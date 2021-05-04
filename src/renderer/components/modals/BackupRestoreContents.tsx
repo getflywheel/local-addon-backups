@@ -22,7 +22,7 @@ export const BackupRestoreContents = (props: ModalContentsProps) => {
 	const { description } = snapshot.configObject;
 
 	const onModalSubmit = (snapshotID: string) => {
-		store.dispatch(actions.restoreSite(snapshotID));
+		store.dispatch(actions.restoreSite({ snapshotID }));
 		FlyModal.onRequestClose();
 	};
 

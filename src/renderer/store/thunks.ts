@@ -125,31 +125,51 @@ const backupSite = createAsyncThunk<
 /**
  * Request to restore backup from to site from Hub.
  */
-const restoreSite = createAsyncThunk(
+const restoreSite = createAsyncThunk<
+	IpcAsyncResponse<null>, // types return here and for extraReducers fulfilled
+	{ snapshotID: string }, // types function signature and extraReducers meta 'arg'
+	AppThunkApiConfig<IpcAsyncResponse['error']> // types rejected return here and for extraReducers rejected
+>(
 	'restoreSite',
-	async (snapshotID: string, { rejectWithValue, getState }) => {
-		const state = getState() as AppState;
+	async (
+		{ snapshotID },
+		{ getState, rejectWithValue },
+	) => {
+		const state = getState();
 		const rsyncProviderId = hubProviderToProvider(selectors.selectActiveProvider(state)?.id);
-		try {
-			/**
-			 * Light convenience wrapper around ipcAsync to backup a site
-			 *
-			 * @param site
-			 * @param provider
-			 */
-			return await ipcAsync(
-				IPCASYNC_EVENTS.RESTORE_BACKUP,
-				state.activeSite.id,
+		const siteId = state.activeSite.id;
+
+		return await processIPCAsyncResponseAndGlobalErrors<null>(
+			IPCASYNC_EVENTS.RESTORE_BACKUP,
+			[
+				siteId,
 				rsyncProviderId,
 				snapshotID,
-			) as null;
-		} catch (error) {
-			if (!error.response) {
-				throw error;
-			}
-
-			return rejectWithValue(error.response);
-		}
+			],
+			siteId,
+			rejectWithValue,
+			(details) => {
+				if (details.isErrorAndUncaptured) {
+					showSiteBanner({
+						icon: 'warning',
+						id: details.bannerId,
+						message: `There was an error while restoring your backup.`,
+						siteID: details.siteId,
+						title: 'Cloud Backup restore failed!',
+						variant: 'error',
+					});
+				} else if (details.isResult) {
+					showSiteBanner({
+						siteID: siteId,
+						variant: 'success',
+						id: details.bannerId,
+						title: 'Cloud Backup restore completed!',
+						message: `This site has been successfully restored.`,
+					});
+				}
+			},
+			restoreSite.typePrefix,
+		);
 	},
 );
 

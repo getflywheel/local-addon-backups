@@ -233,7 +233,6 @@ const onErrorFactory = (additionalActions = []) => ({
 const setErroredStatus = (context: BackupMachineContext) => {
 	const { initialSiteStatus, site } = context;
 	sendIPCEvent('updateSiteStatus', site.id, initialSiteStatus);
-
 };
 
 const assignBackupRepoIDToContext = assign({
@@ -372,9 +371,7 @@ export const createBackup = (site: Site, provider: Providers, description: strin
 	if (serviceState.inProgressStateMachine) {
 		logger.warn('Backup process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.');
 
-		return Promise.reject(
-			'Backup process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.',
-		);
+		return Promise.reject('Backup process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.');
 	}
 
 	return new Promise((resolve, reject) => {
@@ -391,12 +388,13 @@ export const createBackup = (site: Site, provider: Providers, description: strin
 			.onStop(() => {
 				serviceState.inProgressStateMachine = null;
 				// eslint-disable-next-line no-underscore-dangle
-				const { error }: { error: ErrorState } = backupService._state.context;
+				const error: ErrorState = JSON.parse(backupService._state.context.error ?? null);
 
 				// todo - crum this is duplicate logic that should be handled by return result/error
 				sendIPCEvent(IPCEVENTS.BACKUP_COMPLETED);
 
 				if (error) {
+					logger.error(JSON.stringify(error));
 					reject(error);
 				} else {
 					siteProcessManager.restart(site);
