@@ -18,7 +18,6 @@ import type { Site, Providers, GenericObject, SiteMetaData, BackupSnapshot } fro
 import { metaDataFileName, backupSQLDumpFile, IPCEVENTS } from '../../constants';
 import { BackupStates } from '../../types';
 import serviceState from './state';
-import { createIpcAsyncError, createIpcAsyncResult, IpcAsyncResponse } from '../../helpers/createIpcAsyncResponse';
 
 const serviceContainer = getServiceContainer().cradle;
 const {
@@ -44,6 +43,11 @@ interface BackupMachineContext {
 	snapshot?: BackupSnapshot;
 	localBackupRepoID?: string;
 	error?: string;
+}
+
+interface ErrorState {
+	message: string;
+	type: string;
 }
 
 interface BackupMachineSchema {
@@ -346,7 +350,7 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 				error: JSON.stringify({
 					message: event.data.toString(),
 					type: event.type,
-				}),
+				} as ErrorState),
 			})),
 			// event.error exists when taking the invoke.onError branch in a given state
 			logError: (context, error) => {
@@ -364,17 +368,16 @@ const backupMachine = Machine<BackupMachineContext, BackupMachineSchema>(
  * @param provider
  * @param description
  */
-export const createBackup = (site: Site, provider: Providers, description: string): Promise<IpcAsyncResponse> => {
+export const createBackup = (site: Site, provider: Providers, description: string): Promise<null | ErrorState> => {
 	if (serviceState.inProgressStateMachine) {
 		logger.warn('Backup process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.');
 
-		return Promise.resolve(createIpcAsyncError(
+		return Promise.reject(
 			'Backup process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.',
-			site.id,
-		));
+		);
 	}
 
-	return new Promise((resolve) => {
+	return new Promise((resolve, reject) => {
 		const initialSiteStatus = siteProcessManager.getSiteStatus(site);
 
 		const backupService = interpret(backupMachine.withContext({ site, provider, description, initialSiteStatus }))
@@ -388,19 +391,17 @@ export const createBackup = (site: Site, provider: Providers, description: strin
 			.onStop(() => {
 				serviceState.inProgressStateMachine = null;
 				// eslint-disable-next-line no-underscore-dangle
-				const { error } = backupService._state.context;
+				const { error }: { error: ErrorState } = backupService._state.context;
 
 				// todo - crum this is duplicate logic that should be handled by return result/error
 				sendIPCEvent(IPCEVENTS.BACKUP_COMPLETED);
 
 				if (error) {
-					resolve(createIpcAsyncError(JSON.parse(error), site.id));
-					return;
+					reject(error);
+				} else {
+					siteProcessManager.restart(site);
+					resolve(null);
 				}
-
-				siteProcessManager.restart(site);
-
-				resolve(createIpcAsyncResult(null, site.id));
 			});
 
 		serviceState.inProgressStateMachine = backupService;

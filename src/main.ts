@@ -9,7 +9,10 @@ import { cloneFromBackup } from './main/services/cloneFromBackupService';
 import { IPCASYNC_EVENTS } from './constants';
 import { createIpcAsyncError, createIpcAsyncResult } from './helpers/createIpcAsyncResponse';
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+/**
+ * The Main thread of IPC listeners from Renderer.
+ * This is where all main thread ipc responses get normalized to use a consistent IpcAsyncResponse result.
+ */
 export default function (): void {
 	const listenerConfigs = [
 		{
@@ -25,9 +28,13 @@ export default function (): void {
 		{
 			channel: IPCASYNC_EVENTS.START_BACKUP,
 			callback: async (siteId: Local.Site['id'], provider: Providers, description: string) => {
-				const siteJSON = LocalMain.SiteData.getSite(siteId);
-				const site = new Local.Site(siteJSON);
-				return createBackup(site, provider, description);
+				try {
+					const siteJSON = LocalMain.SiteData.getSite(siteId);
+					const site = new Local.Site(siteJSON);
+					return createIpcAsyncResult(await createBackup(site, provider, description), siteId);
+				} catch (error) {
+					return createIpcAsyncError(JSON.parse(error), siteId);
+				}
 			},
 		},
 		{
