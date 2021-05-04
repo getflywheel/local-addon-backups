@@ -93,7 +93,7 @@ export type AppDispatch = typeof store.dispatch;
 
 export const useStoreSelector = useSelector as TypedUseSelectorHook<AppState>;
 
-export type AppThunkApiConfig<R = any> = {
+export type AppThunkApiConfig<R = IpcAsyncResponse['error']> = {
 	dispatch: AppDispatch;
 	rejectValue: R;
 	state: AppState;
