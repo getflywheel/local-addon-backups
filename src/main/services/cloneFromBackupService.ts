@@ -11,7 +11,7 @@ import { restoreBackup as restoreResticBackup } from '../cli';
 import type { Site, Providers, GenericObject } from '../../types';
 import { CloneFromBackupStates } from '../../types';
 import serviceState from './state';
-import { backupSQLDumpFile, IPCEVENTS } from '../../constants';
+import { backupSQLDumpFile } from '../../constants';
 import * as LocalMain from '@getflywheel/local/main';
 import * as Local from '@getflywheel/local';
 import shortid from 'shortid';
@@ -399,7 +399,6 @@ export const cloneFromBackup = async (opts: {
 		const machine = cloneMachine.withContext({ baseSite, provider, snapshotHash, newSiteName });
 		const cloneFromBackupService = interpret(machine)
 			.onTransition((state) => {
-				sendIPCEvent(IPCEVENTS.BACKUP_STARTED);
 				logger.info(camelCaseToSentence(state.value as string));
 			})
 			.onDone(() => cloneFromBackupService.stop())
@@ -407,8 +406,6 @@ export const cloneFromBackup = async (opts: {
 				serviceState.inProgressStateMachine = null;
 				// eslint-disable-next-line no-underscore-dangle
 				const error: ErrorState = JSON.parse(cloneFromBackupService._state.context.error ?? null);
-
-				sendIPCEvent(IPCEVENTS.BACKUP_COMPLETED);
 
 				if (error) {
 					logger.error(JSON.stringify(error));

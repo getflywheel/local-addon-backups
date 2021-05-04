@@ -11,7 +11,7 @@ import { restoreBackup as restoreResticBackup } from '../cli';
 import type { Site, Providers, GenericObject } from '../../types';
 import { RestoreStates } from '../../types';
 import serviceState from './state';
-import { backupSQLDumpFile, IPCEVENTS } from '../../constants';
+import { backupSQLDumpFile } from '../../constants';
 import { getFilteredSiteFiles } from '../../helpers/ignoreFilesPattern';
 
 const serviceContainer = getServiceContainer().cradle;
@@ -293,8 +293,6 @@ export const restoreFromBackup = async (opts: { site: Site; provider: Providers;
 		const machine = restoreMachine.withContext({ site, provider, snapshotID, initialSiteStatus });
 		const restoreService = interpret(machine)
 			.onTransition((state) => {
-				sendIPCEvent(IPCEVENTS.BACKUP_STARTED);
-
 				const actionLabel = camelCaseToSentence(state.value as string);
 				logger.info(`${actionLabel} [site id: ${site.id}]`);
 			})
@@ -306,8 +304,6 @@ export const restoreFromBackup = async (opts: { site: Site; provider: Providers;
 				const siteModel = new LocalSiteModel(site);
 
 				siteProcessManager.restart(siteModel);
-
-				sendIPCEvent(IPCEVENTS.BACKUP_COMPLETED);
 
 				sendIPCEvent('updateSiteStatus', site.id, initialSiteStatus);
 
