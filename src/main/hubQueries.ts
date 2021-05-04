@@ -242,23 +242,23 @@ export async function deleteBackupSnapshotRecord (queryArgs: { snapshotID: numbe
 	return data?.deleteBackupSnapshotRecord.success;
 }
 
-export async function getBackupSnapshot (snapshotID: number) {
-	const { data } = await localHubClient.query({
-		query: gql`
-			query backupSnapshots($snapshotID: Int) {
-				backupSnapshots(id: $snapshotID) {
-					id
-					repo_id
-					hash
-				}
-			}
-		`,
-		variables: { snapshotID },
-	});
-
-	const { repo_id: repoID, ...rest } = data?.backupSnapshots?.[0];
-	return { ...rest, repoID };
-}
+// export async function getBackupSnapshot (snapshotID: number) {
+// 	const { data } = await localHubClient.query({
+// 		query: gql`
+// 			query backupSnapshots($snapshotID: Int) {
+// 				backupSnapshots(id: $snapshotID) {
+// 					id
+// 					repo_id
+// 					hash
+// 				}
+// 			}
+// 		`,
+// 		variables: { snapshotID },
+// 	});
+//
+// 	const { repo_id: repoID, ...rest } = data?.backupSnapshots?.[0];
+// 	return { ...rest, repoID };
+// }
 
 export async function getBackupSnapshots (): Promise<BackupSnapshot[]> {
 	const { data } = await localHubClient.query({

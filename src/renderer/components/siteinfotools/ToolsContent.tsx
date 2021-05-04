@@ -15,13 +15,16 @@ interface Props {
 
 export const ToolsContent = ({ className, site }: Props) => {
 	const { hasErrorLoadingSnapshots } = useStoreSelector((state) => state.activeSite);
+	const activeSite = useStoreSelector((state) => state.activeSite);
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 
 	if (hasErrorLoadingSnapshots) {
 		return (
 			<TryAgain
 				message={`There was an issue retrieving the list of your site's Cloud Backups for ${activeSiteProvider?.name}.`}
-				onClick={() => store.dispatch(getSnapshotsForActiveSiteProviderHub())}
+				onClick={() => store.dispatch(getSnapshotsForActiveSiteProviderHub({
+					siteId: activeSite.id,
+				}))}
 			/>
 		);
 	}

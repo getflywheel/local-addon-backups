@@ -92,6 +92,7 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 				content: renderTextButton('Retry', () => false),
 				onClick: () => store.dispatch(actions.backupSite({
 					description: snapshot.configObject.description,
+					providerId: provider.id,
 					siteId: site.id,
 					siteName: site.name,
 				})),

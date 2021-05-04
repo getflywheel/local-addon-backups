@@ -27,7 +27,7 @@ export const activeSiteSlice = createSlice({
 	extraReducers: (builder) => {
 		builder.addCase(getSnapshotsForActiveSiteProviderHub.fulfilled, (state, { payload }) => {
 			state.isLoadingSnapshots = false;
-			state.snapshots = payload ?? [];
+			state.snapshots = payload.result ?? [];
 		});
 		builder.addCase(getSnapshotsForActiveSiteProviderHub.pending, (state) => {
 			state.isLoadingSnapshots = true;

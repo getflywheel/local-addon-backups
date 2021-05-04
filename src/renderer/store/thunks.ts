@@ -16,43 +16,40 @@ const localStorageKey = 'local-addon-backups-activeProviders';
 /**
  * Get selected provider's snapshots from hub for active site.
  */
-const getSnapshotsForActiveSiteProviderHub = createAsyncThunk(
+const getSnapshotsForActiveSiteProviderHub = createAsyncThunk<
+	IpcAsyncResponse<BackupSnapshot[]>, // types return here and for extraReducers fulfilled
+	{ siteId: string }, // types function signature and extraReducers meta 'arg'
+	AppThunkApiConfig<IpcAsyncResponse['error']> // types rejected return here and for extraReducers rejected
+>(
 	'getSnapshotsForActiveSiteProviderHub',
-	async (_, { rejectWithValue, getState }) => {
-		const {
-			activeSite,
-			providers,
-		} = getState() as AppState;
+	async (
+		{ siteId },
+		{ getState, rejectWithValue },
+	) => {
+		const { providers } = getState();
 
-		// clear out any previous banner caused by this thunk
-		clearSiteBanner(activeSite.id, getSnapshotsForActiveSiteProviderHub.typePrefix);
-
-		try {
-			if (!activeSite?.id) {
-				return null;
-			}
-
-			return await ipcAsync(
-				IPCASYNC_EVENTS.GET_SITE_PROVIDER_BACKUPS,
-				activeSite.id,
-				providers.activeProviders[activeSite.id],
-			) as BackupSnapshot[];
-		} catch (error) {
-			showSiteBanner({
-				icon: 'warning',
-				id: getSnapshotsForActiveSiteProviderHub.typePrefix,
-				message: `There was an issue retrieving your site's list of backups.`,
-				siteID: activeSite.id,
-				title: 'Cloud Backups Error',
-				variant: 'error',
-			});
-
-			if (!error.response) {
-				throw error;
-			}
-
-			return rejectWithValue(error.response);
-		}
+		return await handleIPCResponseOrRejectWithError<BackupSnapshot[]>(
+			IPCASYNC_EVENTS.GET_SITE_PROVIDER_BACKUPS,
+			[
+				siteId,
+				providers.activeProviders[siteId],
+			],
+			siteId,
+			rejectWithValue,
+			(details) => {
+				if (details.isErrorAndUncaptured) {
+					showSiteBanner({
+						icon: 'warning',
+						id: details.bannerId,
+						message: `There was an issue retrieving your site's list of backups.`,
+						siteID: details.siteId,
+						title: 'Cloud Backups Error',
+						variant: 'error',
+					});
+				}
+			},
+			getSnapshotsForActiveSiteProviderHub.typePrefix,
+		);
 	},
 );
 
@@ -61,7 +58,12 @@ const getSnapshotsForActiveSiteProviderHub = createAsyncThunk(
  */
 const backupSite = createAsyncThunk<
 	null, // types return here and for extraReducers fulfilled
-	{ description: string, siteId: string, siteName: string }, // types function signature and extraReducers meta 'arg'
+	{
+		description: string,
+		providerId: HubProviderRecord['id'],
+		siteId: string,
+		siteName: string,
+	}, // types function signature and extraReducers meta 'arg'
 	AppThunkApiConfig<null> // types rejected return here and for extraReducers rejected
 >(
 	'backupSite',
@@ -112,7 +114,9 @@ const backupSite = createAsyncThunk<
 		});
 
 		// asynchronous refresh snapshots (don't await)
-		dispatch(getSnapshotsForActiveSiteProviderHub());
+		dispatch(getSnapshotsForActiveSiteProviderHub({
+			siteId,
+		}));
 
 		return null;
 	},
@@ -155,7 +159,7 @@ const restoreSite = createAsyncThunk(
 const getEnabledProvidersHub = createAsyncThunk<
 	IpcAsyncResponse<HubProviderRecord[]>, // types return here and for extraReducers fulfilled
 	{ siteId: string }, // types function signature and extraReducers meta 'arg'
-	AppThunkApiConfig // types rejected return here and for extraReducers rejected
+	AppThunkApiConfig<IpcAsyncResponse['error']> // types rejected return here and for extraReducers rejected
 >(
 	'getEnabledProvidersHub',
 	async (
@@ -164,13 +168,14 @@ const getEnabledProvidersHub = createAsyncThunk<
 	) => {
 		return await handleIPCResponseOrRejectWithError<HubProviderRecord[]>(
 			IPCASYNC_EVENTS.GET_ENABLED_PROVIDERS,
+			[siteId],
 			siteId,
 			rejectWithValue,
-			(responseData, _) => {
-				if (responseData.isErrorAndUncaptured) {
+			(details, _) => {
+				if (details.isErrorAndUncaptured) {
 					showSiteBanner({
 						icon: 'warning',
-						id: responseData.bannerId,
+						id: details.bannerId,
 						message: 'There was an issue retrieving your backup providers.',
 						siteID: siteId,
 						title: 'Cloud Backups Error',
@@ -236,13 +241,22 @@ const setActiveProviderAndPersist = createAsyncThunk(
 /**
  * Saga of dispatches to update active provider and retrieve its snapshots for the active site.
  */
-const setActiveProviderPersistAndUpdateSnapshots = createAsyncThunk(
+const setActiveProviderPersistAndUpdateSnapshots = createAsyncThunk<
+	IpcAsyncResponse<null>, // types return here and for extraReducers fulfilled
+	{ siteId: string, providerId: HubProviderRecord['id'] }, // types function signature and extraReducers meta 'arg'
+	AppThunkApiConfig // types rejected return here and for extraReducers rejected
+>(
 	'setActiveProviderPersistAndUpdateSnapshots',
-	async (providerId: HubProviderRecord['id'], { dispatch, rejectWithValue }) => {
+	async (
+		{ siteId, providerId },
+		{ dispatch, rejectWithValue },
+	) => {
 		try {
 			await dispatchAsyncThunk(setActiveProviderAndPersist(providerId));
 			// asynchronous get snapshots given the site and provider
-			dispatch(getSnapshotsForActiveSiteProviderHub());
+			dispatch(getSnapshotsForActiveSiteProviderHub({
+				siteId,
+			}));
 
 			return null;
 		} catch (err) {
@@ -282,9 +296,16 @@ const updateActiveSite = createAsyncThunk(
 /**
  * Chains together several thunks resulting from updating the active site that updates the providers and snapshots.
  */
-const updateActiveSiteAndDataSources = createAsyncThunk(
+const updateActiveSiteAndDataSources = createAsyncThunk<
+	string | null, // types return here and for extraReducers fulfilled
+	{ siteId: string | null }, // types function signature and extraReducers meta 'arg'
+	AppThunkApiConfig // types rejected return here and for extraReducers rejected
+>(
 	'updateActiveSiteAndDataSources',
-	async (siteId: string | null, { dispatch, rejectWithValue }) => {
+	async (
+		{ siteId },
+		{ dispatch, rejectWithValue },
+	) => {
 		try {
 			// update active site details
 			await dispatchAsyncThunk(updateActiveSite(siteId));
@@ -292,7 +313,9 @@ const updateActiveSiteAndDataSources = createAsyncThunk(
 			// note: this call should have no other data dependencies (e.g. siteId, enabledProviders, etc)
 			await dispatchAsyncThunk(getEnabledProvidersHub({ siteId }));
 			// get snapshots given the site and provider
-			dispatch(getSnapshotsForActiveSiteProviderHub());
+			dispatch(getSnapshotsForActiveSiteProviderHub({
+				siteId,
+			}));
 
 			return siteId;
 		} catch (error) {

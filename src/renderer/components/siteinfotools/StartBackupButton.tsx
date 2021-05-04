@@ -19,6 +19,7 @@ export const StartBackupButton = (props: Props) => {
 	const backupSite = (description: string) => {
 		store.dispatch(actions.backupSite({
 			description,
+			providerId: activeSiteProvider.id,
 			siteId: site.id,
 			siteName: site.name,
 		}));

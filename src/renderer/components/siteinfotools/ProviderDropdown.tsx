@@ -28,7 +28,7 @@ const renderProviderIcon = (provider: HubProviderRecord): React.ReactNode => {
 		default:
 			return null;
 	}
-}
+};
 
 const renderTextButton = (label: React.ReactNode, value: React.ReactNode, deactivateLabel?: boolean) => (
 	<TextButton
@@ -36,7 +36,7 @@ const renderTextButton = (label: React.ReactNode, value: React.ReactNode, deacti
 			styles.ProviderDropdown_Item_TextButton,
 			{
 				[styles.ProviderDropdown_Item_TextButton__Deactivated]: deactivateLabel,
-			}
+			},
 		)}
 		privateOptions={{
 			fontWeight: 'medium',
@@ -57,7 +57,7 @@ const renderDropdownConnectItem = (label?: string) => renderTextButton(
 	<LoginIconExternalLinkSvg className={styles.TextButtonExternal_Svg} />,
 );
 
-const renderDropdownProviderItem = (provider?: HubProviderRecord, isActiveProvider?: boolean, ) => renderTextButton(
+const renderDropdownProviderItem = (provider?: HubProviderRecord, isActiveProvider?: boolean) => renderTextButton(
 	provider?.name,
 	provider && isActiveProvider
 		? (
@@ -69,6 +69,7 @@ const renderDropdownProviderItem = (provider?: HubProviderRecord, isActiveProvid
 
 export const ProviderDropdown = () => {
 	const { enabledProviders } = useStoreSelector((state) => state.providers);
+	const siteId = useStoreSelector((state) => state.activeSite.id);
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 	const dropdownItems: React.ComponentProps<typeof FlyDropdown>['items'] = [];
 
@@ -77,7 +78,10 @@ export const ProviderDropdown = () => {
 			dropdownItems.push({
 				color: 'none',
 				content: renderDropdownProviderItem(provider, activeSiteProvider === provider),
-				onClick: () => store.dispatch(actions.setActiveProviderPersistAndUpdateSnapshots(provider.id)),
+				onClick: () => store.dispatch(actions.setActiveProviderPersistAndUpdateSnapshots({
+					siteId,
+					providerId: provider.id,
+				})),
 			});
 		});
 
@@ -117,4 +121,4 @@ export const ProviderDropdown = () => {
 			</FlyDropdown>
 		</div>
 	);
-}
+};
