@@ -1,13 +1,14 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import type { BackupSnapshot, HubProviderRecord } from '../../types';
+import type { BackupSnapshot, HubProviderRecord, Providers } from '../../types';
 import { AppThunkApiConfig, AppState } from './store';
 import { selectors } from './selectors';
+import type { Site } from '@getflywheel/local';
 import { hubProviderToProvider } from '../helpers/hubProviderToProvider';
 import { IPCASYNC_EVENTS } from '../../constants';
 import dispatchAsyncThunk from './helpers/dispatchAsyncUnwrapped.js';
 import { showSiteBanner } from '../helpers/showSiteBanner';
 import { IpcAsyncResponse } from '../../helpers/createIpcAsyncResponse';
-import { processIPCAsyncResponseAndGlobalErrors } from '../helpers/thunkUtils';
+import { callIPCAsyncAndProcessResponse } from '../helpers/thunkUtils';
 
 const localStorageKey = 'local-addon-backups-activeProviders';
 
@@ -26,7 +27,7 @@ const getSnapshotsForActiveSiteProviderHub = createAsyncThunk<
 	) => {
 		const { providers } = getState();
 
-		return await processIPCAsyncResponseAndGlobalErrors<BackupSnapshot[]>(
+		return await callIPCAsyncAndProcessResponse<BackupSnapshot[]>(
 			IPCASYNC_EVENTS.GET_SITE_PROVIDER_BACKUPS,
 			[
 				siteId,
@@ -80,7 +81,7 @@ const backupSite = createAsyncThunk<
 		const state = getState();
 		const rsyncProviderId = hubProviderToProvider(selectors.selectActiveProvider(state)?.id);
 
-		return await processIPCAsyncResponseAndGlobalErrors<null>(
+		return await callIPCAsyncAndProcessResponse<null>(
 			IPCASYNC_EVENTS.START_BACKUP,
 			[
 				siteId,
@@ -137,7 +138,7 @@ const restoreSite = createAsyncThunk<
 		const state = getState();
 		const rsyncProviderId = hubProviderToProvider(selectors.selectActiveProvider(state)?.id);
 
-		return await processIPCAsyncResponseAndGlobalErrors<null>(
+		return await callIPCAsyncAndProcessResponse<null>(
 			IPCASYNC_EVENTS.RESTORE_BACKUP,
 			[
 				siteId,
@@ -172,6 +173,64 @@ const restoreSite = createAsyncThunk<
 );
 
 /**
+ * Request to clone backupto new site.
+ */
+const cloneSite = createAsyncThunk<
+	IpcAsyncResponse<null>, // types return here and for extraReducers fulfilled
+	{
+		baseSite: Site,
+		newSiteName: string,
+		provider: Providers,
+		snapshotHash: string,
+	}, // types function signature and extraReducers meta 'arg'
+	AppThunkApiConfig<IpcAsyncResponse['error']> // types rejected return here and for extraReducers rejected
+>(
+	'cloneSite',
+	async (
+		{
+			baseSite,
+			newSiteName,
+			provider,
+			snapshotHash,
+		},
+		{ rejectWithValue },
+	) => {
+		return await callIPCAsyncAndProcessResponse<null>(
+			IPCASYNC_EVENTS.CLONE_BACKUP,
+			[
+				baseSite,
+				newSiteName,
+				provider,
+				snapshotHash,
+			],
+			baseSite.id,
+			rejectWithValue,
+			(details) => {
+				if (details.isErrorAndUncaptured) {
+					showSiteBanner({
+						icon: 'warning',
+						id: details.bannerId,
+						message: `There was an error while cloning your backup.`,
+						siteID: details.siteId,
+						title: 'Cloud Backup clone failed!',
+						variant: 'error',
+					});
+				} else if (details.isResult) {
+					showSiteBanner({
+						siteID: details.siteId,
+						variant: 'success',
+						id: details.bannerId,
+						title: 'Cloud Backup clone completed!',
+						message: `This site has been successfully cloned.`,
+					});
+				}
+			},
+			cloneSite.typePrefix,
+		);
+	},
+);
+
+/**
  * Get provider data from Hub.
  */
 const getEnabledProvidersHub = createAsyncThunk<
@@ -183,27 +242,25 @@ const getEnabledProvidersHub = createAsyncThunk<
 	async (
 		{ siteId },
 		{ rejectWithValue },
-	) => {
-		return await processIPCAsyncResponseAndGlobalErrors<HubProviderRecord[]>(
-			IPCASYNC_EVENTS.GET_ENABLED_PROVIDERS,
-			[siteId],
-			siteId,
-			rejectWithValue,
-			(details) => {
-				if (details.isErrorAndUncaptured) {
-					showSiteBanner({
-						icon: 'warning',
-						id: details.bannerId,
-						message: 'There was an issue retrieving your backup providers.',
-						siteID: siteId,
-						title: 'Cloud Backups Error',
-						variant: 'error',
-					});
-				}
-			},
-			backupSite.typePrefix,
-		);
-	},
+	) => await callIPCAsyncAndProcessResponse<HubProviderRecord[]>(
+		IPCASYNC_EVENTS.GET_ENABLED_PROVIDERS,
+		[siteId],
+		siteId,
+		rejectWithValue,
+		(details) => {
+			if (details.isErrorAndUncaptured) {
+				showSiteBanner({
+					icon: 'warning',
+					id: details.bannerId,
+					message: 'There was an issue retrieving your backup providers.',
+					siteID: siteId,
+					title: 'Cloud Backups Error',
+					variant: 'error',
+				});
+			}
+		},
+		backupSite.typePrefix,
+	),
 );
 
 /**
@@ -350,10 +407,11 @@ const updateActiveSiteAndDataSources = createAsyncThunk<
 
 export {
 	backupSite,
-	restoreSite,
+	cloneSite,
 	initActiveProvidersFromLocalStorage,
 	getEnabledProvidersHub,
 	getSnapshotsForActiveSiteProviderHub,
+	restoreSite,
 	setActiveProviderAndPersist,
 	setActiveProviderPersistAndUpdateSnapshots,
 	updateActiveSite,

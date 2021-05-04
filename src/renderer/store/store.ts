@@ -1,6 +1,5 @@
 import { useSelector, TypedUseSelectorHook } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-import { middleware } from './middleware';
 import { providersSlice } from './providersSlice';
 import { activeSiteSlice } from './activeSiteSlice';
 import { directorSlice } from './directorSlice';
@@ -26,7 +25,6 @@ export const store = configureStore({
 		providers: providersSlice.reducer,
 		director: directorSlice.reducer,
 	},
-	middleware,
 });
 
 /**

@@ -1,9 +1,6 @@
-import {
-	createSlice,
-	PayloadAction,
-} from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 import type { BackupSnapshot } from '../../types';
-import { backupSite, restoreSite } from './thunks';
+import { backupSite, cloneSite, restoreSite } from './thunks';
 
 /**
  * Controls state variables that pertain to all sites
@@ -61,6 +58,24 @@ export const directorSlice = createSlice({
 				...state.backupSnapshotPlaceholder,
 				status: 'errored',
 			};
+		});
+
+		builder.addCase(cloneSite.fulfilled, (state) => {
+			// clear backup details thus signaling that there is no active or pending backup
+			state.backupInMode = null;
+			state.backupIsRunning = false;
+			state.backupSiteId = null;
+		});
+		builder.addCase(cloneSite.pending, (state, { meta }) => {
+			// signal in-progress "running" state
+			state.backupInMode = 'clone';
+			state.backupIsRunning = true;
+			state.backupSiteId = meta.arg.siteId;
+		});
+		builder.addCase(cloneSite.rejected, (state) => {
+			// signal stalled by keeping other state but toggling running state
+			state.backupInMode = null;
+			state.backupIsRunning = false;
 		});
 		builder.addCase(restoreSite.fulfilled, (state) => {
 			// clear backup details thus signaling that there is no active or pending backup

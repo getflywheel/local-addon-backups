@@ -103,7 +103,7 @@ const setupDestinationSite = async (context: BackupMachineContext) => {
 
 	dupSite.id = dupID;
 	dupSite.name = newSiteName;
-
+	// todo - tyler: setup site status as part of site creation to resolve `status.indexof` issue
 
 	dupSite.domain = `${formattedSiteName}.local`;
 	dupSite.path = path.join(localSitesDir, formattedSiteName);

@@ -10,8 +10,7 @@ import type { Site } from '@getflywheel/local';
 import styles from './BackupContents.scss';
 import { BackupSnapshot, HubProviderRecord, Providers } from '../../../types';
 import { hubProviderRecordToProvider } from '../../helpers/hubProviderToProvider';
-import { ipcAsync } from '@getflywheel/local/renderer';
-import { IPCASYNC_EVENTS } from '../../../constants';
+import { actions, store } from '../../store/store';
 
 interface ModalContentsProps {
 	site: Site;
@@ -20,14 +19,7 @@ interface ModalContentsProps {
 }
 
 const onCloneModalSubmit = (baseSite: Site, newSiteName: string, provider: Providers, snapshotHash: string) => {
-	// todo - crum: move to thunk for consistency of calls, handling, global errors, etc
-	ipcAsync(
-		IPCASYNC_EVENTS.CLONE_BACKUP,
-		baseSite,
-		newSiteName,
-		provider,
-		snapshotHash,
-	);
+	store.dispatch(actions.cloneSite({ baseSite, newSiteName, provider, snapshotHash }));
 };
 
 export const BackupCloneContents = (props: ModalContentsProps) => {
