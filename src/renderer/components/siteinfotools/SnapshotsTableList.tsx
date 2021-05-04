@@ -67,7 +67,7 @@ const renderDate = (updatedAt: string, snapshot: BackupSnapshot) => {
 
 const renderTextButton = (label: React.ReactNode, isDisabled: () => boolean) => (
 	<TextButton
-		style={{ pointerEvents: store.getState().director.backupRunning ? 'none' : 'auto' }}
+		style={{ pointerEvents: store.getState().director.backupIsRunning ? 'none' : 'auto' }}
 		disabled={isDisabled()}
 		className={styles.SnapshotsTableList_MoreDropdown_Item_TextButton}
 		privateOptions={{
@@ -112,8 +112,8 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 		default:
 			items.push({
 				color: 'none',
-				content: renderTextButton('Restore site to this Cloud Backup', () => store.getState().director.backupRunning),
-				onClick: store.getState().director.backupRunning
+				content: renderTextButton('Restore site to this Cloud Backup', () => store.getState().director.backupIsRunning),
+				onClick: store.getState().director.backupIsRunning
 					? () => undefined
 					: () => createModal(
 						() => (
@@ -126,8 +126,8 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 			});
 			items.push({
 				color: 'none',
-				content: renderTextButton('Clone site from Cloud Backup', () => store.getState().director.backupRunning),
-				onClick: store.getState().director.backupRunning
+				content: renderTextButton('Clone site from Cloud Backup', () => store.getState().director.backupIsRunning),
+				onClick: store.getState().director.backupIsRunning
 					? () => undefined
 					: () => createModal(
 						() => (

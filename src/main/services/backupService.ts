@@ -15,7 +15,7 @@ import {
 } from '../hubQueries';
 import { initRepo, createSnapshot as createProviderSnapshot } from '../cli';
 import type { Site, Providers, GenericObject, SiteMetaData, BackupSnapshot } from '../../types';
-import { metaDataFileName, backupSQLDumpFile, IPCEVENTS } from '../../constants';
+import { metaDataFileName, backupSQLDumpFile } from '../../constants';
 import { BackupStates } from '../../types';
 import serviceState from './state';
 
@@ -379,8 +379,6 @@ export const createBackup = (site: Site, provider: Providers, description: strin
 
 		const backupService = interpret(backupMachine.withContext({ site, provider, description, initialSiteStatus }))
 			.onTransition((state) => {
-				sendIPCEvent(IPCEVENTS.BACKUP_STARTED);
-
 				const status = camelCaseToSentence(state.value as string);
 				logger.info(`${status} [site id: ${site.id}]`);
 			})
@@ -389,9 +387,6 @@ export const createBackup = (site: Site, provider: Providers, description: strin
 				serviceState.inProgressStateMachine = null;
 				// eslint-disable-next-line no-underscore-dangle
 				const error: ErrorState = JSON.parse(backupService._state.context.error ?? null);
-
-				// todo - crum this is duplicate logic that should be handled by return result/error
-				sendIPCEvent(IPCEVENTS.BACKUP_COMPLETED);
 
 				if (error) {
 					logger.error(JSON.stringify(error));

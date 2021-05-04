@@ -1,6 +1,5 @@
 import { useSelector, TypedUseSelectorHook } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-import { IpcAsyncResponse } from '../../helpers/createIpcAsyncResponse';
 import { middleware } from './middleware';
 import { providersSlice } from './providersSlice';
 import { activeSiteSlice } from './activeSiteSlice';

@@ -1,7 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import type { BackupSnapshot, HubProviderRecord } from '../../types';
 import { AppThunkApiConfig, AppState } from './store';
-import { ipcAsync } from '@getflywheel/local/renderer';
 import { selectors } from './selectors';
 import { hubProviderToProvider } from '../helpers/hubProviderToProvider';
 import { IPCASYNC_EVENTS } from '../../constants';
@@ -127,17 +126,16 @@ const backupSite = createAsyncThunk<
  */
 const restoreSite = createAsyncThunk<
 	IpcAsyncResponse<null>, // types return here and for extraReducers fulfilled
-	{ snapshotID: string }, // types function signature and extraReducers meta 'arg'
+	{ siteId: string, snapshotID: string }, // types function signature and extraReducers meta 'arg'
 	AppThunkApiConfig<IpcAsyncResponse['error']> // types rejected return here and for extraReducers rejected
 >(
 	'restoreSite',
 	async (
-		{ snapshotID },
+		{ siteId, snapshotID },
 		{ getState, rejectWithValue },
 	) => {
 		const state = getState();
 		const rsyncProviderId = hubProviderToProvider(selectors.selectActiveProvider(state)?.id);
-		const siteId = state.activeSite.id;
 
 		return await processIPCAsyncResponseAndGlobalErrors<null>(
 			IPCASYNC_EVENTS.RESTORE_BACKUP,

@@ -2,11 +2,6 @@ export const URLS = {
 	LOCAL_HUB: 'https://hub-staging.localwp.com',
 };
 
-export const IPCEVENTS = {
-	BACKUP_STARTED: 'backupServiceStarted:backups',
-	BACKUP_COMPLETED: 'backupServiceCompleted:backups',
-};
-
 export const IPCASYNC_EVENTS = {
 	GET_ENABLED_PROVIDERS: 'backups:enabled-providers',
 	START_BACKUP: 'backups:backup-site',
