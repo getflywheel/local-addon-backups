@@ -19,7 +19,10 @@ export default function (): void {
 			channel: IPCASYNC_EVENTS.GET_ENABLED_PROVIDERS,
 			callback: async (siteId: Local.Site['id']) => {
 				try {
-					return createIpcAsyncResult(await getEnabledBackupProviders(), siteId);
+					return createIpcAsyncResult(
+						await getEnabledBackupProviders(),
+						siteId,
+					);
 				} catch (error) {
 					return createIpcAsyncError(error, siteId);
 				}
@@ -31,9 +34,12 @@ export default function (): void {
 				try {
 					const siteJSON = LocalMain.SiteData.getSite(siteId);
 					const site = new Local.Site(siteJSON);
-					return createIpcAsyncResult(await createBackup(site, provider, description), siteId);
+					return createIpcAsyncResult(
+						await createBackup(site, provider, description),
+						siteId,
+					);
 				} catch (error) {
-					return createIpcAsyncError(JSON.parse(error), siteId);
+					return createIpcAsyncError(error, siteId);
 				}
 			},
 		},
@@ -71,15 +77,30 @@ export default function (): void {
 		},
 		{
 			channel: IPCASYNC_EVENTS.RESTORE_BACKUP,
-			callback: async (siteID: Site['id'], provider: Providers, snapshotID: string) => {
-				const site = getSiteDataFromDisk(siteID);
-				return restoreFromBackup({ site, provider, snapshotID });
+			callback: async (siteId: Site['id'], provider: Providers, snapshotID: string) => {
+				try {
+					const site = getSiteDataFromDisk(siteId);
+					return createIpcAsyncResult(
+						await restoreFromBackup({ site, provider, snapshotID }),
+						siteId,
+					);
+				} catch (error) {
+					return createIpcAsyncError(error, siteId);
+				}
 			},
 		},
 		{
 			channel: IPCASYNC_EVENTS.CLONE_BACKUP,
-			callback: async (baseSite: Local.Site, newSiteName: string, provider: Providers, snapshotHash: string) =>
-				cloneFromBackup({ baseSite, newSiteName, provider, snapshotHash }),
+			callback: async (baseSite: Local.Site, newSiteName: string, provider: Providers, snapshotHash: string) => {
+				try {
+					return createIpcAsyncResult(
+						await cloneFromBackup({ baseSite, newSiteName, provider, snapshotHash }),
+						baseSite.id,
+					);
+				} catch (error) {
+					return createIpcAsyncError(error, baseSite.id);
+				}
+			},
 		},
 	];
 

@@ -46,6 +46,11 @@ interface BackupMachineSchema {
 	}
 }
 
+interface ErrorState {
+	message: string;
+	type: string;
+}
+
 const getCredentials = async (context: BackupMachineContext) => {
 	const { site } = context;
 
@@ -142,20 +147,11 @@ const restoreBackup = async (context: BackupMachineContext) => {
 };
 
 const removeTmpDir = async (context: BackupMachineContext) => {
-	const { tmpDirData, site } = context;
+	const { tmpDirData } = context;
 
 	// removeCallback will error if the tmp directory is not empty
 	fs.emptyDirSync(tmpDirData.name);
 	tmpDirData.removeCallback();
-
-	sendIPCEvent('showSiteBanner', {
-		siteID: site.id,
-		variant: 'success',
-		icon: false,
-		id: 'site-backup-restored',
-		title: 'Backup restore completed!',
-		message: `The restore for ${site.name} has been successfully completed.`,
-	});
 };
 
 const onErrorFactory = () => ({
@@ -170,17 +166,6 @@ const onErrorFactory = () => ({
 const setErroredStatus = (context: BackupMachineContext) => {
 	const { initialSiteStatus, site } = context;
 	sendIPCEvent('updateSiteStatus', site.id, initialSiteStatus);
-
-	sendIPCEvent('showSiteBanner', {
-		siteID: site.id,
-		id: 'site-errored-backup',
-		variant: 'error',
-		icon: 'warning',
-		title: 'Restore errored!',
-		message: `There was an error while restoring your backup.`,
-	});
-
-	siteProcessManager.restart(site);
 };
 
 // eslint-disable-next-line new-cap
@@ -209,7 +194,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 		states: {
 			[RestoreStates.gettingBackupCredentials]: {
 				invoke: {
-					src: (context, event) => getCredentials(context),
+					src: (context) => getCredentials(context),
 					onDone: {
 						target: RestoreStates.creatingTmpDir,
 						actions: assign((context, { data: { encryptionPassword, backupSiteID, localBackupRepoID } }) => ({
@@ -226,7 +211,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			 */
 			[RestoreStates.creatingTmpDir]: {
 				invoke: {
-					src: (context, event) => createTmpDir(),
+					src: () => createTmpDir(),
 					onDone: {
 						target: RestoreStates.restoringBackup,
 						actions: assign({
@@ -238,7 +223,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			},
 			[RestoreStates.restoringBackup]: {
 				invoke: {
-					src: (context, event) => restoreBackup(context),
+					src: (context) => restoreBackup(context),
 					onDone: {
 						target: RestoreStates.movingSiteFromTmpDir,
 					},
@@ -247,7 +232,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			},
 			[RestoreStates.movingSiteFromTmpDir]: {
 				invoke: {
-					src: (context, event) => moveSiteFromTmpDir(context),
+					src: (context) => moveSiteFromTmpDir(context),
 					onDone: {
 						target: RestoreStates.restoringDatabase,
 					},
@@ -276,7 +261,10 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 		actions: {
 			removeTmpDir,
 			setErrorOnContext: assign((context, event) => ({
-				error: event.data,
+				error: JSON.stringify({
+					message: event.data.toString(),
+					type: event.type,
+				} as ErrorState),
 			})),
 			logError: (context, event) => {
 				logger.error(event.data);
@@ -292,14 +280,14 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
  * @param opts
  * @returns
  */
-export const restoreFromBackup = async (opts: { site: Site; provider: Providers; snapshotID: string; }) => {
+export const restoreFromBackup = async (opts: { site: Site; provider: Providers; snapshotID: string; }): Promise<null | ErrorState> => {
 	if (serviceState.inProgressStateMachine) {
 		logger.warn('Restore process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.');
-		return;
+		return Promise.reject('Restore process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.');
 	}
 
 	const { site, provider, snapshotID } = opts;
-	return new Promise((resolve) => {
+	return new Promise((resolve, reject) => {
 		const initialSiteStatus = siteProcessManager.getSiteStatus(site);
 
 		const machine = restoreMachine.withContext({ site, provider, snapshotID, initialSiteStatus });
@@ -314,7 +302,7 @@ export const restoreFromBackup = async (opts: { site: Site; provider: Providers;
 			.onStop(() => {
 				serviceState.inProgressStateMachine = null;
 				// eslint-disable-next-line no-underscore-dangle
-				const { error } = restoreService._state;
+				const error: ErrorState = JSON.parse(restoreService._state.context.error ?? null);
 				const siteModel = new LocalSiteModel(site);
 
 				siteProcessManager.restart(siteModel);
@@ -324,10 +312,11 @@ export const restoreFromBackup = async (opts: { site: Site; provider: Providers;
 				sendIPCEvent('updateSiteStatus', site.id, initialSiteStatus);
 
 				if (error) {
-					resolve({ error });
+					logger.error(JSON.stringify(error));
+					reject(error);
+				} else {
+					resolve(null);
 				}
-
-				resolve(null);
 			});
 
 		serviceState.inProgressStateMachine = restoreService;

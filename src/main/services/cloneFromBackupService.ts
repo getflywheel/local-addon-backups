@@ -49,6 +49,11 @@ interface BackupMachineContext {
 	newSiteName: string;
 }
 
+interface ErrorState {
+	message: string;
+	type: string;
+}
+
 interface BackupMachineSchema {
 	states: {
 		[CloneFromBackupStates.creatingTmpDir]: GenericObject;
@@ -229,17 +234,8 @@ const onErrorFactory = (additionalActions = []) => ({
 const setErroredStatus = (context: BackupMachineContext) => {
 	const { baseSite } = context;
 
+	// todo - crum: move to thunk handling
 	sendIPCEvent('goToRoute', `/main/site-info/${baseSite.id}`);
-
-	sendIPCEvent('showSiteBanner', {
-		siteID: baseSite.id,
-		id: 'site-errored-backup-cloning',
-		variant: 'error',
-		icon: 'warning',
-		title: 'There was an error while cloning your backup!',
-		message: `There was an error while cloning your backup. Check your Local log for more details.`,
-	});
-
 };
 
 const deleteNewCloneSite = (context: BackupMachineContext) => {
@@ -267,7 +263,7 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 		states: {
 			[CloneFromBackupStates.gettingBackupCredentials]: {
 				invoke: {
-					src: (context, event) => getCredentials(context),
+					src: (context) => getCredentials(context),
 					onDone: {
 						target: CloneFromBackupStates.setupDestinationSite,
 						actions: assign((context, { data: { encryptionPassword, backupSiteID, localBackupRepoID } }) => ({
@@ -281,7 +277,7 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			},
 			 [CloneFromBackupStates.setupDestinationSite]: {
 				invoke: {
-					src: (context, event) => setupDestinationSite(context),
+					src: (context) => setupDestinationSite(context),
 					onDone: {
 						target: CloneFromBackupStates.creatingTmpDir,
 						actions: assign(
@@ -298,7 +294,7 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			 */
 			[CloneFromBackupStates.creatingTmpDir]: {
 				invoke: {
-					src: (context, event) => createTmpDir(),
+					src: () => createTmpDir(),
 					onDone: {
 						target: CloneFromBackupStates.cloningBackup,
 						actions: assign({
@@ -310,7 +306,7 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			},
 			[CloneFromBackupStates.cloningBackup]: {
 				invoke: {
-					src: (context, event) => cloneBackup(context),
+					src: (context) => cloneBackup(context),
 					onDone: {
 						target: CloneFromBackupStates.movingSiteFromTmpDir,
 					},
@@ -319,7 +315,7 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			},
 			[CloneFromBackupStates.movingSiteFromTmpDir]: {
 				invoke: {
-					src: (context, event) => moveSiteFromTmpDir(context),
+					src: (context) => moveSiteFromTmpDir(context),
 					onDone: {
 						target: CloneFromBackupStates.provisioningSite,
 					},
@@ -366,7 +362,10 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 		actions: {
 			removeTmpDir,
 			setErrorOnContext: assign((context, event) => ({
-				error: event.data,
+				error: JSON.stringify({
+					message: event.data.toString(),
+					type: event.type,
+				} as ErrorState),
 			})),
 			logError: (context, event) => {
 				logger.error(event.data);
@@ -388,15 +387,15 @@ export const cloneFromBackup = async (opts: {
 		provider: Providers;
 		snapshotHash: string;
 		newSiteName: string;
-	}) => {
+	}): Promise<null | ErrorState> => {
 	if (serviceState.inProgressStateMachine) {
 		logger.warn('Restore process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.');
-		return;
+		return Promise.reject('Restore process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.');
 	}
 
 	const { baseSite, provider, snapshotHash, newSiteName } = opts;
 
-	return new Promise((resolve) => {
+	return new Promise((resolve, reject) => {
 		const machine = cloneMachine.withContext({ baseSite, provider, snapshotHash, newSiteName });
 		const cloneFromBackupService = interpret(machine)
 			.onTransition((state) => {
@@ -407,15 +406,16 @@ export const cloneFromBackup = async (opts: {
 			.onStop(() => {
 				serviceState.inProgressStateMachine = null;
 				// eslint-disable-next-line no-underscore-dangle
-				const { error } = cloneFromBackupService._state;
+				const error: ErrorState = JSON.parse(cloneFromBackupService._state.context.error ?? null);
 
 				sendIPCEvent(IPCEVENTS.BACKUP_COMPLETED);
 
 				if (error) {
-					resolve({ error });
+					logger.error(JSON.stringify(error));
+					reject(error);
+				} else {
+					resolve(null);
 				}
-
-				resolve(null);
 			});
 
 		serviceState.inProgressStateMachine = cloneFromBackupService;

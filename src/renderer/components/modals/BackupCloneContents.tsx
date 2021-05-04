@@ -20,6 +20,7 @@ interface ModalContentsProps {
 }
 
 const onCloneModalSubmit = (baseSite: Site, newSiteName: string, provider: Providers, snapshotHash: string) => {
+	// todo - crum: move to thunk for consistency of calls, handling, global errors, etc
 	ipcAsync(
 		IPCASYNC_EVENTS.CLONE_BACKUP,
 		baseSite,
