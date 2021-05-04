@@ -7,9 +7,8 @@ import { hubProviderToProvider } from '../helpers/hubProviderToProvider';
 import { IPCASYNC_EVENTS } from '../../constants';
 import dispatchAsyncThunk from './helpers/dispatchAsyncUnwrapped.js';
 import { showSiteBanner } from '../helpers/showSiteBanner';
-import { clearSiteBanner } from '../helpers/clearSiteBanner';
 import { IpcAsyncResponse } from '../../helpers/createIpcAsyncResponse';
-import { handleIPCResponseOrRejectWithError } from '../helpers/thunkUtils';
+import { processIPCAsyncResponseAndGlobalErrors } from '../helpers/thunkUtils';
 
 const localStorageKey = 'local-addon-backups-activeProviders';
 
@@ -28,7 +27,7 @@ const getSnapshotsForActiveSiteProviderHub = createAsyncThunk<
 	) => {
 		const { providers } = getState();
 
-		return await handleIPCResponseOrRejectWithError<BackupSnapshot[]>(
+		return await processIPCAsyncResponseAndGlobalErrors<BackupSnapshot[]>(
 			IPCASYNC_EVENTS.GET_SITE_PROVIDER_BACKUPS,
 			[
 				siteId,
@@ -53,18 +52,19 @@ const getSnapshotsForActiveSiteProviderHub = createAsyncThunk<
 	},
 );
 
+
 /**
  * Request to backup site to Hub.
  */
 const backupSite = createAsyncThunk<
-	null, // types return here and for extraReducers fulfilled
+	IpcAsyncResponse<null>, // types return here and for extraReducers fulfilled
 	{
 		description: string,
 		providerId: HubProviderRecord['id'],
 		siteId: string,
 		siteName: string,
 	}, // types function signature and extraReducers meta 'arg'
-	AppThunkApiConfig<null> // types rejected return here and for extraReducers rejected
+	AppThunkApiConfig<IpcAsyncResponse['error']> // types rejected return here and for extraReducers rejected
 >(
 	'backupSite',
 	async (
@@ -78,47 +78,47 @@ const backupSite = createAsyncThunk<
 			rejectWithValue,
 		},
 	) => {
-		const thunkName = backupSite.typePrefix;
 		const state = getState();
 		const rsyncProviderId = hubProviderToProvider(selectors.selectActiveProvider(state)?.id);
 
-		// clear out any previous banner caused by this thunk
-		clearSiteBanner(siteId, thunkName);
-
-		const response: IpcAsyncResponse<null> = await ipcAsync(
+		return await processIPCAsyncResponseAndGlobalErrors<null>(
 			IPCASYNC_EVENTS.START_BACKUP,
-			state.activeSite.id,
-			rsyncProviderId,
-			description,
-		);
-
-		if (response.error) {
-			showSiteBanner({
-				siteID: siteId,
-				id: thunkName,
-				variant: 'error',
-				icon: 'warning',
-				title: 'Cloud Backup failed!',
-				message: `There was an error while completing your backup.`,
-			});
-
-			return rejectWithValue(null);
-		}
-
-		showSiteBanner({
-			siteID: siteId,
-			variant: 'success',
-			id: thunkName,
-			title: 'Cloud Backup complete!',
-			message: `${siteName} has been successfully backed up.`,
-		});
-
-		// asynchronous refresh snapshots (don't await)
-		dispatch(getSnapshotsForActiveSiteProviderHub({
+			[
+				siteId,
+				rsyncProviderId,
+				description,
+			],
 			siteId,
-		}));
+			rejectWithValue,
+			(details) => {
+				if (details.isErrorAndUncaptured) {
+					showSiteBanner({
+						icon: 'warning',
+						id: details.bannerId,
+						message: `There was an error while completing your backup.`,
+						siteID: details.siteId,
+						title: 'Cloud Backup failed!',
+						variant: 'error',
+					});
+				} else if (details.isResult) {
+					showSiteBanner({
+						siteID: siteId,
+						variant: 'success',
+						id: details.bannerId,
+						title: 'Cloud Backup complete!',
+						message: `${siteName} has been successfully backed up.`,
+					});
 
-		return null;
+					if (siteId === state.activeSite.id) {
+						// asynchronous refresh snapshots (don't await)
+						dispatch(getSnapshotsForActiveSiteProviderHub({
+							siteId,
+						}));
+					}
+				}
+			},
+			backupSite.typePrefix,
+		);
 	},
 );
 
@@ -166,12 +166,12 @@ const getEnabledProvidersHub = createAsyncThunk<
 		{ siteId },
 		{ rejectWithValue },
 	) => {
-		return await handleIPCResponseOrRejectWithError<HubProviderRecord[]>(
+		return await processIPCAsyncResponseAndGlobalErrors<HubProviderRecord[]>(
 			IPCASYNC_EVENTS.GET_ENABLED_PROVIDERS,
 			[siteId],
 			siteId,
 			rejectWithValue,
-			(details, _) => {
+			(details) => {
 				if (details.isErrorAndUncaptured) {
 					showSiteBanner({
 						icon: 'warning',

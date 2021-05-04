@@ -25,6 +25,8 @@ interface onReponseDetails {
 	isError: boolean;
 	/** if error and it hasn't not been intercepted/captured globally (e.g. auth error banner) **/
 	isErrorAndUncaptured: boolean;
+	/** if successful result **/
+	isResult: boolean;
 	/** id of the site the request is for **/
 	siteId: string;
 }
@@ -37,7 +39,7 @@ interface onReponseDetails {
  * @param onResponseIfNotAuthOrNetwork
  * @param bannerId
  */
-export async function handleIPCResponseOrRejectWithError<R = any, E = any> (
+export async function processIPCAsyncResponseAndGlobalErrors<R = any, E = any> (
 	/** name of the ipc event **/
 	ipcEventId: string,
 	/** params for the ipc event **/
@@ -66,6 +68,7 @@ export async function handleIPCResponseOrRejectWithError<R = any, E = any> (
 			ipcEventId,
 			isError: !!error,
 			isErrorAndUncaptured: error && !error.isHubGraphQLAuthError && !error.isHubGraphQLNetworkError,
+			isResult: !error,
 			siteId,
 		},
 		response,
