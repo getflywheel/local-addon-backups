@@ -1,6 +1,7 @@
 import { IpcAsyncResponse } from '../../helpers/createIpcAsyncResponse';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import { clearSiteBanner } from './clearSiteBanner';
+import { showSiteBanner } from './showSiteBanner';
 
 /**
  * Typing for the `rejectWithValue` thunk response for an error.
@@ -31,15 +32,46 @@ interface onReponseDetails {
 	siteId: string;
 }
 
+const GRAPHQL_COMMON_BANNER_ID = 'GraphQL Internal Error';
+
+const processAndCheckIfGlobalGraphQLError = (error: IpcAsyncResponse['error'], siteId: string) => {
+	// if rejected error payload is explicitly set to an IpcAsyncResponse that failed Hub GraphQL authentication
+	if (error?.isHubGraphQLAuthError) {
+		showSiteBanner({
+			icon: 'warning',
+			id: GRAPHQL_COMMON_BANNER_ID,
+			/*
+			// todo - crum: this would be nice but requires exposing the hub ipc event to login
+			linkText: 'Log in to Hub',
+			linkHref: 'https://localwp.com/help-docs/advanced/updating-rsync-on-linux/',
+			*/
+			message: 'There was an issue authenticating your Hub Account. Please log in and try again.',
+			siteID: siteId,
+			title: 'Hub Error',
+			variant: 'error',
+		});
+	} else if (error?.isHubGraphQLNetworkError) {
+		showSiteBanner({
+			icon: 'warning',
+			id: GRAPHQL_COMMON_BANNER_ID,
+			message: 'Cloud Backups requires internet access and there was an issue with the network. Please check your connection and try again.',
+			siteID: siteId,
+			title: 'Connection Error',
+			variant: 'error',
+		});
+	}
+};
+
 /**
  * Convenience method that abstracts out repeated logic of handling global banners from ipc events or valid results.
  * @param ipcEventId
+ * @param ipcEventParams
  * @param siteId
  * @param rejectWithValue
  * @param onResponseIfNotAuthOrNetwork
  * @param bannerId
  */
-export async function processIPCAsyncResponseAndGlobalErrors<R = any, E = any> (
+export async function callIPCAsyncAndProcessResponse<R = any, E = any> (
 	/** name of the ipc event **/
 	ipcEventId: string,
 	/** params for the ipc event **/
@@ -53,6 +85,9 @@ export async function processIPCAsyncResponseAndGlobalErrors<R = any, E = any> (
 	/** optional id used to clear banners (only use if `onResponseIfNotAuthOrNetwork` might call `showSiteBanner` **/
 	bannerId?: string,
 ): Promise<IpcAsyncResponse<R> | RejectWithValue<IpcAsyncResponse<any, E>['error']>> {
+	// clear out any previous common graphql banners for the site
+	clearSiteBanner(siteId, GRAPHQL_COMMON_BANNER_ID);
+
 	if (bannerId) {
 		// clear out any previous banner caused by this thunk
 		clearSiteBanner(siteId, bannerId);
@@ -60,6 +95,10 @@ export async function processIPCAsyncResponseAndGlobalErrors<R = any, E = any> (
 
 	const response: IpcAsyncResponse<R, E> = await ipcAsync(ipcEventId, ...ipcEventParams);
 	const error = response.error;
+
+	if (error) {
+		processAndCheckIfGlobalGraphQLError(error, siteId);
+	}
 
 	// call thunk's optional onResponse handler
 	onResponseIfNotAuthOrNetwork(
