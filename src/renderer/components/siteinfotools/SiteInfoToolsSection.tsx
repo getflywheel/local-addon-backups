@@ -21,6 +21,7 @@ const SiteInfoToolsSection = ({ site }: Props) => {
 		hasErrorLoadingEnabledProviders,
 		isLoadingEnabledProviders,
 	} = useStoreSelector((state) => state.providers);
+	const { id } = useStoreSelector((state) => state.activeSite);
 
 	/**
 	 * @todo sometimes the query to hub fails (like if the auth token has expired)
@@ -39,7 +40,7 @@ const SiteInfoToolsSection = ({ site }: Props) => {
 			<div className={styles.SiteInfoToolsSection}>
 				<TryAgain
 					message={'There was an issue retrieving your Cloud Backups providers.'}
-					onClick={() => store.dispatch(getEnabledProvidersHub())}
+					onClick={() => store.dispatch(getEnabledProvidersHub({ siteId: id }))}
 				/>
 			</div>
 		);

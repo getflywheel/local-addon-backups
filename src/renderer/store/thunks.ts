@@ -82,12 +82,12 @@ const backupSite = createAsyncThunk<
 		// clear out any previous banner caused by this thunk
 		clearSiteBanner(siteId, thunkName);
 
-		const response = await ipcAsync(
+		const response: IpcAsyncResponse<null> = await ipcAsync(
 			IPCASYNC_EVENTS.START_BACKUP,
 			state.activeSite.id,
 			rsyncProviderId,
 			description,
-		) as IpcAsyncResponse<null>;
+		);
 
 		if (response.error) {
 			showSiteBanner({
@@ -151,31 +151,42 @@ const restoreSite = createAsyncThunk(
 /**
  * Get provider data from Hub.
  */
-const getEnabledProvidersHub = createAsyncThunk(
+const getEnabledProvidersHub = createAsyncThunk<
+	HubProviderRecord[], // types return here and for extraReducers fulfilled
+	{ siteId: string }, // types function signature and extraReducers meta 'arg'
+	AppThunkApiConfig<IpcAsyncResponse['error'] | null> // types rejected return here and for extraReducers rejected
+>(
 	'getEnabledProvidersHub',
-	async (_, { getState, rejectWithValue }) => {
-		const siteId = (getState() as AppState).activeSite.id;
+	async (
+		{ siteId },
+		{ rejectWithValue },
+	) => {
+		const thunkName = backupSite.typePrefix;
+
 		// clear out any previous banner caused by this thunk
 		clearSiteBanner(siteId, getEnabledProvidersHub.typePrefix);
 
-		try {
-			return await ipcAsync(IPCASYNC_EVENTS.GET_ENABLED_PROVIDERS) as HubProviderRecord[];
-		} catch (error) {
+		const response: IpcAsyncResponse<HubProviderRecord[]> = await ipcAsync(IPCASYNC_EVENTS.GET_ENABLED_PROVIDERS, siteId);
+
+		if (response.error) {
+			if (response.error.isHubGraphQLAuthError || response.error.isHubGraphQLNetworkError) {
+				// if either of these graphql errors then let the middleware handle it
+				return rejectWithValue(response.error);
+			}
+
 			showSiteBanner({
 				icon: 'warning',
-				id: getEnabledProvidersHub.typePrefix,
+				id: thunkName,
 				message: 'There was an issue retrieving your backup providers.',
 				siteID: siteId,
 				title: 'Cloud Backups Error',
 				variant: 'error',
 			});
 
-			if (!error.response) {
-				throw error;
-			}
-
-			return rejectWithValue(error.response);
+			return rejectWithValue(null);
 		}
+
+		return response.result;
 	},
 );
 
@@ -286,7 +297,7 @@ const updateActiveSiteAndDataSources = createAsyncThunk(
 			await dispatchAsyncThunk(updateActiveSite(siteId));
 			// (re)check for enabled providers on hub
 			// note: this call should have no other data dependencies (e.g. siteId, enabledProviders, etc)
-			await dispatchAsyncThunk(getEnabledProvidersHub());
+			await dispatchAsyncThunk(getEnabledProvidersHub({ siteId }));
 			// get snapshots given the site and provider
 			dispatch(getSnapshotsForActiveSiteProviderHub());
 
