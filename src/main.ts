@@ -32,24 +32,34 @@ export default function (): void {
 		},
 		{
 			channel: IPCASYNC_EVENTS.GET_SITE_PROVIDER_BACKUPS,
-			callback: async (siteID: Site['id'], provider: HubOAuthProviders) => {
-				const site = getSiteDataFromDisk(siteID);
-				const backupRepo = (await getBackupReposByProviderID(provider)).find(({ hash }) => hash === site.localBackupRepoID);
+			callback: async (siteId: Site['id'], provider: HubOAuthProviders) => {
+				try {
+					const site = getSiteDataFromDisk(siteId);
+					const backupRepo = (await getBackupReposByProviderID(provider)).find(
+						({ hash }) => hash === site.localBackupRepoID,
+					);
 
-				if (!backupRepo) {
-					return [];
+					if (!backupRepo) {
+						return [];
+					}
+
+					/**
+					 * @todo filtering the query directly by passing it a repo_id seems to be broken atm.
+					 * Fix this up once the Hub side is working
+					 */
+					const snapshots = await getBackupSnapshots();
+					// Hub returns the "config" data as a single string, so we need to convert back to object
+					snapshots.forEach((snapshot) => {
+						snapshot.configObject = JSON.parse(snapshot.config);
+					});
+
+					return createIpcAsyncResult(
+						snapshots.filter(({ repoID }) => repoID === backupRepo.id),
+						siteId,
+					);
+				} catch (error) {
+					return createIpcAsyncError(error, siteId);
 				}
-
-				/**
-				 * @todo filtering the query directly b3y passing it a repo_id seems to be broken atm.
-				 * Fix this up once the Hub side is working
-				 */
-				const snapshots = await getBackupSnapshots();
-				// Hub returns the "config" data as a single string, so we need to convert back to object
-				snapshots.forEach((snapshot) => {
-					snapshot.configObject = JSON.parse(snapshot.config);
-				});
-				return snapshots.filter(({ repoID }) => repoID === backupRepo.id);
 			},
 		},
 		{

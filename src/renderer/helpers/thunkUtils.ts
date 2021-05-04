@@ -16,7 +16,7 @@ declare class RejectWithValue<RejectValue> {
 /**
  * The `returnIPCResponseOrRejectWithError` helper response data type.
  */
-interface onReponseData {
+interface onReponseDetails {
 	/** optional id used to clear banners (only use if `onResponseIfNotAuthOrNetwork` might call `showSiteBanner` **/
 	bannerId?: string;
 	/** name of the ipc event **/
@@ -40,12 +40,14 @@ interface onReponseData {
 export async function handleIPCResponseOrRejectWithError<R = any, E = any> (
 	/** name of the ipc event **/
 	ipcEventId: string,
+	/** params for the ipc event **/
+	ipcEventParams: any[],
 	/** id of the site the request is for **/
 	siteId: string,
 	/** function for the thunk rejectWithValue **/
 	rejectWithValue: (value: IpcAsyncResponse<any, E>['error']) => RejectWithValue<IpcAsyncResponse<any, E>['error']>,
 	/** callback for the response regardless of error or result and indicating if globally captured or not **/
-	onResponseIfNotAuthOrNetwork: (data: onReponseData, response: IpcAsyncResponse<R, E>) => void,
+	onResponseIfNotAuthOrNetwork: (details: onReponseDetails, response: IpcAsyncResponse<R, E>) => void,
 	/** optional id used to clear banners (only use if `onResponseIfNotAuthOrNetwork` might call `showSiteBanner` **/
 	bannerId?: string,
 ): Promise<IpcAsyncResponse<R> | RejectWithValue<IpcAsyncResponse<any, E>['error']>> {
@@ -54,7 +56,7 @@ export async function handleIPCResponseOrRejectWithError<R = any, E = any> (
 		clearSiteBanner(siteId, bannerId);
 	}
 
-	const response: IpcAsyncResponse<R, E> = await ipcAsync(ipcEventId, siteId);
+	const response: IpcAsyncResponse<R, E> = await ipcAsync(ipcEventId, ...ipcEventParams);
 	const error = response.error;
 
 	// call thunk's optional onResponse handler
