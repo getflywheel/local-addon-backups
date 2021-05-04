@@ -27,7 +27,7 @@ export const providersSlice = createSlice({
 		});
 		builder.addCase(getEnabledProvidersHub.fulfilled, (state, { payload }) => {
 			state.isLoadingEnabledProviders = false;
-			state.enabledProviders = payload;
+			state.enabledProviders = payload.result;
 		});
 		builder.addCase(getEnabledProvidersHub.pending, (state) => {
 			state.hasErrorLoadingEnabledProviders = false;

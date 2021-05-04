@@ -9,6 +9,7 @@ import dispatchAsyncThunk from './helpers/dispatchAsyncUnwrapped.js';
 import { showSiteBanner } from '../helpers/showSiteBanner';
 import { clearSiteBanner } from '../helpers/clearSiteBanner';
 import { IpcAsyncResponse } from '../../helpers/createIpcAsyncResponse';
+import { handleIPCResponseOrRejectWithError } from '../helpers/thunkUtils';
 
 const localStorageKey = 'local-addon-backups-activeProviders';
 
@@ -152,41 +153,33 @@ const restoreSite = createAsyncThunk(
  * Get provider data from Hub.
  */
 const getEnabledProvidersHub = createAsyncThunk<
-	HubProviderRecord[], // types return here and for extraReducers fulfilled
+	IpcAsyncResponse<HubProviderRecord[]>, // types return here and for extraReducers fulfilled
 	{ siteId: string }, // types function signature and extraReducers meta 'arg'
-	AppThunkApiConfig<IpcAsyncResponse['error'] | null> // types rejected return here and for extraReducers rejected
+	AppThunkApiConfig // types rejected return here and for extraReducers rejected
 >(
 	'getEnabledProvidersHub',
 	async (
 		{ siteId },
 		{ rejectWithValue },
 	) => {
-		const thunkName = backupSite.typePrefix;
-
-		// clear out any previous banner caused by this thunk
-		clearSiteBanner(siteId, getEnabledProvidersHub.typePrefix);
-
-		const response: IpcAsyncResponse<HubProviderRecord[]> = await ipcAsync(IPCASYNC_EVENTS.GET_ENABLED_PROVIDERS, siteId);
-
-		if (response.error) {
-			if (response.error.isHubGraphQLAuthError || response.error.isHubGraphQLNetworkError) {
-				// if either of these graphql errors then let the middleware handle it
-				return rejectWithValue(response.error);
-			}
-
-			showSiteBanner({
-				icon: 'warning',
-				id: thunkName,
-				message: 'There was an issue retrieving your backup providers.',
-				siteID: siteId,
-				title: 'Cloud Backups Error',
-				variant: 'error',
-			});
-
-			return rejectWithValue(null);
-		}
-
-		return response.result;
+		return await handleIPCResponseOrRejectWithError<HubProviderRecord[]>(
+			IPCASYNC_EVENTS.GET_ENABLED_PROVIDERS,
+			siteId,
+			rejectWithValue,
+			(responseData, _) => {
+				if (responseData.isErrorAndUncaptured) {
+					showSiteBanner({
+						icon: 'warning',
+						id: responseData.bannerId,
+						message: 'There was an issue retrieving your backup providers.',
+						siteID: siteId,
+						title: 'Cloud Backups Error',
+						variant: 'error',
+					});
+				}
+			},
+			backupSite.typePrefix,
+		);
 	},
 );
 

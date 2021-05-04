@@ -16,9 +16,7 @@ export default function (): void {
 			channel: IPCASYNC_EVENTS.GET_ENABLED_PROVIDERS,
 			callback: async (siteId: Local.Site['id']) => {
 				try {
-					const response = await getEnabledBackupProviders();
-
-					return createIpcAsyncResult(response, siteId);
+					return createIpcAsyncResult(await getEnabledBackupProviders(), siteId);
 				} catch (error) {
 					return createIpcAsyncError(error, siteId);
 				}
