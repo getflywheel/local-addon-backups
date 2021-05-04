@@ -12,13 +12,9 @@ import type {
 	SnapshotStatus,
 } from '../types';
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 /* @ts-ignore */
 const { localHubClient } = getServiceContainer().cradle;
-
-/**
- * @todo add handling (logging + UI) in case the Hub user has been logged out
- */
-
 
 export async function getBackupCredentials (provider: HubOAuthProviders): Promise<RcloneConfig> {
 	const { data } = await localHubClient.mutate({

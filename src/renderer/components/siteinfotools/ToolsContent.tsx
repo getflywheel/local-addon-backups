@@ -20,7 +20,7 @@ export const ToolsContent = ({ className, site }: Props) => {
 	if (hasErrorLoadingSnapshots) {
 		return (
 			<TryAgain
-				message={`There was an issue retrieving the list of your site's Cloud Backups for ${activeSiteProvider.name}.`}
+				message={`There was an issue retrieving the list of your site's Cloud Backups for ${activeSiteProvider?.name}.`}
 				onClick={() => store.dispatch(getSnapshotsForActiveSiteProviderHub())}
 			/>
 		);

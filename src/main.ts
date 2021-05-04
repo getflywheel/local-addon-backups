@@ -7,13 +7,22 @@ import { restoreFromBackup } from './main/services/restoreService';
 import { getSiteDataFromDisk } from './main/utils';
 import { cloneFromBackup } from './main/services/cloneFromBackupService';
 import { IPCASYNC_EVENTS } from './constants';
+import { createIpcAsyncError, createIpcAsyncResult } from './helpers/createIpcAsyncResponse';
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function (): void {
 	const listenerConfigs = [
 		{
 			channel: IPCASYNC_EVENTS.GET_ENABLED_PROVIDERS,
-			callback: async () => await getEnabledBackupProviders(),
+			callback: async (siteId: Local.Site['id']) => {
+				try {
+					const response = await getEnabledBackupProviders();
+
+					return createIpcAsyncResult(response, siteId);
+				} catch (error) {
+					return createIpcAsyncError(error, siteId);
+				}
+			},
 		},
 		{
 			channel: IPCASYNC_EVENTS.START_BACKUP,
@@ -34,7 +43,7 @@ export default function (): void {
 				}
 
 				/**
-				 * @todo filtering the query directly by passing it a repo_id seems to be broken atm.
+				 * @todo filtering the query directly b3y passing it a repo_id seems to be broken atm.
 				 * Fix this up once the Hub side is working
 				 */
 				const snapshots = await getBackupSnapshots();
