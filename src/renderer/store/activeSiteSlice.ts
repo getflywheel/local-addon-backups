@@ -2,7 +2,6 @@ import {
 	createSlice,
 	PayloadAction,
 } from '@reduxjs/toolkit';
-import type { BackupSnapshot } from '../../types';
 import {
 	getSnapshotsForActiveSiteProviderHub,
 	updateActiveSite,
@@ -17,7 +16,6 @@ export const activeSiteSlice = createSlice({
 		id: null as string | null,
 		hasErrorLoadingSnapshots: false,
 		isLoadingSnapshots: false,
-		snapshots: null as BackupSnapshot[] | null,
 	},
 	reducers: {
 		setActiveSiteID: (state, action: PayloadAction<string>) => {
@@ -25,9 +23,8 @@ export const activeSiteSlice = createSlice({
 		},
 	},
 	extraReducers: (builder) => {
-		builder.addCase(getSnapshotsForActiveSiteProviderHub.fulfilled, (state, { payload }) => {
+		builder.addCase(getSnapshotsForActiveSiteProviderHub.fulfilled, (state ) => {
 			state.isLoadingSnapshots = false;
-			state.snapshots = payload.result ?? [];
 		});
 		builder.addCase(getSnapshotsForActiveSiteProviderHub.pending, (state) => {
 			state.isLoadingSnapshots = true;

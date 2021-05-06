@@ -18,6 +18,7 @@ import { BackupCloneContents } from '../modals/BackupCloneContents';
 import { BackupRestoreContents } from '../modals/BackupRestoreContents';
 import { createModal } from '../createModal';
 import { selectors } from '../../store/selectors';
+import { selectSnapshotsForActiveSitePlusExtra } from '../../store/snapshotsSlice';
 
 interface Props {
 	site: Site;
@@ -189,7 +190,7 @@ export const SnapshotsTableList = ({ site }: Props) => {
 		isLoadingSnapshots,
 	} = useStoreSelector((state) => state.activeSite);
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
-	const snapshotsPlusBackingupPlaceholder = useStoreSelector(selectors.selectSnapshotsPlusBackingupPlaceholder);
+	const snapshotsPlusBackingupPlaceholder = useStoreSelector(selectSnapshotsForActiveSitePlusExtra);
 
 	if (isLoadingSnapshots) {
 		return (
