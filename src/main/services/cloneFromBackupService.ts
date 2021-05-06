@@ -234,7 +234,6 @@ const onErrorFactory = (additionalActions = []) => ({
 const setErroredStatus = (context: BackupMachineContext) => {
 	const { baseSite } = context;
 
-	// todo - crum: move to thunk handling
 	sendIPCEvent('goToRoute', `/main/site-info/${baseSite.id}`);
 };
 

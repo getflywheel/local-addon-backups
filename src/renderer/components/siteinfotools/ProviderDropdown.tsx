@@ -78,7 +78,7 @@ export const ProviderDropdown = () => {
 			dropdownItems.push({
 				color: 'none',
 				content: renderDropdownProviderItem(provider, activeSiteProvider === provider),
-				onClick: () => store.dispatch(actions.setActiveProviderPersistAndUpdateSnapshots({
+				onClick: () => store.dispatch(actions.updateBackupProviderPersistAndUpdateSnapshots({
 					siteId,
 					providerId: provider.id,
 				})),

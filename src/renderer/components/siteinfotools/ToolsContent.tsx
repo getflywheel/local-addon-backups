@@ -7,6 +7,7 @@ import { store, useStoreSelector } from '../../store/store';
 import { getSnapshotsForActiveSiteProviderHub } from '../../store/thunks';
 import TryAgain from './TryAgain';
 import { selectors } from '../../store/selectors';
+import { selectActivePagingDetails } from '../../store/snapshotsSlice';
 
 interface Props {
 	className: string;
@@ -14,11 +15,11 @@ interface Props {
 }
 
 export const ToolsContent = ({ className, site }: Props) => {
-	const { hasErrorLoadingSnapshots } = useStoreSelector((state) => state.activeSite);
 	const activeSite = useStoreSelector((state) => state.activeSite);
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
+	const activePagingDetails = useStoreSelector(selectActivePagingDetails);
 
-	if (hasErrorLoadingSnapshots) {
+	if (activePagingDetails?.hasLoadingError) {
 		return (
 			<TryAgain
 				message={`There was an issue retrieving the list of your site's Cloud Backups for ${activeSiteProvider?.name}.`}
