@@ -21,30 +21,8 @@ const selectActiveProvider = createSelector(
 );
 
 /**
- * List of snapshots prepended with any currently backing up details.
- */
-const selectSnapshotsPlusBackingupPlaceholder = createSelector(
-	[
-		(state: AppState) => state.activeSite,
-		(state: AppState) => state.director,
-	],
-	(activeSite, director) => {
-		// prepend placeholder snapshot only if the backup is for the active site
-		if (director.backupSnapshotPlaceholder && activeSite.id === director.backupSiteId) {
-			return ([
-				director.backupSnapshotPlaceholder,
-				...activeSite.snapshots ?? [],
-			]);
-		}
-
-		return activeSite.snapshots ?? [];
-	},
-);
-
-/**
  * Organized export of available selectors.
  */
 export const selectors = {
 	selectActiveProvider,
-	selectSnapshotsPlusBackingupPlaceholder,
 };

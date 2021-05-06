@@ -6,6 +6,7 @@ import { actions, store, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
 import { createModal } from '../createModal';
 import { BackupContents } from '../modals/BackupContents';
+import { selectSnapshotsForActiveSitePlusExtra } from '../../store/snapshotsSlice';
 
 interface Props {
 	site: Site;
@@ -14,7 +15,7 @@ interface Props {
 export const StartBackupButton = (props: Props) => {
 	const { site } = props;
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
-	const { snapshots } = useStoreSelector((state) => state.activeSite);
+	const hasSnapshots = useStoreSelector(selectSnapshotsForActiveSitePlusExtra)?.length > 0;
 	const { backupIsRunning } = useStoreSelector((state) => state.director);
 	const backupSite = (description: string) => {
 		store.dispatch(actions.backupSite({
@@ -53,7 +54,7 @@ export const StartBackupButton = (props: Props) => {
 							<BackupContents
 								submitAction={backupSite}
 								site={site}
-								snapshots={snapshots}
+								hasSnapshots={hasSnapshots}
 							/>
 						),
 					)}
@@ -75,7 +76,7 @@ export const StartBackupButton = (props: Props) => {
 					<BackupContents
 						submitAction={backupSite}
 						site={site}
-						snapshots={snapshots}
+						hasSnapshots={hasSnapshots}
 					/>
 				),
 			)}

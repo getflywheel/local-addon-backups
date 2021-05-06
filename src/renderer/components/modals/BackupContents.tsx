@@ -9,7 +9,6 @@ import {
 } from '@getflywheel/local-components';
 import type { Site } from '@getflywheel/local';
 import styles from './BackupContents.scss';
-import { BackupSnapshot } from '../../../types';
 import { fetchSiteSizeInMB } from './fetchSiteSizeInMB';
 import { getIgnoreFilePath } from '../../../helpers/ignoreFilesPattern';
 
@@ -20,11 +19,11 @@ const { shell } = remote;
 export interface ModalContentsProps {
 	submitAction: (description) => void;
 	site: Site;
-	snapshots: BackupSnapshot[];
+	hasSnapshots: boolean;
 }
 
 export const BackupContents = (props: ModalContentsProps) => {
-	const { submitAction, site, snapshots } = props;
+	const { submitAction, site, hasSnapshots } = props;
 
 	const [siteSizeInMB, setSiteSizeInMB] = useState(0);
 	const [inputDescriptionData, setInputData] = useState('');
@@ -58,7 +57,7 @@ export const BackupContents = (props: ModalContentsProps) => {
 
 			<hr />
 			<div className={styles.AlignLeft}>
-				{ !snapshots?.length &&
+				{ !hasSnapshots &&
 				<div>
 					<Title size="m" className="align-left">
 						Estimated size of first Cloud Backup:
