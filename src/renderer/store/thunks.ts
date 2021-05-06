@@ -17,13 +17,21 @@ const localStorageKey = 'local-addon-backups-activeProviders';
  */
 const getSnapshotsForActiveSiteProviderHub = createAsyncThunk<
 	IpcAsyncResponse<BackupSnapshot[]>, // types return here and for extraReducers fulfilled
-	{ siteId: string }, // types function signature and extraReducers meta 'arg'
+	{
+		siteId: string,
+		pageOffset: number,
+	}, // types function signature and extraReducers meta 'arg'
 	AppThunkApiConfig<IpcAsyncResponse['error']> // types rejected return here and for extraReducers rejected
 >(
 	'getSnapshotsForActiveSiteProviderHub',
 	async (
-		{ siteId },
-		{ getState, rejectWithValue },
+		{
+			siteId,
+		},
+		{
+			getState,
+			rejectWithValue,
+		},
 	) => {
 		const { providers } = getState();
 
@@ -113,6 +121,8 @@ const backupSite = createAsyncThunk<
 						// asynchronous refresh snapshots (don't await)
 						dispatch(getSnapshotsForActiveSiteProviderHub({
 							siteId,
+							// get fresh results starting with page 0
+							pageOffset: 0,
 						}));
 					}
 				}
@@ -316,15 +326,21 @@ const setActiveProviderAndPersist = createAsyncThunk(
 /**
  * Saga of dispatches to update active provider and retrieve its snapshots for the active site.
  */
-const setActiveProviderPersistAndUpdateSnapshots = createAsyncThunk<
+const updateBackupProviderPersistAndUpdateSnapshots = createAsyncThunk<
 	IpcAsyncResponse<null>, // types return here and for extraReducers fulfilled
 	{ siteId: string, providerId: HubProviderRecord['id'] }, // types function signature and extraReducers meta 'arg'
 	AppThunkApiConfig // types rejected return here and for extraReducers rejected
 >(
-	'setActiveProviderPersistAndUpdateSnapshots',
+	'updateBackupProviderPersistAndUpdateSnapshots',
 	async (
-		{ siteId, providerId },
-		{ dispatch, rejectWithValue },
+		{
+			siteId,
+			providerId,
+		},
+		{
+			dispatch,
+			rejectWithValue,
+		},
 	) => {
 		try {
 			await dispatchAsyncThunk(setActiveProviderAndPersist(providerId));
@@ -390,6 +406,8 @@ const updateActiveSiteAndDataSources = createAsyncThunk<
 			// get snapshots given the site and provider
 			dispatch(getSnapshotsForActiveSiteProviderHub({
 				siteId,
+				// get fresh results starting with page 0
+				pageOffset: 0,
 			}));
 
 			return siteId;
@@ -413,7 +431,7 @@ export {
 	getSnapshotsForActiveSiteProviderHub,
 	restoreSite,
 	setActiveProviderAndPersist,
-	setActiveProviderPersistAndUpdateSnapshots,
+	updateBackupProviderPersistAndUpdateSnapshots,
 	updateActiveSite,
 	updateActiveSiteAndDataSources,
 };

@@ -18,7 +18,12 @@ import { BackupCloneContents } from '../modals/BackupCloneContents';
 import { BackupRestoreContents } from '../modals/BackupRestoreContents';
 import { createModal } from '../createModal';
 import { selectors } from '../../store/selectors';
-import { selectSnapshotsForActiveSitePlusExtra } from '../../store/snapshotsSlice';
+import {
+	selectActivePagingDetails,
+	selectSnapshotsForActiveSitePlusExtra,
+	TABLEROW_HASH_IS_SPECIAL_PAGING_HAS_MORE, TABLEROW_HASH_IS_SPECIAL_PAGING_IS_LOADING
+} from '../../store/snapshotsSlice';
+import { getSnapshotsForActiveSiteProviderHub } from '../../store/thunks';
 
 interface Props {
 	site: Site;
@@ -44,8 +49,7 @@ const renderDate = (updatedAt: string, snapshot: BackupSnapshot) => {
 		);
 	} if (snapshot.status === 'errored') {
 		return (
-			<div
-				className={styles.SnapshotsTableList_DateCell_WarningCont}>
+			<div className={styles.SnapshotsTableList_DateCell_WarningCont}>
 				<CircleWarnIcon />
 				Failed
 			</div>
@@ -82,6 +86,10 @@ const renderTextButton = (label: React.ReactNode, isDisabled: () => boolean) => 
 
 const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubProviderRecord) => {
 	const items: React.ComponentProps<typeof FlyDropdown>['items'] = [];
+
+	if (snapshot.hash === TABLEROW_HASH_IS_SPECIAL_PAGING_HAS_MORE) {
+		return null;
+	}
 
 	switch (snapshot.status) {
 		case 'started':
@@ -172,6 +180,40 @@ const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 		return cellData;
 	}
 
+	if (snapshot.hash === TABLEROW_HASH_IS_SPECIAL_PAGING_HAS_MORE) {
+		// don't render any cells other than the middle description/configObject one
+		if (colKey !== 'configObject') {
+			return null;
+		}
+
+		// todo - crum: style this!!!
+		return (
+			<div
+				onClick={() => {
+					// asynchronous get snapshots given the site and provider
+					store.dispatch(getSnapshotsForActiveSiteProviderHub({
+						siteId: site.id,
+						pageOffset: store.getState().snapshots.pagingBySite[site.id]?.offset + 1,
+					}));
+				}}
+				className={styles.SnapshotsTableList_DateCell_WarningCont}
+			>
+				HAS MORE
+			</div>
+		);
+	} if (snapshot.hash === TABLEROW_HASH_IS_SPECIAL_PAGING_IS_LOADING) {
+		// don't render any cells other than the middle description/configObject one
+		if (colKey !== 'configObject') {
+			return null;
+		}
+
+		return (
+			<div className={styles.SnapshotsTableList_LoadingCont}>
+				<LoadingIndicator dots={3} />
+			</div>
+		);
+	}
+
 	switch (colKey) {
 		case 'configObject': return cellData.description;
 		case 'moremenu': return renderCellMoreMenu(snapshot, site, provider);
@@ -186,16 +228,14 @@ const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 };
 
 export const SnapshotsTableList = ({ site }: Props) => {
-	const {
-		isLoadingSnapshots,
-	} = useStoreSelector((state) => state.activeSite);
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 	const snapshotsPlusBackingupPlaceholder = useStoreSelector(selectSnapshotsForActiveSitePlusExtra);
+	const activePagingDetails = useStoreSelector(selectActivePagingDetails);
 
-	if (isLoadingSnapshots) {
+	if (activePagingDetails?.isLoading && activePagingDetails.offset === 0) {
 		return (
 			<div className={styles.SnapshotsTableList_LoadingCont}>
-				<LoadingIndicator color="Gray" dots={3} />
+				<LoadingIndicator dots={3} />
 			</div>
 		);
 	}
