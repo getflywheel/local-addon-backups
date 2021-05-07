@@ -47,6 +47,7 @@ export const directorSlice = createSlice({
 				hash: 'placeholder-hash',
 				id: -1,
 				repoID: -1,
+				siteId: meta.arg.siteId,
 				status: 'started',
 			};
 		});

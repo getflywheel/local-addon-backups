@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from './SnapshotsTableList.scss';
 import {
+	Button,
 	CircleWarnIcon,
 	DotsIcon,
 	FlyDropdown,
@@ -188,17 +189,18 @@ const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 
 		// todo - crum: style this!!!
 		return (
-			<div
-				onClick={() => {
-					// asynchronous get snapshots given the site and provider
-					store.dispatch(getSnapshotsForActiveSiteProviderHub({
-						siteId: site.id,
-						pageOffset: store.getState().snapshots.pagingBySite[site.id]?.offset + 1,
-					}));
-				}}
-				className={styles.SnapshotsTableList_DateCell_WarningCont}
-			>
-				HAS MORE
+			<div className={styles.SnapshotsTableList_LoadingCont}>
+				<Button
+					onClick={() => {
+						// asynchronous get snapshots given the site and provider
+						store.dispatch(getSnapshotsForActiveSiteProviderHub({
+							siteId: site.id,
+							pageOffset: store.getState().snapshots.pagingBySite[site.id]?.offset + 1,
+						}));
+					}}
+				>
+					Load More
+				</Button>
 			</div>
 		);
 	} if (snapshot.hash === TABLEROW_HASH_IS_SPECIAL_PAGING_IS_LOADING) {
@@ -232,7 +234,7 @@ export const SnapshotsTableList = ({ site }: Props) => {
 	const snapshotsPlusBackingupPlaceholder = useStoreSelector(selectSnapshotsForActiveSitePlusExtra);
 	const activePagingDetails = useStoreSelector(selectActivePagingDetails);
 
-	if (activePagingDetails?.isLoading && activePagingDetails.offset === 0) {
+	if (activePagingDetails?.isLoading && activePagingDetails.offset === 1) {
 		return (
 			<div className={styles.SnapshotsTableList_LoadingCont}>
 				<LoadingIndicator dots={3} />

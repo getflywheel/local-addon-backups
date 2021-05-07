@@ -1,5 +1,5 @@
 import { createEntityAdapter, createSelector, createSlice } from '@reduxjs/toolkit';
-import type { BackupSnapshot } from '../../types';
+import type { BackupSnapshot, PaginationInfo } from '../../types';
 import { getSnapshotsForActiveSiteProviderHub } from './thunks';
 import type { AppState } from './store';
 
@@ -9,22 +9,15 @@ type SitePaging = {
 	hasLoadingError: boolean;
 	hasMore: boolean | null;
 	isLoading: boolean;
-	limit: number;
 	offset: number;
 }
 type SitesLookupPaging = {[siteId: string]: SitePaging};
 
 const snapshotsEntityAdapter = createEntityAdapter<BackupSnapshot>({
-	// todo - crum: need to confirm that `id` is unique across all sites otherwise it can't be the id/key here
 	selectId: (snapshot) => snapshot.id,
 	// regardless of the order received, do this additional sort by descending updated date/time
 	sortComparer: (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
 });
-
-// todo - crum: change this to a reasonable number
-const PAGING_LIMIT = 2;
-// todo - crum: remove this flag
-const PAGING_USE_MOCK = true;
 
 export const TABLEROW_HASH_IS_SPECIAL_PAGING_HAS_MORE = 'placeholder-paging-hasMore';
 export const TABLEROW_HASH_IS_SPECIAL_PAGING_IS_LOADING = 'placeholder-paging-isLoading';
@@ -46,24 +39,14 @@ export const snapshotsSlice = createSlice({
 	extraReducers: (builder) => {
 		builder.addCase(getSnapshotsForActiveSiteProviderHub.fulfilled, (state, { payload, meta }) => {
 			const { siteId } = meta.arg;
-			const sitePaging = state.pagingBySite[siteId];
-
-			// todo - crum: remove fake paging
-			const originalResultsLength = payload.result.length;
-
-			if (PAGING_USE_MOCK) {
-				// todo - crum: remove fake paging
-				payload.result = payload.result.slice(
-					sitePaging.offset * sitePaging.limit,
-					sitePaging.limit + (sitePaging.offset * sitePaging.limit),
-				);
-			}
+			const snapshots: BackupSnapshot[] = payload.result.snapshots ?? [];
+			const pagination: PaginationInfo = payload.result.pagination;
 
 			// add to ongoing list of all snapshots across all sites
-			snapshotsEntityAdapter.upsertMany(state.items, payload.result);
+			snapshotsEntityAdapter.upsertMany(state.items, snapshots);
 
 			// append these results to existing list (i.e. pages) of snapshots
-			state.idsBySite[siteId] = payload.result.reduce(
+			state.idsBySite[siteId] = snapshots.reduce(
 				(prev, snapshot) => {
 					prev[snapshot.id] = true;
 					return prev;
@@ -76,8 +59,7 @@ export const snapshotsSlice = createSlice({
 			state.pagingBySite[siteId] = {
 				...state.pagingBySite[siteId],
 				hasLoadingError: false,
-				// todo - crum: remove fake paging `hasMore` with real graphql result
-				hasMore: PAGING_USE_MOCK ? Object.keys(state.idsBySite[siteId]).length < originalResultsLength : false,
+				hasMore: pagination.lastPage > pagination.currentPage,
 				isLoading: false,
 			};
 		});
@@ -89,12 +71,11 @@ export const snapshotsSlice = createSlice({
 				hasLoadingError: false,
 				hasMore: null,
 				isLoading: true,
-				limit: PAGING_LIMIT,
-				offset: pageOffset ?? 0,
+				offset: pageOffset ?? 1,
 			};
 
-			// if paging index/offset is undefined or zero
-			if (!meta.arg.pageOffset) {
+			// if paging index/offset is undefined or not the first page
+			if (!pageOffset || pageOffset === 1) {
 				// todo - crum: should these snapshots be purged from `items` also??? yes!
 				// purge an existing snapshots so results can start a fresh new list
 				state.idsBySite[siteId] = {};
@@ -180,7 +161,7 @@ export const selectSnapshotsForActiveSitePlusExtra = createSelector(
 				} as BackupSnapshot]
 				: []
 			),
-			...(paging && paging.isLoading
+			...(paging && paging.isLoading && paging.offset > 1
 				? [{
 					hash: TABLEROW_HASH_IS_SPECIAL_PAGING_IS_LOADING,
 					id: -1,

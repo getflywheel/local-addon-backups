@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import type { BackupSnapshot, HubProviderRecord, Providers } from '../../types';
+import type { BackupSnapshotsResult, HubProviderRecord, Providers } from '../../types';
 import { AppThunkApiConfig, AppState } from './store';
 import { selectors } from './selectors';
 import type { Site } from '@getflywheel/local';
@@ -16,7 +16,7 @@ const localStorageKey = 'local-addon-backups-activeProviders';
  * Get selected provider's snapshots from hub for active site.
  */
 const getSnapshotsForActiveSiteProviderHub = createAsyncThunk<
-	IpcAsyncResponse<BackupSnapshot[]>, // types return here and for extraReducers fulfilled
+	IpcAsyncResponse<BackupSnapshotsResult>, // types return here and for extraReducers fulfilled
 	{
 		siteId: string,
 		pageOffset: number,
@@ -27,6 +27,7 @@ const getSnapshotsForActiveSiteProviderHub = createAsyncThunk<
 	async (
 		{
 			siteId,
+			pageOffset,
 		},
 		{
 			getState,
@@ -35,11 +36,12 @@ const getSnapshotsForActiveSiteProviderHub = createAsyncThunk<
 	) => {
 		const { providers } = getState();
 
-		return await callIPCAsyncAndProcessResponse<BackupSnapshot[]>(
+		return await callIPCAsyncAndProcessResponse<BackupSnapshotsResult>(
 			IPCASYNC_EVENTS.GET_SITE_PROVIDER_BACKUPS,
 			[
 				siteId,
 				providers.activeProviders[siteId],
+				pageOffset,
 			],
 			siteId,
 			rejectWithValue,
@@ -122,7 +124,7 @@ const backupSite = createAsyncThunk<
 						dispatch(getSnapshotsForActiveSiteProviderHub({
 							siteId,
 							// get fresh results starting with page 0
-							pageOffset: 0,
+							pageOffset: 1,
 						}));
 					}
 				}
@@ -407,7 +409,7 @@ const updateActiveSiteAndDataSources = createAsyncThunk<
 			dispatch(getSnapshotsForActiveSiteProviderHub({
 				siteId,
 				// get fresh results starting with page 0
-				pageOffset: 0,
+				pageOffset: 1,
 			}));
 
 			return siteId;
