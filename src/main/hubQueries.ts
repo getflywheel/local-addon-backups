@@ -10,6 +10,7 @@ import type {
 	HubProviderRecord,
 	SiteMetaData,
 	SnapshotStatus,
+	BackupSnapshotsResult,
 } from '../types';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -242,32 +243,19 @@ export async function deleteBackupSnapshotRecord (queryArgs: { snapshotID: numbe
 	return data?.deleteBackupSnapshotRecord.success;
 }
 
-// export async function getBackupSnapshot (snapshotID: number) {
-// 	const { data } = await localHubClient.query({
-// 		query: gql`
-// 			query backupSnapshots($snapshotID: Int) {
-// 				backupSnapshots(id: $snapshotID) {
-// 					id
-// 					repo_id
-// 					hash
-// 				}
-// 			}
-// 		`,
-// 		variables: { snapshotID },
-// 	});
-//
-// 	const { repo_id: repoID, ...rest } = data?.backupSnapshots?.[0];
-// 	return { ...rest, repoID };
-// }
-
-export async function getBackupSnapshotsByRepo (repoId: number) {
+/**
+ * @param repoId The backup restic repo id.
+ * @param limit Limits number of fetched elements.
+ * @param offset The offset from which elements are returned.
+ */
+export async function getBackupSnapshotsByRepo (repoId: number, limit: number, offset: number): Promise<BackupSnapshotsResult> {
 	const { data } = await localHubClient.query({
 		query: gql`
-			query backupSnapshots($backup_repo_id: Int) {
+			query backupSnapshots($backup_repo_id: Int, $first: Int!, $page: Int!) {
 				backupSnapshots(
 					backup_repo_id: $backup_repo_id,
-					first: 10,
-					page: 1,
+					first: $first,
+					page: $page,
 					orderBy: [{ field: "updated_at", order: DESC }]
 				) {
 					data {
@@ -284,41 +272,20 @@ export async function getBackupSnapshotsByRepo (repoId: number) {
 				}
 			}
 		`,
-		variables: { repoId },
+		variables: {
+			// eslint-disable-next-line camelcase
+			backup_repo_id: repoId,
+			first: limit,
+			page: offset,
+		},
 	});
 
-	const { repo_id: repoID, ...rest } = data?.backupSnapshots?.[0];
-	return { ...rest, repoID };
-}
-
-export async function getBackupSnapshots (): Promise<BackupSnapshot[]> {
-	const { data } = await localHubClient.query({
-		query: gql`
-			query backupSnapshots {
-				backupSnapshots(
-					first: 10,
-					page: 1,
-					orderBy: [{ field: "updated_at", order: DESC }]
-				) {
-					data {
-						id
-						repo_id
-						hash
-						updated_at
-						config
-					}
-					paginatorInfo {
-						currentPage
-						lastPage
-					}
-				}
-			}
-		`,
-	});
-
-	return data?.backupSnapshots?.data?.map(({ repo_id: repoID, updated_at: updatedAt, ...rest }) => ({
-		...rest,
-		repoID,
-		updatedAt,
-	}));
+	return {
+		pagination: data?.backupSnapshots?.paginatorInfo,
+		snapshots: data?.backupSnapshots?.data?.map(({ repo_id: repoID, updated_at: updatedAt, ...rest }) => ({
+			...rest,
+			repoID,
+			updatedAt,
+		})),
+	};
 }

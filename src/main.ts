@@ -1,7 +1,11 @@
 import * as Local from '@getflywheel/local';
 import * as LocalMain from '@getflywheel/local/main';
 import type { HubOAuthProviders, Providers, Site } from './types';
-import { getEnabledBackupProviders, getBackupReposByProviderID, getBackupSnapshots } from './main/hubQueries';
+import {
+	getEnabledBackupProviders,
+	getBackupReposByProviderID,
+	getBackupSnapshotsByRepo,
+} from './main/hubQueries';
 import { createBackup } from './main/services/backupService';
 import { restoreFromBackup } from './main/services/restoreService';
 import { getSiteDataFromDisk } from './main/utils';
@@ -56,7 +60,7 @@ export default function (): void {
 		},
 		{
 			channel: IPCASYNC_EVENTS.GET_SITE_PROVIDER_BACKUPS,
-			callback: async (siteId: Site['id'], provider: HubOAuthProviders) => {
+			callback: async (siteId: Site['id'], provider: HubOAuthProviders, pageOffset: number) => {
 				try {
 					const site = getSiteDataFromDisk(siteId);
 					const backupRepo = (await getBackupReposByProviderID(provider)).find(
@@ -67,18 +71,16 @@ export default function (): void {
 						return [];
 					}
 
-					/**
-					 * @todo filtering the query directly by passing it a repo_id seems to be broken atm.
-					 * Fix this up once the Hub side is working
-					 */
-					const snapshots = await getBackupSnapshots();
+					// todo - crum: change limit to reasonable number
+					const result = await getBackupSnapshotsByRepo(backupRepo.id, 2, pageOffset);
 					// Hub returns the "config" data as a single string, so we need to convert back to object
-					snapshots.forEach((snapshot) => {
+					result.snapshots.forEach((snapshot) => {
 						snapshot.configObject = JSON.parse(snapshot.config);
+						snapshot.siteId = siteId;
 					});
 
 					return createIpcAsyncResult(
-						snapshots.filter(({ repoID }) => repoID === backupRepo.id),
+						result,
 						siteId,
 					);
 				} catch (error) {

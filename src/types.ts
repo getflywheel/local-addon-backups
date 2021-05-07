@@ -72,6 +72,17 @@ export interface BackupSnapshot {
 	updatedAt?: number;
 	config?: string;
 	configObject?: GenericObject;
+	siteId: string;
+}
+
+export interface PaginationInfo {
+	currentPage: number;
+	lastPage: number;
+}
+
+export interface BackupSnapshotsResult {
+	snapshots: BackupSnapshot[];
+	pagination: PaginationInfo;
 }
 
 export interface RcloneConfig {
