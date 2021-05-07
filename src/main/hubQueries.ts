@@ -260,16 +260,57 @@ export async function deleteBackupSnapshotRecord (queryArgs: { snapshotID: numbe
 // 	return { ...rest, repoID };
 // }
 
+export async function getBackupSnapshotsByRepo (repoId: number) {
+	const { data } = await localHubClient.query({
+		query: gql`
+			query backupSnapshots($backup_repo_id: Int) {
+				backupSnapshots(
+					backup_repo_id: $backup_repo_id,
+					first: 10,
+					page: 1,
+					orderBy: [{ field: "updated_at", order: DESC }]
+				) {
+					data {
+						id
+						repo_id
+						hash
+						updated_at
+						config
+					}
+					paginatorInfo {
+						currentPage
+						lastPage
+					}
+				}
+			}
+		`,
+		variables: { repoId },
+	});
+
+	const { repo_id: repoID, ...rest } = data?.backupSnapshots?.[0];
+	return { ...rest, repoID };
+}
+
 export async function getBackupSnapshots (): Promise<BackupSnapshot[]> {
 	const { data } = await localHubClient.query({
 		query: gql`
 			query backupSnapshots {
-				backupSnapshots {
-					id
-					repo_id
-					hash
-					updated_at
-					config
+				backupSnapshots(
+					first: 10,
+					page: 1,
+					orderBy: [{ field: "updated_at", order: DESC }]
+				) {
+					data {
+						id
+						repo_id
+						hash
+						updated_at
+						config
+					}
+					paginatorInfo {
+						currentPage
+						lastPage
+					}
 				}
 			}
 		`,
