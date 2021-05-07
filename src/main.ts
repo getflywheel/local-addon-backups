@@ -8,6 +8,15 @@ import { getSiteDataFromDisk } from './main/utils';
 import { cloneFromBackup } from './main/services/cloneFromBackupService';
 import { IPCASYNC_EVENTS } from './constants';
 import { createIpcAsyncError, createIpcAsyncResult } from './helpers/createIpcAsyncResponse';
+import { getServiceContainer } from '@getflywheel/local/main';
+
+const serviceContainer = getServiceContainer().cradle;
+const { localLogger } = serviceContainer;
+
+const logger = localLogger.child({
+	thread: 'main',
+	class: 'backup-add-on.main.ts',
+});
 
 /**
  * The Main thread of IPC listeners from Renderer.
@@ -24,6 +33,7 @@ export default function (): void {
 						siteId,
 					);
 				} catch (error) {
+					logger.error(`Error - IPCASYNC_EVENTS.CLONE_BACKUP: ${error.toString()}`);
 					return createIpcAsyncError(error, siteId);
 				}
 			},
@@ -39,6 +49,7 @@ export default function (): void {
 						siteId,
 					);
 				} catch (error) {
+					logger.error(`Error - IPCASYNC_EVENTS.IPCASYNC_EVENTS: ${error.toString()}`);
 					return createIpcAsyncError(error, siteId);
 				}
 			},
@@ -71,6 +82,7 @@ export default function (): void {
 						siteId,
 					);
 				} catch (error) {
+					logger.error(`Error - IPCASYNC_EVENTS.GET_SITE_PROVIDER_BACKUPS: ${error.toString()}`);
 					return createIpcAsyncError(error, siteId);
 				}
 			},
@@ -85,6 +97,7 @@ export default function (): void {
 						siteId,
 					);
 				} catch (error) {
+					logger.error(`Error - IPCASYNC_EVENTS.RESTORE_BACKUP: ${error.toString()}`);
 					return createIpcAsyncError(error, siteId);
 				}
 			},
@@ -98,6 +111,7 @@ export default function (): void {
 						baseSite.id,
 					);
 				} catch (error) {
+					logger.error(`Error - IPCASYNC_EVENTS.CLONE_BACKUP: ${error.toString()}`);
 					return createIpcAsyncError(error, baseSite.id);
 				}
 			},

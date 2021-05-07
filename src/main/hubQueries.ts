@@ -316,7 +316,7 @@ export async function getBackupSnapshots (): Promise<BackupSnapshot[]> {
 		`,
 	});
 
-	return data?.backupSnapshots?.map(({ repo_id: repoID, updated_at: updatedAt, ...rest }) => ({
+	return data?.backupSnapshots?.data?.map(({ repo_id: repoID, updated_at: updatedAt, ...rest }) => ({
 		...rest,
 		repoID,
 		updatedAt,
