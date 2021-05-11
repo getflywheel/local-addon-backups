@@ -39,8 +39,8 @@ export const snapshotsSlice = createSlice({
 	extraReducers: (builder) => {
 		builder.addCase(getSnapshotsForActiveSiteProviderHub.fulfilled, (state, { payload, meta }) => {
 			const { siteId } = meta.arg;
-			const snapshots: BackupSnapshot[] = payload.result.snapshots ?? [];
-			const pagination: PaginationInfo = payload.result.pagination;
+			const snapshots: BackupSnapshot[] | null = payload.result?.snapshots ?? [];
+			const pagination: PaginationInfo | null = payload.result?.pagination;
 
 			// add to ongoing list of all snapshots across all sites
 			snapshotsEntityAdapter.upsertMany(state.items, snapshots);
@@ -59,7 +59,7 @@ export const snapshotsSlice = createSlice({
 			state.pagingBySite[siteId] = {
 				...state.pagingBySite[siteId],
 				hasLoadingError: false,
-				hasMore: pagination.lastPage > pagination.currentPage,
+				hasMore: pagination ? pagination.lastPage > pagination.currentPage : false,
 				isLoading: false,
 			};
 		});
