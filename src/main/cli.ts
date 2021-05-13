@@ -51,11 +51,22 @@ const makeRepoFlag = (provider: Providers, localBackupRepoID: string) => {
 	if (!localBackupRepoID) {
 		throw new Error('No repo id found for this site');
 	}
+
+	let fullRemotePath: string;
+
+	switch (provider) {
+		case Providers.Drive:
+			fullRemotePath = `LocalBackups/${localBackupRepoID}`;
+			break;
+		default:
+			fullRemotePath = localBackupRepoID;
+	}
+
 	/**
 	 * Note the double colon. This is because we are combining the restic syntax to use rclone as a backend
-	 * along with the rlcone :backend: syntax.
+	 * along with the rclone :backend: syntax.
 	 */
-	return `--repo rclone::${provider}:${localBackupRepoID}`;
+	return `--repo rclone::${provider}:${fullRemotePath}`;
 };
 
 /**
