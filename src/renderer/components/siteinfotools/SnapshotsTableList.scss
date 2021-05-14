@@ -1,5 +1,8 @@
 @import '~@getflywheel/local-components/src/styles/_partials/index';
 
+$dateColWidth: 140px;
+$moreColWidth: 60px;
+
 .SnapshotsTableList_LoadingCont,
 .SnapshotsTableList_EmptyCont {
 	display: flex;
@@ -8,6 +11,11 @@
 	align-items: center;
 	justify-content: center;
 	@include theme-color-gray-else-gray25;
+}
+
+.SnapshotsTableList_LoadingCont {
+	// offset by diff between other 2 columns to effective center it within the row (hackish, but easier ways failed)
+	margin-right: $dateColWidth - $moreColWidth;
 }
 
 .SnapshotsTableList_VirtualTable {
@@ -61,7 +69,7 @@
 }
 
 .SnapshotsTableList_Column_Created {
-	flex: 0 0 140px;
+	flex: 0 0 $dateColWidth;
 }
 
 .SnapshotsTableList_Column_Description {
@@ -71,7 +79,7 @@
 }
 
 .SnapshotsTableList_Column_More {
-	flex: 0 0 60px;
+	flex: 0 0 $moreColWidth;
 }
 
 .SnapshotsTableList_MoreDropdown {

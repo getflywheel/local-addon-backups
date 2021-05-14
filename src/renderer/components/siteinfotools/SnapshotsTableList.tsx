@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import styles from './SnapshotsTableList.scss';
 import {
-	Button,
 	CircleWarnIcon,
 	DotsIcon,
 	FlyDropdown,
@@ -22,9 +21,12 @@ import { selectors } from '../../store/selectors';
 import {
 	selectActivePagingDetails,
 	selectSnapshotsForActiveSitePlusExtra,
-	TABLEROW_HASH_IS_SPECIAL_PAGING_HAS_MORE, TABLEROW_HASH_IS_SPECIAL_PAGING_IS_LOADING
+	TABLEROW_HASH_IS_SPECIAL_PAGING_HAS_MORE,
+	TABLEROW_HASH_IS_SPECIAL_PAGING_IS_LOADING,
 } from '../../store/snapshotsSlice';
 import { getSnapshotsForActiveSiteProviderHub } from '../../store/thunks';
+import useOnScreen from '../../helpers/useOnScreen';
+import has = Reflect.has;
 
 interface Props {
 	site: Site;
@@ -172,6 +174,27 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 	);
 };
 
+const LoadMoreWhenVisibleCell = ({ site }) => {
+	const ref = useRef();
+	const isVisible = useOnScreen(ref);
+	const { hasMore, isLoading, hasLoadingError } = useStoreSelector(selectActivePagingDetails);
+
+	if (isVisible && hasMore && !isLoading && !hasLoadingError) {
+		// asynchronous get snapshots given the site and provider
+		store.dispatch(getSnapshotsForActiveSiteProviderHub({
+			siteId: site.id,
+			pageOffset: store.getState().snapshots.pagingBySite[site.id]?.offset + 1,
+		}));
+	}
+
+	return (
+		<div
+			ref={ref}
+			className={styles.SnapshotsTableList_LoadingCont}
+		/>
+	);
+};
+
 const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 	const { colKey, cellData, isHeader, extraData } = dataArgs;
 	const { site, provider } = extraData;
@@ -187,22 +210,7 @@ const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 			return null;
 		}
 
-		// todo - crum: style this!!!
-		return (
-			<div className={styles.SnapshotsTableList_LoadingCont}>
-				<Button
-					onClick={() => {
-						// asynchronous get snapshots given the site and provider
-						store.dispatch(getSnapshotsForActiveSiteProviderHub({
-							siteId: site.id,
-							pageOffset: store.getState().snapshots.pagingBySite[site.id]?.offset + 1,
-						}));
-					}}
-				>
-					Load More
-				</Button>
-			</div>
-		);
+		return <LoadMoreWhenVisibleCell site={site} />;
 	} if (snapshot.hash === TABLEROW_HASH_IS_SPECIAL_PAGING_IS_LOADING) {
 		// don't render any cells other than the middle description/configObject one
 		if (colKey !== 'configObject') {
