@@ -1,4 +1,5 @@
 import { exec } from 'child_process';
+import path from 'path';
 import { isString } from 'lodash';
 import { formatHomePath, getServiceContainer } from '@getflywheel/local/main';
 import getOSBins from './getOSBins';
@@ -47,7 +48,7 @@ const logger = localLogger.child({
  * @param localBackupRepoID
  */
 // eslint-disable-next-line arrow-body-style
-const makeRepoFlag = (provider: Providers, localBackupRepoID: string) => {
+const makeRepoFlag = (provider: Providers, localBackupRepoID: string, site) => {
 	if (!localBackupRepoID) {
 		throw new Error('No repo id found for this site');
 	}
@@ -60,6 +61,18 @@ const makeRepoFlag = (provider: Providers, localBackupRepoID: string) => {
 			break;
 		default:
 			fullRemotePath = localBackupRepoID;
+	}
+
+	if (process.platform === 'win32') {
+		/**
+		 *  Restic blows up if we pass it a path that contains "C:\", so we'll find the relative path
+		 *  to the rclone binary from our current working directory (the site).
+		 */
+		const relativeRCLONEPath = path.relative(formatHomePath(site.path), bins.rclone)
+			.replace(/\\/g,"/") // Convert backslashes to forward which restic expects.
+			.replace(/\s/g, `\ `); // Convert spaces to escaped spaces.
+
+		return `--repo rclone::${provider}:${fullRemotePath} -o rclone.program="${relativeRCLONEPath}"`;
 	}
 
 	/**
@@ -81,12 +94,12 @@ const makeRepoFlag = (provider: Providers, localBackupRepoID: string) => {
 async function execPromise (cmd: string, site: Site, env: { [key: string]: string } = {}): Promise<string> {
 	return new Promise((resolve, reject) => {
 		exec(
-			`${cmd}`,
+			cmd,
 			{
 				env: {
 					...process.env,
 					...env,
-					PATH: `${bins.binDir}:${process.env.PATH}`,
+					PATH: `${bins.binDir}${path.delimiter}${process.env.PATH}`,
 				},
 				cwd: formatHomePath(site.path),
 			},
@@ -176,7 +189,7 @@ export async function initRepo ({ provider, encryptionPassword, localBackupRepoI
 		];
 
 		return await execPromiseWithRcloneContext({
-			cmd: `"${bins.restic}" ${makeRepoFlag(provider, localBackupRepoID)} init ${flags.join(' ')}`,
+			cmd: `"${bins.restic}" ${makeRepoFlag(provider, localBackupRepoID, site)} init ${flags.join(' ')}`,
 			site,
 			provider,
 			encryptionPassword,
@@ -215,7 +228,7 @@ export async function createSnapshot (site: Site, provider: Providers, encryptio
 	const flags = [
 		'--json',
 		`--exclude "${excludePatterns.join(' ')}"`,
-		`--exclude-file \'${ignoreFilePath}\'`,
+		`--exclude-file "${ignoreFilePath}"`,
 	];
 
 	/**
@@ -230,7 +243,7 @@ Fatal: wrong password or no key found
 		/**
 		 * This passes "." as the path since we cwd of the shell to the site
 		 */
-		cmd: `"${bins.restic}" ${makeRepoFlag(provider, localBackupRepoID)} ${flags.join(' ')} backup .`,
+		cmd: `"${bins.restic}" ${makeRepoFlag(provider, localBackupRepoID, site)} ${flags.join(' ')} backup .`,
 		site,
 		provider,
 		encryptionPassword,
@@ -257,7 +270,7 @@ export async function restoreBackup (options: RestoreFromBackupOptions) {
 	}
 
 	return execPromiseWithRcloneContext({
-		cmd: `"${bins.restic}" ${makeRepoFlag(provider, localBackupRepoID)} restore ${snapshotID} ${flags.join(' ')} `,
+		cmd: `"${bins.restic}" ${makeRepoFlag(provider, localBackupRepoID, site)} restore ${snapshotID} ${flags.join(' ')} `,
 		site,
 		provider,
 		encryptionPassword,
