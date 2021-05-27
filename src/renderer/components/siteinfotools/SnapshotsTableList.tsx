@@ -26,7 +26,6 @@ import {
 } from '../../store/snapshotsSlice';
 import { getSnapshotsForActiveSiteProviderHub } from '../../store/thunks';
 import useOnScreen from '../../helpers/useOnScreen';
-import has = Reflect.has;
 
 interface Props {
 	site: Site;
@@ -108,11 +107,6 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 					siteId: site.id,
 					siteName: site.name,
 				})),
-			});
-			items.push({
-				color: 'none',
-				content: renderTextButton('Dismiss', () => false),
-				onClick: () => store.dispatch(actions.dismissBackupAttempt()),
 			});
 			items.push({
 				color: 'none',
