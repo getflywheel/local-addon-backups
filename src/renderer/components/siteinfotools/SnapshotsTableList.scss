@@ -76,6 +76,9 @@ $moreColWidth: 60px;
 	flex: 1 1 400px;
 	min-width: 200px;
 	margin-right: 20px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .SnapshotsTableList_Column_More {
