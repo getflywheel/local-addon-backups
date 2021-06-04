@@ -66,7 +66,7 @@ export const BackupCloneContents = (props: ModalContentsProps) => {
 				<PrimaryButton
 					style={{ marginTop: 0 }}
 					onClick={() => onModalSubmit()}
-					disabled={inputSiteNameData === ''}
+					disabled={!inputSiteNameData}
 				>
 					Create Clone
 				</PrimaryButton>
