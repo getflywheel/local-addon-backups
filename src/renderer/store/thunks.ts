@@ -19,7 +19,7 @@ const getSnapshotsForActiveSiteProviderHub = createAsyncThunk<
 	IpcAsyncResponse<BackupSnapshotsResult>, // types return here and for extraReducers fulfilled
 	{
 		siteId: string,
-		pageOffset: number,
+		pageOffset?: number,
 	}, // types function signature and extraReducers meta 'arg'
 	AppThunkApiConfig<IpcAsyncResponse['error']> // types rejected return here and for extraReducers rejected
 >(
@@ -41,7 +41,8 @@ const getSnapshotsForActiveSiteProviderHub = createAsyncThunk<
 			[
 				siteId,
 				providers.activeProviders[siteId],
-				pageOffset,
+				// fallback to first page of results if this is '0' or not provided (undefined)
+				pageOffset || 1,
 			],
 			siteId,
 			rejectWithValue,
