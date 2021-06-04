@@ -73,7 +73,11 @@ export const BackupContents = (props: ModalContentsProps) => {
 				}
 
 				<Title size="m" style={{ paddingBottom: 15, paddingTop: 15 }}>Add a description</Title>
-				<BasicInput value={inputDescriptionData} onChange={onInputChange} />
+				<BasicInput
+					value={inputDescriptionData}
+					onChange={onInputChange}
+					maxlength={50}
+				/>
 
 				<Title size="m" style={{ paddingTop: 15 }}>Ignore files</Title>
 				<p style={{ marginTop: 7 }}>Add any files(s) you would like to exclude from this backup.</p>
