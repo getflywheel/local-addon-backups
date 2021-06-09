@@ -1,13 +1,13 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import type { BackupSnapshotsResult, HubProviderRecord, Providers } from '../../types';
-import { AppThunkApiConfig, AppState } from './store';
+import type { AppThunkApiConfig, AppState } from './store';
 import { selectors } from './selectors';
 import type { Site } from '@getflywheel/local';
 import { hubProviderToProvider } from '../helpers/hubProviderToProvider';
 import { IPCASYNC_EVENTS } from '../../constants';
 import dispatchAsyncThunk from './helpers/dispatchAsyncUnwrapped.js';
 import { showSiteBanner } from '../helpers/showSiteBanner';
-import { IpcAsyncResponse } from '../../helpers/createIpcAsyncResponse';
+import type { IpcAsyncResponse } from '../../helpers/createIpcAsyncResponse';
 import { callIPCAsyncAndProcessResponse } from '../helpers/thunkUtils';
 
 const localStorageKey = 'local-addon-backups-activeProviders';
@@ -398,7 +398,11 @@ const updateActiveSiteAndDataSources = createAsyncThunk<
 	'updateActiveSiteAndDataSources',
 	async (
 		{ siteId },
-		{ dispatch, rejectWithValue },
+		{
+			dispatch,
+			getState,
+			rejectWithValue,
+		},
 	) => {
 		try {
 			// update active site details
@@ -406,6 +410,27 @@ const updateActiveSiteAndDataSources = createAsyncThunk<
 			// (re)check for enabled providers on hub
 			// note: this call should have no other data dependencies (e.g. siteId, enabledProviders, etc)
 			await dispatchAsyncThunk(getEnabledProvidersHub({ siteId }));
+
+			const enabledProviders = getState().providers.enabledProviders;
+
+			if (!enabledProviders?.length) {
+				return siteId;
+			}
+
+			let siteProviderId = getState().providers.activeProviders[siteId];
+
+			// if site has no saved provider OR the currently saved provider is not in the list of enabled providers
+			if (!siteProviderId || !enabledProviders.some((provider => provider.id === siteProviderId))) {
+				const provider = enabledProviders[0];
+				await dispatchAsyncThunk(setActiveProviderAndPersist(provider.id));
+			}
+
+			siteProviderId = getState().providers.activeProviders[siteId];
+
+			if (!siteProviderId) {
+				return siteId;
+			}
+
 			// get snapshots given the site and provider
 			dispatch(getSnapshotsForActiveSiteProviderHub({
 				siteId,
