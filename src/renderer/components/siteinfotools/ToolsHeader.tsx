@@ -6,6 +6,7 @@ import { PrimaryButton } from '@getflywheel/local-components';
 import { useStoreSelector } from '../../store/store';
 import { launchBrowserToHubBackups } from '../../helpers/launchBrowser';
 import { StartBackupButton } from './StartBackupButton';
+import { RefreshButton } from './RefreshButton';
 
 interface Props {
 	site: Site;
@@ -18,21 +19,24 @@ export const ToolsHeader = (props: Props) => {
 	return (
 		<div className={styles.ToolsHeaders}>
 			<ProviderDropdown />
-			{enabledProviders?.length
-				? (
-					<StartBackupButton site={site} />
-				)
-				: (
-					<PrimaryButton
-						onClick={() => launchBrowserToHubBackups()}
-						privateOptions={{
-							padding: 'm',
-						}}
-					>
-						Connect Provider
-					</PrimaryButton>
-				)
-			}
+			<div className={styles.ToolsHeaders_Right}>
+				<RefreshButton />
+				{enabledProviders?.length
+					? (
+						<StartBackupButton site={site} />
+					)
+					: (
+						<PrimaryButton
+							onClick={() => launchBrowserToHubBackups()}
+							privateOptions={{
+								padding: 'm',
+							}}
+						>
+							Connect Provider
+						</PrimaryButton>
+					)
+				}
+			</div>
 		</div>
 	);
 };

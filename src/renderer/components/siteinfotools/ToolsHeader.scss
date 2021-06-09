@@ -8,3 +8,14 @@
 	padding: 20px;
 	@include theme-background-white-else-graydark;
 }
+
+.ToolsHeaders_Right {
+	display: flex;
+	flex-direction: row;
+	gap: 0;
+
+	@media screen and (min-width: 1030px) {
+		gap: 10px;
+	}
+}
+
