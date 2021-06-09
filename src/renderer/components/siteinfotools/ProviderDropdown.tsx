@@ -116,7 +116,7 @@ export const ProviderDropdown = () => {
 							{activeSiteProvider.name}
 						</>
 					)
-					: 'no provider selected'
+					: 'select provider'
 				}
 			</FlyDropdown>
 		</div>
