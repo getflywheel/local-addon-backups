@@ -1,5 +1,4 @@
 import React from 'react';
-import { TextButton } from '@getflywheel/local-components';
 import RefreshSvg from '../../assets/refresh.svg';
 import styles from './RefreshButton.scss';
 import { store, useStoreSelector } from '../../store/store';
@@ -10,13 +9,16 @@ import { updateActiveSiteAndDataSources } from '../../store/thunks';
  */
 export const RefreshButton = () => {
 	const siteId = useStoreSelector((state) => state.activeSite.id);
+	const loading = useStoreSelector((state) => state.providers.isLoadingEnabledProviders);
 
 	return (
-		<TextButton
-			onClick={() => store.dispatch(updateActiveSiteAndDataSources({ siteId }))}
-			className={styles.RefreshButton}
+		<button
+			onClick={() => {
+				store.dispatch(updateActiveSiteAndDataSources({ siteId }));
+			}}
+			className={`${loading ? styles.Spinning : ''}${styles.RefreshButton}`}
 		>
 			<RefreshSvg/>
-		</TextButton>
+		</button>
 	);
 };
