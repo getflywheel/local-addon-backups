@@ -1,9 +1,39 @@
 @import '~@getflywheel/local-components/src/styles/_partials/index';
 
+@keyframes rotateSpinner {
+	from {
+		transform: rotate(0deg) scaleX(1);
+	}
+	to {
+		transform: rotate(360deg) scaleX(1);
+	}
+}
+
 .RefreshButton {
 	padding: 10px;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+
 
 	svg {
 		margin: 0;
+
+		&:hover {
+			cursor: pointer;
+		}
+
+		path {
+			cursor: pointer;
+		}
 	}
+
+	&:hover {
+		cursor: pointer;
+	}
+
+}
+
+.Spinning {
+	animation: rotateSpinner 1s linear infinite;
 }
