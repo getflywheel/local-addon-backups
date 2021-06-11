@@ -35,5 +35,7 @@
 }
 
 .Spinning {
-	animation: rotateSpinner 1s linear infinite;
+	svg {
+		animation: rotateSpinner 1s linear infinite;
+	}
 }

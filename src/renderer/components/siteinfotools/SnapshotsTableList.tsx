@@ -24,8 +24,9 @@ import {
 	TABLEROW_HASH_IS_SPECIAL_PAGING_HAS_MORE,
 	TABLEROW_HASH_IS_SPECIAL_PAGING_IS_LOADING,
 } from '../../store/snapshotsSlice';
-import { getSnapshotsForActiveSiteProviderHub } from '../../store/thunks';
+import { getSnapshotsForActiveSiteProviderHub, updateActiveSiteAndDataSources } from '../../store/thunks';
 import useOnScreen from '../../helpers/useOnScreen';
+import RefreshInlineSvg from '../../assets/refresh-inline.svg';
 
 interface Props {
 	site: Site;
@@ -235,8 +236,14 @@ export const SnapshotsTableList = ({ site }: Props) => {
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 	const snapshotsPlusBackingupPlaceholder = useStoreSelector(selectSnapshotsForActiveSitePlusExtra);
 	const activePagingDetails = useStoreSelector(selectActivePagingDetails);
+	const siteId = useStoreSelector((state) => state.activeSite.id);
+	const {
+		isLoadingEnabledProviders,
+	} = useStoreSelector((state) => state.providers);
 
-	if (activePagingDetails?.isLoading && activePagingDetails.offset === 1) {
+	if ((activePagingDetails?.isLoading && activePagingDetails.offset === 1) ||
+		isLoadingEnabledProviders
+	) {
 		return (
 			<div className={styles.SnapshotsTableList_LoadingCont}>
 				<LoadingIndicator dots={3} />
@@ -247,12 +254,20 @@ export const SnapshotsTableList = ({ site }: Props) => {
 	if (!snapshotsPlusBackingupPlaceholder?.length) {
 		return (
 			<div className={styles.SnapshotsTableList_EmptyCont}>
-				<span>
-					{activeSiteProvider
-						? `There are no Cloud Backups created on ${activeSiteProvider.name} for this site yet.`
-						: 'There are no Cloud Backups created for this site yet.'
-					}
-				</span>
+				{activeSiteProvider
+					? <span>There are no Cloud Backups created on {activeSiteProvider.name} for this site yet.</span>
+					: <div className={styles.SnapshotsTableList_Empty_GetStarted}>
+						<h1 className={styles.SnapshotsTableList_Empty_Header}>Getting started with Cloud Backups</h1>
+						<ul>
+							<li>1. Connect to your provider</li>
+							<li>2. Allow Local to back up to your provider</li>
+							<li>3. <RefreshInlineSvg/> <a onClick={() => {
+								store.dispatch(updateActiveSiteAndDataSources({ siteId }));
+							}} className={styles.SnapshotTableList_Refresh_Anchor}>Refresh Cloud Backups</a></li>
+							<li>4. Create your backup</li>
+						</ul>
+					</div>
+				}
 			</div>
 		);
 	}

@@ -16,7 +16,7 @@ export const RefreshButton = () => {
 			onClick={() => {
 				store.dispatch(updateActiveSiteAndDataSources({ siteId }));
 			}}
-			className={`${loading ? styles.Spinning : ''}${styles.RefreshButton}`}
+			className={`${loading ? styles.Spinning : ''} ${styles.RefreshButton}`}
 		>
 			<RefreshSvg/>
 		</button>
