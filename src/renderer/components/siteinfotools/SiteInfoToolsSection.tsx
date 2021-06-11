@@ -19,7 +19,6 @@ const SiteInfoToolsSection = ({ site }: Props) => {
 
 	const {
 		hasErrorLoadingEnabledProviders,
-		isLoadingEnabledProviders,
 	} = useStoreSelector((state) => state.providers);
 	const { id } = useStoreSelector((state) => state.activeSite);
 
@@ -27,15 +26,8 @@ const SiteInfoToolsSection = ({ site }: Props) => {
 	 * @todo sometimes the query to hub fails (like if the auth token has expired)
 	 * we should handle that more gracefully
 	 */
-	if (isLoadingEnabledProviders) {
-		return (
-			<div className={styles.SiteInfoToolsSection}>
-				<div className={styles.SiteInfoToolsSection_LoadingCont}>
-					<LoadingIndicator color="Gray" dots={3} />
-				</div>
-			</div>
-		);
-	} else if (hasErrorLoadingEnabledProviders) {
+
+	if (hasErrorLoadingEnabledProviders) {
 		return (
 			<div className={styles.SiteInfoToolsSection}>
 				<TryAgain
