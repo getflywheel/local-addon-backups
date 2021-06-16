@@ -1,5 +1,5 @@
 {
-  "name": "local-addon-backups",
+  "name": "@getflywheel/local-addon-backups",
   "productName": "Local Cloud Backups",
   "version": "1.0.0",
   "author": "Local Team",
