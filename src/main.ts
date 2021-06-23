@@ -22,6 +22,8 @@ const logger = localLogger.child({
 	class: 'backup-add-on.main.ts',
 });
 
+const SNAPSHOTS_PAGE_LIMIT = 20;
+
 /**
  * The Main thread of IPC listeners from Renderer.
  * This is where all main thread ipc responses get normalized to use a consistent IpcAsyncResponse result.
@@ -71,8 +73,7 @@ export default function (): void {
 						return [];
 					}
 
-					// todo - crum: change limit to reasonable number
-					const result = await getBackupSnapshotsByRepo(backupRepo.id, 2, pageOffset);
+					const result = await getBackupSnapshotsByRepo(backupRepo.id, SNAPSHOTS_PAGE_LIMIT, pageOffset);
 					// Hub returns the "config" data as a single string, so we need to convert back to object
 					result.snapshots.forEach((snapshot) => {
 						snapshot.configObject = JSON.parse(snapshot.config);
