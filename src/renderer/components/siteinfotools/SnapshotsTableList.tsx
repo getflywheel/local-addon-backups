@@ -146,11 +146,6 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 						),
 					),
 			});
-			items.push({
-				color: 'none',
-				content: renderTextButton('Edit description', () => false),
-				onClick: () => console.log('onClick'),
-			});
 	}
 
 	if (!items.length) {
