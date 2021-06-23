@@ -69,8 +69,8 @@ const makeRepoFlag = (provider: Providers, localBackupRepoID: string, site) => {
 		 *  to the rclone binary from our current working directory (the site).
 		 */
 		const relativeRCLONEPath = path.relative(formatHomePath(site.path), bins.rclone)
-			.replace(/\\/g,"/") // Convert backslashes to forward which restic expects.
-			.replace(/\s/g, `\ `); // Convert spaces to escaped spaces.
+			.replace(/\\/g,'/') // Convert backslashes to forward which restic expects.
+			.replace('Local Beta', 'LOCALB~1'); // Use weird Windows specific format to avoid spaces in our command.
 
 		return `--repo rclone::${provider}:${fullRemotePath} -o rclone.program="${relativeRCLONEPath}"`;
 	}
