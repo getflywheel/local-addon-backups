@@ -364,6 +364,17 @@ const updateBackupProviderPersistAndUpdateSnapshots = createAsyncThunk<
 );
 
 /**
+ * Remove all snapshots for the given site.
+ * Note: because this is called from another thunk, to avoid a circular reference, this is also a thunk instead of a reducer.
+ */
+const clearSnapshotsForSite = createAsyncThunk(
+	'clearSnapshotsForSite',
+	async (siteId: string | null) => {
+		return siteId;
+	},
+);
+
+/**
  * Persist changes to the active provider for the active site.
  */
 const updateActiveSite = createAsyncThunk(
@@ -407,6 +418,9 @@ const updateActiveSiteAndDataSources = createAsyncThunk<
 		try {
 			// update active site details
 			await dispatchAsyncThunk(updateActiveSite(siteId));
+			// clear out existing results
+			// note: do this in the event that the previous provider is removed to make sure cached results don't show
+			await dispatchAsyncThunk(clearSnapshotsForSite(siteId));
 			// (re)check for enabled providers on hub
 			// note: this call should have no other data dependencies (e.g. siteId, enabledProviders, etc)
 			await dispatchAsyncThunk(getEnabledProvidersHub({ siteId }));
@@ -453,6 +467,7 @@ const updateActiveSiteAndDataSources = createAsyncThunk<
 
 export {
 	backupSite,
+	clearSnapshotsForSite,
 	cloneSite,
 	initActiveProvidersFromLocalStorage,
 	getEnabledProvidersHub,

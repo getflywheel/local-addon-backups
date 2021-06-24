@@ -25,9 +25,17 @@ export const providersSlice = createSlice({
 		builder.addCase(initActiveProvidersFromLocalStorage.fulfilled, (state, { payload }) => {
 			state.activeProviders = payload;
 		});
-		builder.addCase(getEnabledProvidersHub.fulfilled, (state, { payload }) => {
+		builder.addCase(getEnabledProvidersHub.fulfilled, (state, { payload, meta }) => {
 			state.isLoadingEnabledProviders = false;
 			state.enabledProviders = payload.result;
+
+			// if the active provider is no longer enabled for this site
+			if (state.activeProviders
+				&& state.activeProviders[meta.arg.siteId]
+				&& !state.enabledProviders.some((provider => provider.id === state.activeProviders[meta.arg.siteId]))
+			) {
+				delete state.activeProviders[meta.arg.siteId];
+			}
 		});
 		builder.addCase(getEnabledProvidersHub.pending, (state) => {
 			state.hasErrorLoadingEnabledProviders = false;
