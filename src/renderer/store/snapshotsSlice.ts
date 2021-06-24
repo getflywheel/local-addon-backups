@@ -1,6 +1,7 @@
 import { createEntityAdapter, createSelector, createSlice } from '@reduxjs/toolkit';
+import type { EntityState } from '@reduxjs/toolkit';
 import type { BackupSnapshot, PaginationInfo } from '../../types';
-import { getSnapshotsForActiveSiteProviderHub } from './thunks';
+import { clearSnapshotsForSite, getSnapshotsForActiveSiteProviderHub } from './thunks';
 import type { AppState } from './store';
 
 type SitePaging = {
@@ -11,6 +12,9 @@ type SitePaging = {
 }
 type SitesLookupPaging = {[siteId: string]: SitePaging};
 
+/**
+ * Normalized list of all snapshots for all sites using the entity adapter pattern.
+ */
 const snapshotsEntityAdapter = createEntityAdapter<BackupSnapshot>({
 	selectId: (snapshot) => snapshot.id,
 	// regardless of the order received, do this additional sort by descending updated date/time
@@ -19,6 +23,21 @@ const snapshotsEntityAdapter = createEntityAdapter<BackupSnapshot>({
 
 export const TABLEROW_HASH_IS_SPECIAL_PAGING_HAS_MORE = 'placeholder-paging-hasMore';
 export const TABLEROW_HASH_IS_SPECIAL_PAGING_IS_LOADING = 'placeholder-paging-isLoading';
+
+/**
+ * Removes all snapshots records within the entity adapter for the given site.
+ * @param siteId
+ * @param items
+ */
+function purgeSnapshotsForSite (siteId: string | null, items: EntityState<BackupSnapshot>) {
+	if (siteId) {
+		// purge existing snapshots for this site
+		snapshotsEntityAdapter.removeMany(
+			items,
+			items.ids.filter((snapshotId) => items.entities[snapshotId]?.siteId === siteId),
+		);
+	}
+}
 
 /**
  * State for various site's lists of backup snapshots.
@@ -33,6 +52,9 @@ export const snapshotsSlice = createSlice({
 	},
 	reducers: {},
 	extraReducers: (builder) => {
+		builder.addCase(clearSnapshotsForSite.fulfilled, (state, { payload }) => {
+			purgeSnapshotsForSite(payload, state.items);
+		});
 		builder.addCase(getSnapshotsForActiveSiteProviderHub.fulfilled, (state, { payload, meta }) => {
 			const { siteId } = meta.arg;
 			const snapshots: BackupSnapshot[] | null = payload.result?.snapshots ?? [];
@@ -62,11 +84,7 @@ export const snapshotsSlice = createSlice({
 
 			// if paging index/offset is undefined or not the first page
 			if (!pageOffset || pageOffset === 1) {
-				// purge existing snapshots for this site
-				snapshotsEntityAdapter.removeMany(
-					state.items,
-					state.items.ids.filter((snapshotId) => state.items.entities[snapshotId]?.siteId === siteId),
-				);
+				purgeSnapshotsForSite(siteId, state.items);
 			}
 		});
 		builder.addCase(getSnapshotsForActiveSiteProviderHub.rejected, (state, { meta }) => {
