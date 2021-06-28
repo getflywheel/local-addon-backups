@@ -45,9 +45,8 @@ const processAndCheckIfGlobalGraphQLError = (error: IpcAsyncResponse['error'], s
 			linkText: 'Log in to Hub',
 			linkHref: 'https://localwp.com/help-docs/advanced/updating-rsync-on-linux/',
 			*/
-			message: 'There was an issue authenticating your Hub Account. Please log in and try again.',
+			message: 'There was an issue authenticating your Local account. Please log in and try again.',
 			siteID: siteId,
-			title: 'Hub Error',
 			variant: 'error',
 		});
 	} else if (error?.isHubGraphQLNetworkError) {
