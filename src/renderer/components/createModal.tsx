@@ -10,6 +10,7 @@ export const createModal = (
 		<FlyModal
 			contentLabel='Back up site'
 			className={classnames('FlyModal')}
+			shouldCloseOnOverlayClick={false}
 		>
 			{renderContent()}
 		</FlyModal>,
