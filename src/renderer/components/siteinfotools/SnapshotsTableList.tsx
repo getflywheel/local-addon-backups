@@ -119,7 +119,7 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 		default:
 			items.push({
 				color: 'none',
-				content: renderTextButton('Restore site to this Cloud Backup', () => store.getState().director.backupIsRunning),
+				content: renderTextButton('Restore site to this backup', () => store.getState().director.backupIsRunning),
 				onClick: store.getState().director.backupIsRunning
 					? () => undefined
 					: () => createModal(
@@ -131,21 +131,21 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 						),
 					),
 			});
-			items.push({
-				color: 'none',
-				content: renderTextButton('Clone site from Cloud Backup', () => store.getState().director.backupIsRunning),
-				onClick: store.getState().director.backupIsRunning
-					? () => undefined
-					: () => createModal(
-						() => (
-							<BackupCloneContents
-								site={site}
-								snapshot={snapshot}
-								provider={provider}
-							/>
-						),
-					),
-			});
+			// items.push({
+			// 	color: 'none',
+			// 	content: renderTextButton('Clone site from this backup', () => store.getState().director.backupIsRunning),
+			// 	onClick: store.getState().director.backupIsRunning
+			// 		? () => undefined
+			// 		: () => createModal(
+			// 			() => (
+			// 				<BackupCloneContents
+			// 					site={site}
+			// 					snapshot={snapshot}
+			// 					provider={provider}
+			// 				/>
+			// 			),
+			// 		),
+			// });
 	}
 
 	if (!items.length) {
