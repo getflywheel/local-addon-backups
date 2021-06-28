@@ -90,7 +90,7 @@ const configs = [
 							options: {
 								importLoaders: 1,
 								modules: {
-									localIdentName: `${packageJson.name}_[local]_[hash:base64:5]`,
+									localIdentName: `[local]_[hash:base64:5]`,
 								},
 							}
 						},
