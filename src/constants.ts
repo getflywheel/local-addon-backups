@@ -1,5 +1,5 @@
 export const URLS = {
-	LOCAL_HUB: 'https://hub-staging.localwp.com',
+	LOCAL_HUB: 'https://hub.localwp.com',
 };
 
 export const IPCASYNC_EVENTS = {
