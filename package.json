@@ -6,7 +6,7 @@
   "keywords": [
     "local-addon"
   ],
-  "bgColor": "#51bb7b",
+  "bgColor": "#f0ce15",
   "icon": "icon.svg",
   "slug": "local-addon-backups",
   "description": "The future of Cloud Backups in Local is here!",
