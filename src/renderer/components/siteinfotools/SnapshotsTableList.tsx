@@ -131,21 +131,21 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 						),
 					),
 			});
-			// items.push({
-			// 	color: 'none',
-			// 	content: renderTextButton('Clone site from this backup', () => store.getState().director.backupIsRunning),
-			// 	onClick: store.getState().director.backupIsRunning
-			// 		? () => undefined
-			// 		: () => createModal(
-			// 			() => (
-			// 				<BackupCloneContents
-			// 					site={site}
-			// 					snapshot={snapshot}
-			// 					provider={provider}
-			// 				/>
-			// 			),
-			// 		),
-			// });
+			items.push({
+				color: 'none',
+				content: renderTextButton('Clone site from this backup', () => store.getState().director.backupIsRunning),
+				onClick: store.getState().director.backupIsRunning
+					? () => undefined
+					: () => createModal(
+						() => (
+							<BackupCloneContents
+								site={site}
+								snapshot={snapshot}
+								provider={provider}
+							/>
+						),
+					),
+			});
 	}
 
 	if (!items.length) {

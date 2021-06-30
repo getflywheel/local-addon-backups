@@ -97,12 +97,15 @@ const setupDestinationSite = async (context: BackupMachineContext) => {
 	}
 
 	const dupID = shortid.generate();
-	const dupSite = new Local.Site(baseSite);
+	const dupSite: Site = new Local.Site(baseSite);
 
 	const localSitesDir = path.dirname(baseSite.path);
 
 	dupSite.id = dupID;
 	dupSite.name = newSiteName;
+
+	delete dupSite.localBackupRepoID;
+
 	// todo - tyler: setup site status as part of site creation to resolve `status.indexof` issue
 
 	dupSite.domain = `${formattedSiteName}.local`;
