@@ -104,6 +104,7 @@ const setupDestinationSite = async (context: BackupMachineContext) => {
 	dupSite.id = dupID;
 	dupSite.name = newSiteName;
 
+	// get rid of the origin site's repo id reference to ensure the new clone has it's own repo created
 	delete dupSite.localBackupRepoID;
 
 	// todo - tyler: setup site status as part of site creation to resolve `status.indexof` issue
