@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import type { BackupSnapshot } from '../../types';
+import type { BackupSnapshot, HubProviderRecord } from '../../types';
 import { backupSite, cloneSite, restoreSite } from './thunks';
 
 /**
@@ -13,6 +13,8 @@ export const directorSlice = createSlice({
 		backupInMode: null as 'backup' | 'restore' | 'clone' | null,
 		/** whether backups is currently running (limited to 1) **/
 		backupIsRunning: false as boolean,
+		/** the provider being backed up to **/
+		backupProviderId: null as HubProviderRecord['id'] | null,
 		/** the site id for the currently running backup **/
 		backupSiteId: null as string | null,
 		/** a placeholder for the snapshot so it can be shown in the UI as either in-progress or having failed **/
@@ -23,6 +25,7 @@ export const directorSlice = createSlice({
 			// clear backup details thus signaling that there is no active or pending backup
 			state.backupInMode = null;
 			state.backupIsRunning = false;
+			state.backupProviderId = null;
 			state.backupSiteId = null;
 			state.backupSnapshotPlaceholder = null;
 		},
@@ -32,6 +35,7 @@ export const directorSlice = createSlice({
 			// clear backup details thus signaling that there is no active or pending backup
 			state.backupInMode = null;
 			state.backupIsRunning = false;
+			state.backupProviderId = null;
 			state.backupSiteId = null;
 			state.backupSnapshotPlaceholder = null;
 		});
@@ -39,6 +43,7 @@ export const directorSlice = createSlice({
 			// signal in-progress "running" state
 			state.backupInMode = 'backup';
 			state.backupIsRunning = true;
+			state.backupProviderId = meta.arg.providerId;
 			state.backupSiteId = meta.arg.siteId;
 			state.backupSnapshotPlaceholder = {
 				configObject: {
@@ -65,35 +70,41 @@ export const directorSlice = createSlice({
 			// clear backup details thus signaling that there is no active or pending backup
 			state.backupInMode = null;
 			state.backupIsRunning = false;
+			state.backupProviderId = null;
 			state.backupSiteId = null;
 		});
 		builder.addCase(cloneSite.pending, (state, { meta }) => {
 			// signal in-progress "running" state
 			state.backupInMode = 'clone';
 			state.backupIsRunning = true;
+			state.backupProviderId = null;
 			state.backupSiteId = meta.arg.siteId;
 		});
 		builder.addCase(cloneSite.rejected, (state) => {
 			// signal stalled by keeping other state but toggling running state
 			state.backupInMode = null;
 			state.backupIsRunning = false;
+			state.backupProviderId = null;
 		});
 		builder.addCase(restoreSite.fulfilled, (state) => {
 			// clear backup details thus signaling that there is no active or pending backup
 			state.backupInMode = null;
 			state.backupIsRunning = false;
+			state.backupProviderId = null;
 			state.backupSiteId = null;
 		});
 		builder.addCase(restoreSite.pending, (state, { meta }) => {
 			// signal in-progress "running" state
 			state.backupInMode = 'restore';
 			state.backupIsRunning = true;
+			state.backupProviderId = null;
 			state.backupSiteId = meta.arg.siteId;
 		});
 		builder.addCase(restoreSite.rejected, (state) => {
 			// signal stalled by keeping other state but toggling running state
 			state.backupInMode = null;
 			state.backupIsRunning = false;
+			state.backupProviderId = null;
 		});
 	},
 });

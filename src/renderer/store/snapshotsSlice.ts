@@ -3,6 +3,7 @@ import type { EntityState } from '@reduxjs/toolkit';
 import type { BackupSnapshot, PaginationInfo } from '../../types';
 import { clearSnapshotsForSite, getSnapshotsForActiveSiteProviderHub } from './thunks';
 import type { AppState } from './store';
+import { selectors } from './selectors';
 
 type SitePaging = {
 	hasLoadingError: boolean;
@@ -146,15 +147,24 @@ export const selectSnapshotsForActiveSitePlusExtra = createSelector(
 		(state: AppState) => state.director,
 		selectActiveSiteSnapshots,
 		(state: AppState) => state.snapshots.pagingBySite,
+		selectors.selectActiveProvider,
 	],
-	(activeSite, director, selectActiveSiteSnapshots, pagingBySite) => {
+	(
+		activeSite,
+		director,
+		selectActiveSiteSnapshots,
+		pagingBySite,
+		activeSiteProvider,
+	) => {
 		const paging = pagingBySite[activeSite.id];
 
 		return [
 			// prepend placeholder snapshot only if the backup is for the active site
-			...(director.backupSnapshotPlaceholder && activeSite.id === director.backupSiteId
-				? [director.backupSnapshotPlaceholder]
-				: []
+			...(director.backupSnapshotPlaceholder
+				&& activeSite.id === director.backupSiteId
+				&& activeSiteProvider?.id === director.backupProviderId
+					? [director.backupSnapshotPlaceholder]
+					: []
 			),
 			...selectActiveSiteSnapshots ?? [],
 			...(paging && paging.hasMore && !paging.isLoading
