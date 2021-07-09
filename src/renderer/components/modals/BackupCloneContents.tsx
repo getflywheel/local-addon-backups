@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { ipcAsync } from '@getflywheel/local/renderer';
 import {
 	FlyModal,
 	Title,
@@ -11,6 +12,7 @@ import styles from './BackupContents.scss';
 import { BackupSnapshot, HubProviderRecord, Providers } from '../../../types';
 import { hubProviderRecordToProvider } from '../../helpers/hubProviderToProvider';
 import { actions, store } from '../../store/store';
+import { IPCASYNC_EVENTS } from '../../../constants';
 
 interface ModalContentsProps {
 	site: Site;
@@ -29,8 +31,16 @@ export const BackupCloneContents = (props: ModalContentsProps) => {
 
 	const providerRecordConvertedToProvider = hubProviderRecordToProvider(provider);
 
-	const onInputChange = (event) => {
-		setSiteNameData(event.target.value);
+	const checkForDuplicateSiteName = async (siteName: string) =>
+		await ipcAsync(
+			IPCASYNC_EVENTS.CHECK_FOR_DUPLICATE_NAME,
+			siteName,
+		);
+
+	const onInputChange = async (event) => {
+		const siteName = event.target.value;
+		setSiteNameData(siteName);
+		const test = await checkForDuplicateSiteName(siteName);
 	};
 
 	const onModalSubmit = () => {

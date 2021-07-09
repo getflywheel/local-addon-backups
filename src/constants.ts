@@ -8,6 +8,7 @@ export const IPCASYNC_EVENTS = {
 	GET_SITE_PROVIDER_BACKUPS: 'backups:provider-snapshots',
 	RESTORE_BACKUP: 'backups:restore-backup',
 	CLONE_BACKUP: 'backups:restore-site-clone',
+	CHECK_FOR_DUPLICATE_NAME: 'backups:check-for-duplicate-sitename',
 };
 
 export const metaDataFileName = '.local-backups-site-meta-data.json';

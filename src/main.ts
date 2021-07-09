@@ -13,6 +13,7 @@ import { cloneFromBackup } from './main/services/cloneFromBackupService';
 import { IPCASYNC_EVENTS } from './constants';
 import { createIpcAsyncError, createIpcAsyncResult } from './helpers/createIpcAsyncResponse';
 import { getServiceContainer } from '@getflywheel/local/main';
+import { checkForDuplicateSiteName } from './helpers/checkForDuplicateSiteName';
 
 const serviceContainer = getServiceContainer().cradle;
 const { localLogger } = serviceContainer;
@@ -118,6 +119,11 @@ export default function (): void {
 					return createIpcAsyncError(error, baseSite.id);
 				}
 			},
+		},
+		{
+			channel: IPCASYNC_EVENTS.CHECK_FOR_DUPLICATE_NAME,
+			callback: async (siteName: string) =>
+				await checkForDuplicateSiteName(siteName),
 		},
 	];
 

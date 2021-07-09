@@ -1,12 +1,14 @@
-import { getServiceContainer } from '@getflywheel/local/main';
+import { getServiceContainer, formatSiteNicename } from '@getflywheel/local/main';
 
 const serviceContainer = getServiceContainer().cradle;
 const {
 	siteData,
 } = serviceContainer;
 
-export const checkForDuplicateSiteName = async (siteName: string, formattedSiteName: string) => {
+export const checkForDuplicateSiteName = async (siteName: string) => {
 	const coolSitedata = siteData.getSites();
+
+	const formattedSiteName = formatSiteNicename(siteName);
 	const newSiteDomain = `${formattedSiteName}.local`;
 
 	let matchesExistingDomains = false;
