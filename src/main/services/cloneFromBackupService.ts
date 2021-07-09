@@ -89,7 +89,7 @@ const setupDestinationSite = async (context: BackupMachineContext) => {
 	// make sure we can safely use the name in site path and domain
 	const formattedSiteName = formatSiteNicename(newSiteName);
 
-	const duplicateSiteName = await checkForDuplicateSiteName(newSiteName, formattedSiteName);
+	const duplicateSiteName = await checkForDuplicateSiteName(newSiteName);
 
 	if (duplicateSiteName) {
 		dialog.showErrorBox('Invalid Site Name', `${newSiteName} is already taken by another site. Please choose a different name.`);
