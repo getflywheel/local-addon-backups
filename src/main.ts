@@ -124,4 +124,12 @@ export default function (): void {
 	listenerConfigs.forEach(({ channel, callback }) => {
 		LocalMain.addIpcAsyncListener(channel, callback);
 	});
+
+	LocalMain.HooksMain.addFilter(
+		'updateCloneSiteMetadata',
+		(site: Site) => {
+			delete site.localBackupRepoID;
+			return site;
+		},
+	);
 }
