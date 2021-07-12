@@ -25,3 +25,20 @@
 .CustomSpinnerStyles {
 	display: inline-block !important;
 }
+
+.ErrorText {
+	color: #EF4E65;
+	display: flex;
+	align-items: center;
+	font-weight: 500;
+}
+
+.ErrorIcon {
+	margin-right: 10px;
+}
+
+.ErrorState {
+	input {
+		box-shadow: inset 0 0 0 2px #EF4E65 !important;
+	}
+}
