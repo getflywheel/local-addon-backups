@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import {
 	FlyModal,
@@ -6,6 +6,7 @@ import {
 	PrimaryButton,
 	TextButton,
 	BasicInput,
+	Text
 } from '@getflywheel/local-components';
 import type { Site } from '@getflywheel/local';
 import styles from './BackupContents.scss';
@@ -13,6 +14,7 @@ import { BackupSnapshot, HubProviderRecord, Providers } from '../../../types';
 import { hubProviderRecordToProvider } from '../../helpers/hubProviderToProvider';
 import { actions, store } from '../../store/store';
 import { IPCASYNC_EVENTS } from '../../../constants';
+import WarningIcon from '../../assets/warning-icon.svg';
 
 interface ModalContentsProps {
 	site: Site;
@@ -26,6 +28,7 @@ const onCloneModalSubmit = (baseSite: Site, newSiteName: string, provider: Provi
 
 export const BackupCloneContents = (props: ModalContentsProps) => {
 	const [inputSiteNameData, setSiteNameData] = useState('');
+	const [isDuplicateName, setIsDuplicateName] = useState(false);
 
 	const { site, snapshot, provider } = props;
 
@@ -40,7 +43,8 @@ export const BackupCloneContents = (props: ModalContentsProps) => {
 	const onInputChange = async (event) => {
 		const siteName = event.target.value;
 		setSiteNameData(siteName);
-		const test = await checkForDuplicateSiteName(siteName);
+		const isDuplicate = await checkForDuplicateSiteName(siteName);
+		setIsDuplicateName(isDuplicate);
 	};
 
 	const onModalSubmit = () => {
@@ -58,7 +62,13 @@ export const BackupCloneContents = (props: ModalContentsProps) => {
 			<div className={styles.AlignLeft}>
 
 				<Title size="m" style={{ paddingBottom: 15, paddingTop: 15 }}>Enter a name for the new site</Title>
-				<BasicInput value={inputSiteNameData} onChange={onInputChange} />
+				<BasicInput className={isDuplicateName && styles.ErrorState} value={inputSiteNameData} onChange={onInputChange} />
+				{isDuplicateName &&
+				<Text className={styles.ErrorText}>
+					<WarningIcon className={styles.ErrorIcon} />
+					Site name already exists. Please choose a unique site name.
+				</Text>
+				}
 
 			</div>
 
