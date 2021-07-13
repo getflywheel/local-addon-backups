@@ -237,13 +237,14 @@ const onErrorFactory = (additionalActions = []) => ({
 
 const setErroredStatus = (context: BackupMachineContext) => {
 	const { baseSite } = context;
-
 	sendIPCEvent('goToRoute', `/main/site-info/${baseSite.id}`);
 };
 
 const deleteNewCloneSite = (context: BackupMachineContext) => {
 	const { destinationSite } = context;
-	sendIPCEvent('deleteSite', { destinationSite, trashFiles: true });
+	if (destinationSite) {
+		sendIPCEvent('deleteSite', { destinationSite, trashFiles: true });
+	}
 };
 
 // eslint-disable-next-line new-cap
