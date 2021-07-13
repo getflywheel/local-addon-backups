@@ -1,9 +1,5 @@
 @import '~@getflywheel/local-components/src/styles/_partials/index';
 
-.FlyModal {
-	background-color: blue;
-}
-
 .AlignLeft {
 	text-align: left !important;
 	@include theme-color-gray-else-gray25;
@@ -27,7 +23,7 @@
 }
 
 .ErrorText {
-	color: #EF4E65;
+	color: $red;
 	display: flex;
 	align-items: center;
 	font-weight: 500;
@@ -39,6 +35,6 @@
 
 .ErrorState {
 	input {
-		box-shadow: inset 0 0 0 2px #EF4E65 !important;
+		box-shadow: inset 0 0 0 2px $red !important;
 	}
 }
