@@ -16,6 +16,7 @@ import DateUtils from '../../helpers/DateUtils';
 import type { Site } from '@getflywheel/local';
 import { BackupCloneContents } from '../modals/BackupCloneContents';
 import { BackupRestoreContents } from '../modals/BackupRestoreContents';
+import { BackupEditDescriptionContents } from '../modals/BackupEditDescriptionContents';
 import { createModal } from '../createModal';
 import { selectors } from '../../store/selectors';
 import {
@@ -143,6 +144,17 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 								snapshot={snapshot}
 								provider={provider}
 							/>
+						),
+					),
+			});
+			items.push({
+				color: 'none',
+				content: renderTextButton('Edit backup description', () => store.getState().director.backupIsRunning),
+				onClick: store.getState().director.backupIsRunning
+					? () => undefined
+					: () => createModal(
+						() => (
+							<BackupEditDescriptionContents />
 						),
 					),
 			});
