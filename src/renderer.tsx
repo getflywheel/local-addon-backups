@@ -6,6 +6,9 @@ import { store } from './renderer/store/store';
 import SiteInfoToolsSection from './renderer/components/siteinfotools/SiteInfoToolsSection';
 import { setupListeners } from './renderer/helpers/setupListeners';
 import { client } from './renderer/localClient/localGraphQLClient';
+import { ChooseCreateSite } from './renderer/components/multimachinebackups/ChooseCreateSite';
+import { SelectSiteBackup } from './renderer/components/multimachinebackups/SelectSiteBackup';
+import { SelectSnapshot } from './renderer/components/multimachinebackups/SelectSnapshot';
 
 setupListeners();
 
@@ -43,5 +46,22 @@ export default function (context): void {
 		statuses.push(...Object.values(RestoreStates));
 		statuses.push(BackupStates.creatingDatabaseSnapshot);
 		return statuses;
+	});
+
+	hooks.addFilter('AddSiteUserFlow:RoutesArray', (routes, path) => {
+		routes.forEach((route) => {
+			if (route.path === `${path}/`) {
+				route.path = `${path}/add`;
+			}
+		});
+		console.log(routes);
+
+		routes.push(
+			{ key: 'add-site-choose', path: `${path}/`, component: ChooseCreateSite },
+			{ key: 'add-site-select-site-backup', path: `${path}/select-site-backup`, component: SelectSiteBackup },
+			{ key: 'add-site-select-snapshot', path: `${path}/select-snapshot`, component: SelectSnapshot },
+		);
+
+		return routes;
 	});
 }
