@@ -6,6 +6,7 @@ import {
 	getBackupReposByProviderID,
 	getBackupSnapshotsByRepo,
 	updateBackupSnapshot,
+	getAllBackupSites,
 } from './main/hubQueries';
 import { createBackup } from './main/services/backupService';
 import { restoreFromBackup } from './main/services/restoreService';
@@ -146,6 +147,11 @@ export default function (): void {
 					return createIpcAsyncError(error, siteId);
 				}
 			},
+		},
+		{
+			channel: IPCASYNC_EVENTS.GET_ALL_SITES,
+			callback: async () =>
+				await getAllBackupSites(),
 		},
 	];
 
