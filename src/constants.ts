@@ -11,6 +11,8 @@ export const IPCASYNC_EVENTS = {
 	CHECK_FOR_DUPLICATE_NAME: 'backups:check-for-duplicate-sitename',
 	EDIT_BACKUP_DESCRIPTION: 'backups:edit-backup-description',
 	GET_ALL_SITES: 'backups:get-all-sites-for-user',
+	GET_ALL_SNAPSHOTS: 'backup:get-all-snapshots-for-site',
+	MULTI_MACHINE_GET_AVAILABLE_PROVIDERS: 'backup:get-enabled-providers-multi-machine',
 };
 
 export const metaDataFileName = '.local-backups-site-meta-data.json';

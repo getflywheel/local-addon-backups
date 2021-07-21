@@ -46,7 +46,7 @@ export const ChooseCreateSite = () => {
 				{}
 			</div>
 			<PrimaryButton
-				className="TID_NewSiteEnvironment_Button_Continue Continue"
+				className="Continue"
 				onClick={onContinue}
 			>
 				Continue

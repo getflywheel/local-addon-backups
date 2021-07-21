@@ -153,6 +153,32 @@ export default function (): void {
 			callback: async () =>
 				await getAllBackupSites(),
 		},
+		{
+			channel: IPCASYNC_EVENTS.MULTI_MACHINE_GET_AVAILABLE_PROVIDERS,
+			callback: async () =>
+				await getEnabledBackupProviders(),
+		},
+		{
+			channel: IPCASYNC_EVENTS.GET_ALL_SNAPSHOTS,
+			callback: async (siteUUID: string, provider: HubOAuthProviders) => {
+				const repos = await getBackupReposByProviderID(provider);
+
+				let repoID: number;
+
+				repos.forEach((repo) => {
+					if (repo.hash === siteUUID) {
+						repoID = repo.id;
+					}
+				});
+
+				if (repoID) {
+					const snapshots = await getBackupSnapshotsByRepo(repoID, 20, 0);
+					return snapshots;
+				}
+
+				return [];
+			},
+		},
 	];
 
 	listenerConfigs.forEach(({ channel, callback }) => {

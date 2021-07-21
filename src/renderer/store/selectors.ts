@@ -26,10 +26,22 @@ const selectAllBackupSites = createSelector(
 	({ multiMachineRestore }) => multiMachineRestore.backupSites,
 );
 
+const selectEnabledProvider = createSelector(
+	() => store.getState(),
+	({ multiMachineRestore }) => multiMachineRestore.selectedProvider,
+);
+
+const selectBackupSite = createSelector(
+	() => store.getState(),
+	({ multiMachineRestore }) => multiMachineRestore.selectedSite,
+);
+
 /**
  * Organized export of available selectors.
  */
 export const selectors = {
 	selectActiveProvider,
 	selectAllBackupSites,
+	selectEnabledProvider,
+	selectBackupSite,
 };
