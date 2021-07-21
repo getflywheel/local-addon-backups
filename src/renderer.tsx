@@ -28,6 +28,9 @@ const withStoreProvider = (Component) => (props) => (
 export default function (context): void {
 	const { hooks } = context;
 	const SiteInfoToolsSectionHOC = withApolloProvider(withStoreProvider(SiteInfoToolsSection));
+	const ChooseCreateSiteHOC = withApolloProvider(withStoreProvider(ChooseCreateSite));
+	const SelectSiteBackupHOC = withApolloProvider(withStoreProvider(SelectSiteBackup));
+	const SelectSnapshotHOC = withApolloProvider(withStoreProvider(SelectSnapshot));
 
 	hooks.addFilter('siteInfoToolsItem', (items) => {
 		items.push({
@@ -57,9 +60,9 @@ export default function (context): void {
 		console.log(routes);
 
 		routes.push(
-			{ key: 'add-site-choose', path: `${path}/`, component: ChooseCreateSite },
-			{ key: 'add-site-select-site-backup', path: `${path}/select-site-backup`, component: SelectSiteBackup },
-			{ key: 'add-site-select-snapshot', path: `${path}/select-snapshot`, component: SelectSnapshot },
+			{ key: 'add-site-choose', path: `${path}/`, component: ChooseCreateSiteHOC },
+			{ key: 'add-site-select-site-backup', path: `${path}/select-site-backup`, component: SelectSiteBackupHOC },
+			{ key: 'add-site-select-snapshot', path: `${path}/select-snapshot`, component: SelectSnapshotHOC },
 		);
 
 		return routes;

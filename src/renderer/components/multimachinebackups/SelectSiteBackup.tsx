@@ -9,6 +9,9 @@ import {
 } from '@getflywheel/local-components';
 import { IPCASYNC_EVENTS } from '../../../constants';
 import { ipcAsync } from '@getflywheel/local/renderer';
+import { store, actions, useStoreSelector } from '../../store/store';
+import { selectors } from '../../store/selectors';
+
 
 // interface Props {
 
@@ -20,10 +23,15 @@ export const SelectSiteBackup = () => {
 			const bleeb = await ipcAsync(
 				IPCASYNC_EVENTS.GET_ALL_SITES,
 			);
-			console.log(bleeb);
+
+			store.dispatch(actions.setAllBackupSites(bleeb));
 		};
 		getSitesList();
 	}, []);
+
+	const backupSites = useStoreSelector(selectors.selectAllBackupSites);
+
+	console.log(backupSites, 'tylers state');
 
 	return (
 		<div>

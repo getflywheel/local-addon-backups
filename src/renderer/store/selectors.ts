@@ -1,5 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit';
-import { AppState } from './store';
+import state from '../../main/services/state';
+import { AppState, store } from './store';
 
 /**
  * The selected/active provider derived from the current active site and known providers.
@@ -20,9 +21,15 @@ const selectActiveProvider = createSelector(
 	},
 );
 
+const selectAllBackupSites = createSelector(
+	() => store.getState(),
+	({ multiMachineRestore }) => multiMachineRestore.backupSites,
+);
+
 /**
  * Organized export of available selectors.
  */
 export const selectors = {
 	selectActiveProvider,
+	selectAllBackupSites,
 };

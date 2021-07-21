@@ -50,6 +50,7 @@ export interface BackupSite {
 	id: number;
 	uuid: string;
 	password: string;
+	name?: string;
 }
 
 export interface BackupRepo {
