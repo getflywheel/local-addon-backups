@@ -5,6 +5,7 @@ import { activeSiteSlice } from './activeSiteSlice';
 import { directorSlice } from './directorSlice';
 import { providersSlice } from './providersSlice';
 import { snapshotsSlice } from './snapshotsSlice';
+import { multiMachineRestoreSlice } from './multiMachineRestoreSlice';
 
 /**
  * Convenience collection of Redux actions.
@@ -14,6 +15,7 @@ export const actions = {
 	...directorSlice.actions,
 	...providersSlice.actions,
 	...snapshotsSlice.actions,
+	...multiMachineRestoreSlice.actions,
 	// include all thunks here to make it easier to reference both actions and thunks from same place
 	...thunks,
 };
@@ -27,6 +29,7 @@ export const store = configureStore({
 		director: directorSlice.reducer,
 		providers: providersSlice.reducer,
 		snapshots: snapshotsSlice.reducer,
+		multiMachineRestore: multiMachineRestoreSlice.reducer,
 	},
 });
 
