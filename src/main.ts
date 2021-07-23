@@ -1,10 +1,11 @@
 import * as Local from '@getflywheel/local';
 import * as LocalMain from '@getflywheel/local/main';
-import type { HubOAuthProviders, Providers, Site } from './types';
+import type { BackupSnapshot, HubOAuthProviders, Providers, Site, SiteMetaData } from './types';
 import {
 	getEnabledBackupProviders,
 	getBackupReposByProviderID,
 	getBackupSnapshotsByRepo,
+	updateBackupSnapshot,
 } from './main/hubQueries';
 import { createBackup } from './main/services/backupService';
 import { restoreFromBackup } from './main/services/restoreService';
@@ -124,6 +125,17 @@ export default function (): void {
 			channel: IPCASYNC_EVENTS.CHECK_FOR_DUPLICATE_NAME,
 			callback: async (siteName: string) =>
 				await checkForDuplicateSiteName(siteName),
+		},
+		{
+			channel: IPCASYNC_EVENTS.EDIT_BACKUP_DESCRIPTION,
+			callback: async ({ metaData, snapshot }: {metaData: SiteMetaData, snapshot: BackupSnapshot }) => {
+				await updateBackupSnapshot({
+					metaData,
+					snapshotID: snapshot.id,
+					resticSnapshotHash: snapshot.hash,
+					status: 'complete',
+				});
+			},
 		},
 	];
 
