@@ -200,13 +200,13 @@ export async function createBackupSnapshot (repoID: number, metaData: SiteMetaDa
 	return { ...rest, repoID: repo_id };
 }
 
-export async function updateBackupSnapshot (queryArgs: { snapshotID: number, resticSnapshotHash?: string, status: SnapshotStatus }): Promise<BackupSnapshot> {
-	const { snapshotID, resticSnapshotHash, status } = queryArgs;
-
+export async function updateBackupSnapshot (queryArgs: { snapshotID: number, resticSnapshotHash?: string, status: SnapshotStatus, metaData?: SiteMetaData }): Promise<BackupSnapshot> {
+	const { snapshotID, resticSnapshotHash, status, metaData } = queryArgs;
+	console.log('queryArgs: ', queryArgs);
 	const { data } = await localHubClient.mutate({
 		mutation: gql`
-			mutation updateBackupSnapshot($snapshotID: Int!, $resticSnapshotHash: String, $status: String!) {
-				updateBackupSnapshot(id: $snapshotID, hash: $resticSnapshotHash, status: $status) {
+			mutation updateBackupSnapshot($snapshotID: Int!, $resticSnapshotHash: String, $status: String!, $metaData: Mixed) {
+				updateBackupSnapshot(id: $snapshotID, hash: $resticSnapshotHash, status: $status, config: $metaData) {
 					id
 					repo_id
 					hash
@@ -217,9 +217,10 @@ export async function updateBackupSnapshot (queryArgs: { snapshotID: number, res
 			snapshotID,
 			resticSnapshotHash,
 			status,
+			metaData: JSON.stringify(metaData),
 		},
 	});
-
+	console.log('data: ', data);
 	const { repo_id: repoID, ...rest } = data?.updateBackupSnapshot;
 	return { ...rest, repoID };
 }

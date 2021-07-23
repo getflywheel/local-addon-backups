@@ -154,7 +154,10 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 					? () => undefined
 					: () => createModal(
 						() => (
-							<BackupEditDescriptionContents />
+							<BackupEditDescriptionContents
+								site={site}
+								snapshot={snapshot}
+							/>
 						),
 					),
 			});
