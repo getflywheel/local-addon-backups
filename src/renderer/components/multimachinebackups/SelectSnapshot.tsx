@@ -15,17 +15,18 @@ import {
 import { store, actions, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
 import * as LocalRenderer from '@getflywheel/local/renderer';
-import type { BackupSnapshot, HubProviderRecord } from '../../../types';
+import type { BackupSnapshot, Providers } from '../../../types';
 import DateUtils from '../../helpers/DateUtils';
 import styles from '../siteinfotools/SiteInfoToolsSection.scss';
 
 
-// interface Props {
-// 	updateSiteSettings: any
-// 	siteSettings: any
-// }
+interface Props {
+	updateSiteSettings: any
+	siteSettings: any
+}
 
-export const SelectSnapshot = () => {
+export const SelectSnapshot = (props: Props) => {
+	const { updateSiteSettings, siteSettings } = props;
 	const selectedProvider = useStoreSelector(selectors.selectEnabledProvider);
 	const selectedBackupSite = useStoreSelector(selectors.selectBackupSite);
 	const backupSnapshots = useStoreSelector(selectors.selectAllSnapshots);
@@ -74,6 +75,16 @@ export const SelectSnapshot = () => {
 		const snapshotHash = event.currentTarget.value;
 		const selectedSnapshot = backupSnapshots.find((snapshot) => snapshotHash === snapshot.hash);
 		store.dispatch(actions.setSelectedSnapshot(selectedSnapshot));
+
+		updateSiteSettings({
+			...siteSettings,
+			cloudBackupMeta: {
+				...siteSettings.cloudBackupMeta,
+				createdFromCloudBackup: true,
+				snapshotID: snapshotHash,
+				provider: selectedProvider,
+			},
+		});
 	};
 
 	const onContinue = () => {

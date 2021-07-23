@@ -77,7 +77,10 @@ export const SelectSiteBackup = (props: Props) => {
 			siteName: formattedSiteName,
 			siteDomain: formattedSiteDomain,
 			sitePath: formattedSitePath,
-			createdFromCloudBackup: true,
+			cloudBackupMeta: {
+				createdFromCloudBackup: true,
+				repoID: siteUUID,
+			},
 		});
 	};
 
