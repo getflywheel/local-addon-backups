@@ -11,7 +11,7 @@ export const multiMachineRestoreSlice = createSlice({
 	initialState: {
 		backupSites: [] as BackupSite[],
 		backupSnapshots: [] as BackupSnapshot[],
-		selectedSite: null as string,
+		selectedSite: null as BackupSite,
 		selectedSnapshot: null as BackupSnapshot,
 		selectedProvider: null as HubOAuthProviders,
 	},
