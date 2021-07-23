@@ -8,6 +8,12 @@ export type GenericObject = { [key: string]: any };
  */
 export interface Site extends SiteBase {
 	localBackupRepoID?: string;
+	cloudBackupMeta?: {
+		createdFromCloudBackup?: boolean,
+		snapshotID?: string,
+		provider?: string,
+		repoID?: string,
+	};
 }
 
 type SiteMetaDataBase = Pick<SiteBase,

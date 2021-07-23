@@ -32,6 +32,7 @@ interface BackupMachineContext {
 	localBackupRepoID?: string;
 	tmpDirData?: DirResult;
 	error?: string;
+	repoID?: string;
 }
 
 interface BackupMachineSchema {
@@ -52,7 +53,7 @@ interface ErrorState {
 }
 
 const getCredentials = async (context: BackupMachineContext) => {
-	const { site } = context;
+	const { site, repoID } = context;
 
 	sendIPCEvent('updateSiteStatus', site.id, 'restoring_backup');
 
@@ -60,7 +61,12 @@ const getCredentials = async (context: BackupMachineContext) => {
 
 	sendIPCEvent('updateSiteMessage', site.id, 'Restoring backup');
 
-	const { localBackupRepoID } = getSiteDataFromDisk(site.id);
+	let { localBackupRepoID } = getSiteDataFromDisk(site.id);
+
+	if (repoID) {
+		localBackupRepoID = repoID;
+	}
+
 	const { uuid, password, id } = await getBackupSite(localBackupRepoID);
 
 	return {
@@ -135,13 +141,14 @@ const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 };
 
 const restoreBackup = async (context: BackupMachineContext) => {
-	const { site, provider, encryptionPassword, snapshotID, tmpDirData } = context;
+	const { site, provider, encryptionPassword, snapshotID, tmpDirData, repoID } = context;
 
 	await restoreResticBackup({
 		site,
 		provider,
 		encryptionPassword,
 		snapshotID,
+		repoID,
 		restoreDir: tmpDirData.name,
 	});
 };
@@ -190,6 +197,7 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 			localBackupRepoID: null,
 			tmpDirData: null,
 			error: null,
+			repoID: null,
 		},
 		states: {
 			[RestoreStates.gettingBackupCredentials]: {
@@ -280,17 +288,22 @@ const restoreMachine = Machine<BackupMachineContext, BackupMachineSchema>(
  * @param opts
  * @returns
  */
-export const restoreFromBackup = async (opts: { site: Site; provider: Providers; snapshotID: string; }): Promise<null | ErrorState> => {
+export const restoreFromBackup = async (opts: {
+	site: Site;
+	provider: Providers;
+	snapshotID: string;
+	repoID?: string;
+}): Promise<null | ErrorState> => {
 	if (serviceState.inProgressStateMachine) {
 		logger.warn('Restore process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.');
 		return Promise.reject('Restore process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.');
 	}
 
-	const { site, provider, snapshotID } = opts;
+	const { site, provider, snapshotID, repoID } = opts;
 	return new Promise((resolve, reject) => {
 		const initialSiteStatus = siteProcessManager.getSiteStatus(site);
 
-		const machine = restoreMachine.withContext({ site, provider, snapshotID, initialSiteStatus });
+		const machine = restoreMachine.withContext({ site, provider, snapshotID, initialSiteStatus, repoID });
 		const restoreService = interpret(machine)
 			.onTransition((state) => {
 				const actionLabel = camelCaseToSentence(state.value as string);

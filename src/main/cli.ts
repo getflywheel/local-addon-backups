@@ -17,6 +17,7 @@ interface RestoreFromBackupOptions {
 	snapshotID: string;
 	restoreDir: string;
 	restoringToNewSite?: boolean;
+	repoID?: string;
 }
 
 const bins = getOSBins();
@@ -257,8 +258,12 @@ Fatal: wrong password or no key found
  * @param options
  */
 export async function restoreBackup (options: RestoreFromBackupOptions) {
-	const { site, provider, encryptionPassword, snapshotID, restoreDir, restoringToNewSite } = options;
-	const { localBackupRepoID } = getSiteDataFromDisk(site.id);
+	const { site, provider, encryptionPassword, snapshotID, restoreDir, restoringToNewSite, repoID } = options;
+	let { localBackupRepoID } = getSiteDataFromDisk(site.id);
+
+	if (repoID) {
+		localBackupRepoID = repoID;
+	}
 
 	const flags = [
 		'--json',

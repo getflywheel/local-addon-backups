@@ -1,6 +1,7 @@
 import * as Local from '@getflywheel/local';
 import * as LocalMain from '@getflywheel/local/main';
 import type { BackupSnapshot, HubOAuthProviders, Providers, Site, SiteMetaData } from './types';
+import { HubOAuthProviders as HubProviderNames, Providers as ProviderNames } from './types';
 import {
 	getEnabledBackupProviders,
 	getBackupReposByProviderID,
@@ -196,6 +197,30 @@ export default function (): void {
 		(site: Site) => {
 			delete site.localBackupRepoID;
 			return site;
+		},
+	);
+
+	LocalMain.HooksMain.addFilter(
+		'modifyAddSiteObjectBeforeCreation',
+		(site: Site, newSiteInfo) => {
+			site.cloudBackupMeta = newSiteInfo.cloudBackupMeta;
+			return site;
+		},
+	);
+
+	LocalMain.HooksMain.addAction(
+		'siteAdded',
+		async (site: Site) => {
+			console.log(site);
+			const { provider, snapshotID, repoID } = site.cloudBackupMeta;
+
+			if (provider === HubProviderNames.Google) {
+				return await restoreFromBackup({ site, provider: ProviderNames.Drive, snapshotID, repoID });
+			}
+			// todo - tyler - clean up this typing so the default provider isn't dropbox
+			return await restoreFromBackup({ site, provider: ProviderNames.Dropbox, snapshotID, repoID });
+
+			// todo - tyler - after running restore from backup, update hosts file with new domain url
 		},
 	);
 }

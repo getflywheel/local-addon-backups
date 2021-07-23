@@ -69,7 +69,7 @@ export default function (context): void {
 	});
 
 	hooks.addFilter('AddSiteUserFlow:NewSiteEnvironment', (newSiteEnvironmentProps) => {
-		if (newSiteEnvironmentProps.siteSettings.createdFromCloudBackup === true) {
+		if (newSiteEnvironmentProps.siteSettings.cloudBackupMeta.createdFromCloudBackup === true) {
 			const continueCreateSite = () => {
 				LocalRenderer.sendIPCEvent('addSite', {
 					newSiteInfo: newSiteEnvironmentProps.siteSettings,
