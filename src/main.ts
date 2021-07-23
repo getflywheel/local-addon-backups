@@ -173,6 +173,12 @@ export default function (): void {
 
 				if (repoID) {
 					const snapshots = await getBackupSnapshotsByRepo(repoID, 20, 0);
+
+					// Hub returns the "config" data as a single string, so we need to convert back to object
+					snapshots.snapshots.forEach((snapshot) => {
+						snapshot.configObject = JSON.parse(snapshot.config);
+					});
+
 					return snapshots;
 				}
 

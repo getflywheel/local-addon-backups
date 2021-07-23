@@ -2,13 +2,15 @@ import React from 'react';
 import { Provider } from 'react-redux';
 import { ApolloProvider } from '@apollo/client';
 import { RestoreStates, BackupStates } from './types';
-import { store } from './renderer/store/store';
+import { store, useStoreSelector } from './renderer/store/store';
 import SiteInfoToolsSection from './renderer/components/siteinfotools/SiteInfoToolsSection';
 import { setupListeners } from './renderer/helpers/setupListeners';
 import { client } from './renderer/localClient/localGraphQLClient';
 import { ChooseCreateSite } from './renderer/components/multimachinebackups/ChooseCreateSite';
 import { SelectSiteBackup } from './renderer/components/multimachinebackups/SelectSiteBackup';
 import { SelectSnapshot } from './renderer/components/multimachinebackups/SelectSnapshot';
+import * as LocalRenderer from '@getflywheel/local/renderer';
+import { selectors } from './renderer/store/selectors';
 
 setupListeners();
 
@@ -57,7 +59,6 @@ export default function (context): void {
 				route.path = `${path}/add`;
 			}
 		});
-		console.log(routes);
 
 		routes.push(
 			{ key: 'add-site-choose', path: `${path}/`, component: ChooseCreateSiteHOC },
@@ -66,5 +67,24 @@ export default function (context): void {
 		);
 
 		return routes;
+	});
+
+	hooks.addFilter('AddSiteUserFlow:NewSiteEnvironment', (newSiteEnvironmentProps) => {
+		const continueCreateSite = () => {
+			LocalRenderer.sendIPCEvent('addSite', {
+				newSiteInfo: newSiteEnvironmentProps.siteSettings,
+				goToSite: true,
+				installWP: false,
+			});
+		};
+
+		const onGoBack = () => {
+			LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/select-snapshot');
+		};
+
+		newSiteEnvironmentProps.onContinue = continueCreateSite;
+		newSiteEnvironmentProps.onGoBack = onGoBack;
+
+		return newSiteEnvironmentProps;
 	});
 }

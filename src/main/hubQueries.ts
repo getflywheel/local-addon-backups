@@ -283,6 +283,7 @@ export async function getBackupSnapshotsByRepo (repoId: number, limit: number, o
 						repo_id
 						hash
 						updated_at
+						created_at
 						config
 					}
 					paginatorInfo {
