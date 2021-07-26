@@ -1,6 +1,7 @@
 import { useSelector, TypedUseSelectorHook } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import * as thunks from './thunks';
+import * as multiMachineThunks from './multiMachineThunks';
 import { activeSiteSlice } from './activeSiteSlice';
 import { directorSlice } from './directorSlice';
 import { providersSlice } from './providersSlice';
@@ -18,6 +19,7 @@ export const actions = {
 	...multiMachineRestoreSlice.actions,
 	// include all thunks here to make it easier to reference both actions and thunks from same place
 	...thunks,
+	...multiMachineThunks,
 };
 
 /**
