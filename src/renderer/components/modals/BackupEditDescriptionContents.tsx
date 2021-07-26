@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
-import { BasicInput, Title, Divider, PrimaryButton } from '@getflywheel/local-components';
+import React, { useEffect, useState } from 'react';
+import {
+	FlyModal,
+	BasicInput,
+	Title,
+	Divider,
+	PrimaryButton,
+} from '@getflywheel/local-components';
 import styles from './BackupEditDescriptionContents.scss';
-import { ipcAsync } from '@getflywheel/local/renderer';
 import type { Site } from '@getflywheel/local';
 import { BackupSnapshot } from '../../../types';
-import { IPCASYNC_EVENTS } from '../../../constants';
 import { actions, store } from '../../store/store';
-
 export interface ModalContentsProps {
 	site: Site;
 	snapshot: BackupSnapshot;
@@ -15,14 +18,14 @@ export interface ModalContentsProps {
 export const BackupEditDescriptionContents = (props: ModalContentsProps) => {
 	const [description, updateDescription] = useState('');
 
-	const updateDescriptionGQL = async () => {
-		await ipcAsync(
-			IPCASYNC_EVENTS.EDIT_BACKUP_DESCRIPTION,
-			{
-				metaData: { ...props.snapshot.configObject, description },
-				snapshot: props.snapshot,
-			},
-		);
+	const updateDescriptionGQL = () => {
+		store.dispatch(actions.editSnapshotMetaData({
+			siteId: props.site.id,
+			metaData: { ...props.snapshot.configObject, description },
+			snapshot: props.snapshot,
+		}));
+
+		FlyModal.onRequestClose();
 	};
 
 	return (
@@ -32,8 +35,11 @@ export const BackupEditDescriptionContents = (props: ModalContentsProps) => {
 			</Title>
 			<Divider className={styles.Divider} />
 			<BasicInput
+				autoFocus
 				value={description}
+				placeholder={props.snapshot.configObject.description}
 				onChange={(e) => updateDescription(e.target.value)}
+				maxLength={50}
 			/>
 			<PrimaryButton
 				onClick={updateDescriptionGQL}

@@ -196,13 +196,14 @@ export async function createBackupSnapshot (repoID: number, metaData: SiteMetaDa
 
 	// eslint-disable-next-line camelcase
 	const { repo_id, ...rest } = data?.createBackupSnapshot;
+
 	// eslint-disable-next-line camelcase
 	return { ...rest, repoID: repo_id };
 }
 
 export async function updateBackupSnapshot (queryArgs: { snapshotID: number, resticSnapshotHash?: string, status: SnapshotStatus, metaData?: SiteMetaData }): Promise<BackupSnapshot> {
 	const { snapshotID, resticSnapshotHash, status, metaData } = queryArgs;
-	console.log('queryArgs: ', queryArgs);
+
 	const { data } = await localHubClient.mutate({
 		mutation: gql`
 			mutation updateBackupSnapshot($snapshotID: Int!, $resticSnapshotHash: String, $status: String!, $metaData: Mixed) {
@@ -220,8 +221,9 @@ export async function updateBackupSnapshot (queryArgs: { snapshotID: number, res
 			metaData: JSON.stringify(metaData),
 		},
 	});
-	console.log('data: ', data);
+
 	const { repo_id: repoID, ...rest } = data?.updateBackupSnapshot;
+
 	return { ...rest, repoID };
 }
 

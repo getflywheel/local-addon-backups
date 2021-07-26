@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import type { BackupSnapshotsResult, HubProviderRecord, Providers } from '../../types';
+import type { BackupSnapshot, BackupSnapshotsResult, HubProviderRecord, Providers, SiteMetaData } from '../../types';
 import type { AppThunkApiConfig, AppState } from './store';
 import { selectors } from './selectors';
 import type { Site } from '@getflywheel/local';
@@ -11,6 +11,44 @@ import type { IpcAsyncResponse } from '../../helpers/createIpcAsyncResponse';
 import { callIPCAsyncAndProcessResponse } from '../helpers/thunkUtils';
 
 const localStorageKey = 'local-addon-backups-activeProviders';
+
+const editSnapshotMetaData = createAsyncThunk<
+	IpcAsyncResponse<null>,
+	{
+		siteId: string,
+		metaData: SiteMetaData,
+		snapshot: BackupSnapshot,
+	},
+	AppThunkApiConfig<IpcAsyncResponse['error']>
+>(
+	'editSnapshotMetaData',
+	async (
+		{
+			siteId,
+			metaData,
+			snapshot,
+		}, {
+			rejectWithValue,
+		}) => await callIPCAsyncAndProcessResponse<null>(
+			IPCASYNC_EVENTS.EDIT_BACKUP_DESCRIPTION,
+			[{ metaData, snapshot, siteId }],
+			siteId,
+			rejectWithValue,
+			(details) => {
+				if (details.isErrorAndUncaptured) {
+					showSiteBanner({
+						icon: 'warning',
+						id: details.bannerId,
+						message: `There was an issue updating your backup.`,
+						siteID: details.siteId,
+						title: 'Cloud Backups Error',
+						variant: 'error',
+					});
+				}
+			},
+			editSnapshotMetaData.typePrefix,
+		),
+);
 
 /**
  * Get selected provider's snapshots from hub for active site.
@@ -472,6 +510,7 @@ export {
 	initActiveProvidersFromLocalStorage,
 	getEnabledProvidersHub,
 	getSnapshotsForActiveSiteProviderHub,
+	editSnapshotMetaData,
 	restoreSite,
 	setActiveProviderAndPersist,
 	updateBackupProviderPersistAndUpdateSnapshots,
