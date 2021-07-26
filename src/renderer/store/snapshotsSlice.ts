@@ -1,7 +1,7 @@
 import { createEntityAdapter, createSelector, createSlice } from '@reduxjs/toolkit';
 import type { EntityState } from '@reduxjs/toolkit';
-import type { BackupSnapshot, PaginationInfo } from '../../types';
-import { clearSnapshotsForSite, getSnapshotsForActiveSiteProviderHub } from './thunks';
+import type { BackupSnapshot, PaginationInfo, SiteMetaData } from '../../types';
+import { clearSnapshotsForSite, getSnapshotsForActiveSiteProviderHub, editSnapshotMetaData } from './thunks';
 import type { AppState } from './store';
 import { selectors } from './selectors';
 
@@ -97,6 +97,18 @@ export const snapshotsSlice = createSlice({
 				hasLoadingError: true,
 				isLoading: false,
 			};
+		});
+		builder.addCase(editSnapshotMetaData.fulfilled, (state, { meta, payload }) => {
+			const { snapshot }: { snapshot: BackupSnapshot } = meta.arg;
+			const { metaData }: { metaData: SiteMetaData } = payload.result;
+
+			snapshotsEntityAdapter.upsertOne(state.items, {
+				...snapshot,
+				configObject: {
+					...snapshot.configObject,
+					...metaData,
+				},
+			});
 		});
 	},
 });

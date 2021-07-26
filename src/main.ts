@@ -128,13 +128,23 @@ export default function (): void {
 		},
 		{
 			channel: IPCASYNC_EVENTS.EDIT_BACKUP_DESCRIPTION,
-			callback: async ({ metaData, snapshot }: {metaData: SiteMetaData, snapshot: BackupSnapshot }) => {
-				await updateBackupSnapshot({
-					metaData,
-					snapshotID: snapshot.id,
-					resticSnapshotHash: snapshot.hash,
-					status: 'complete',
-				});
+			callback: async ({ metaData, snapshot, siteId }: { metaData: SiteMetaData, snapshot: BackupSnapshot, siteId: string }) => {
+				try {
+					const result = await updateBackupSnapshot({
+						metaData,
+						snapshotID: snapshot.id,
+						resticSnapshotHash: snapshot.hash,
+						status: 'complete',
+					});
+
+					return createIpcAsyncResult(
+						{ ...result, metaData },
+						siteId,
+					);
+				} catch (error) {
+					logger.error(`Error - IPCASYNC_EVENTS.EDIT_BACKUP_DESCRIPTON: ${error.toString()}`);
+					return createIpcAsyncError(error, siteId);
+				}
 			},
 		},
 	];
