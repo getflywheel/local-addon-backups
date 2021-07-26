@@ -8,6 +8,7 @@ import {
 	getBackupSnapshotsByRepo,
 	updateBackupSnapshot,
 	getAllBackupSites,
+	getBackupReposBySiteID,
 } from './main/hubQueries';
 import { createBackup } from './main/services/backupService';
 import { restoreFromBackup } from './main/services/restoreService';
@@ -155,9 +156,22 @@ export default function (): void {
 				await getAllBackupSites(),
 		},
 		{
+			channel: IPCASYNC_EVENTS.GET_REPOS_BY_SITE_ID,
+			callback: async (siteID: number) =>
+				await getBackupReposBySiteID(siteID),
+		},
+		{
 			channel: IPCASYNC_EVENTS.MULTI_MACHINE_GET_AVAILABLE_PROVIDERS,
-			callback: async () =>
-				await getEnabledBackupProviders(),
+			callback: async () => {
+				try {
+					return await getEnabledBackupProviders();
+				} catch (error) {
+					logger.error(`Error - IPCASYNC_EVENTS.MULTI_MACHINE_GET_AVAILABLE_PROVIDERS: ${error.toString()}`);
+					return error;
+				}
+
+			},
+
 		},
 		{
 			channel: IPCASYNC_EVENTS.GET_ALL_SNAPSHOTS,

@@ -1,20 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
 	PrimaryButton,
-	RadioBlock,
-	TextButton,
 	Title,
 	FlySelect,
-	FlySelectOption,
-	FlyDropdown,
 } from '@getflywheel/local-components';
-import { IPCASYNC_EVENTS } from '../../../constants';
-import { ipcAsync } from '@getflywheel/local/renderer';
 import { store, actions, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
 import * as LocalRenderer from '@getflywheel/local/renderer';
 import * as Local from '@getflywheel/local';
 import path from 'path';
+import { BackupSite } from '../../../types';
 
 interface Props {
 	siteSettings: Local.NewSiteInfo
@@ -25,27 +20,9 @@ interface Props {
 }
 
 export const SelectSiteBackup = (props: Props) => {
-	const { updateSiteSettings, siteSettings, osPath, formatSiteNicename, defaultLocalSettings} = props;
-
-	useEffect(() => {
-		const getSitesList = async () => {
-			const allSites = await ipcAsync(
-				IPCASYNC_EVENTS.GET_ALL_SITES,
-			);
-
-			store.dispatch(actions.setAllBackupSites(allSites));
-
-			const availableProviders = await ipcAsync(
-				IPCASYNC_EVENTS.MULTI_MACHINE_GET_AVAILABLE_PROVIDERS,
-			);
-
-			store.dispatch(actions.setSelectedProvider(availableProviders[0].id));
-		};
-		getSitesList();
-	}, []);
-
-	const backupSites = useStoreSelector(selectors.selectAllBackupSites);
-	const selectedSite = useStoreSelector(selectors.selectBackupSite);
+	const { updateSiteSettings, siteSettings, osPath, formatSiteNicename, defaultLocalSettings } = props;
+	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
+	const { backupSites, selectedSite } = state;
 
 	let flySelectSites: { [value: string]: string; } = {};
 
@@ -57,12 +34,8 @@ export const SelectSiteBackup = (props: Props) => {
 		return flySelectSites;
 	});
 
-	const onSiteSelect = async (siteUUID: string) => {
-		const selectedSite = backupSites.find((site) => siteUUID === site.uuid);
-
-		store.dispatch(actions.setSelectedSite(selectedSite));
-
-		const formattedSiteName = `${formatSiteNicename(selectedSite.name)}-clone`;
+	const generateSiteSettingsData = (site: BackupSite) => {
+		const formattedSiteName = `${formatSiteNicename(site.name)}-clone`;
 
 		const formattedSiteDomain = `${formattedSiteName}${defaultLocalSettings['new-site-defaults'].tld}`;
 
@@ -72,11 +45,28 @@ export const SelectSiteBackup = (props: Props) => {
 			osPath.toNative(sitePath),
 		);
 
+		return {
+			formattedSiteName,
+			formattedSiteDomain,
+			formattedSitePath,
+		};
+	};
+
+	const onSiteSelect = async (siteUUID: string) => {
+		const site: BackupSite = backupSites.find((site) => siteUUID === site.uuid);
+
+		// save site object to redux
+		store.dispatch(actions.setSelectedSite(site));
+
+		const newSiteSettings = generateSiteSettingsData(site);
+
+		// updateSiteSettings is a function passed into props from local core
+		// used to build out the new site object
 		updateSiteSettings({
 			...siteSettings,
-			siteName: formattedSiteName,
-			siteDomain: formattedSiteDomain,
-			sitePath: formattedSitePath,
+			siteName: newSiteSettings.formattedSiteName,
+			siteDomain: newSiteSettings.formattedSiteDomain,
+			sitePath: newSiteSettings.formattedSitePath,
 			cloudBackupMeta: {
 				createdFromCloudBackup: true,
 				repoID: siteUUID,
@@ -85,6 +75,8 @@ export const SelectSiteBackup = (props: Props) => {
 	};
 
 	const onContinue = () => {
+		store.dispatch(actions.getSnapshotList());
+		// todo - tyler - replace route with constant
 		LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/select-snapshot');
 	};
 

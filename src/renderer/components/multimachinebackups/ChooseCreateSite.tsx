@@ -2,29 +2,39 @@ import React, { useState } from 'react';
 import {
 	PrimaryButton,
 	RadioBlock,
-	TextButton,
 	Title,
-	FlySelect,
-	FlySelectOption,
+	ProgressBar,
 } from '@getflywheel/local-components';
 import * as LocalRenderer from '@getflywheel/local/renderer';
-
-// interface Props {
-
-// }
+import { store, actions, useStoreSelector } from '../../store/store';
+import { selectors } from '../../store/selectors';
 
 export const ChooseCreateSite = () => {
+	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
+	const { isLoading } = state;
 	const [radioState, setRadioState] = useState('createnew');
 
 	const onContinue = () => {
 		if (radioState === 'createnew') {
+			// todo - tyler - update all these routes to use constants within the addon
 			LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/add');
 		}
 
 		if (radioState === 'usebackup') {
-			LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/select-site-backup');
+			store.dispatch(actions.getSitesList());
 		}
 	};
+
+	if (isLoading) {
+		return (
+			<div className="AddSiteContent">
+				<div className="Inner">
+					<p>Authenticating connection and fetching sites...</p>
+					<ProgressBar stripes />
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="AddSiteContent">

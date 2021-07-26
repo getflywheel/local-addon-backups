@@ -1,21 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { IPCASYNC_EVENTS } from '../../../constants';
-import { ipcAsync } from '@getflywheel/local/renderer';
+import React from 'react';
 import {
 	PrimaryButton,
-	RadioBlock,
-	TextButton,
 	Title,
-	FlySelect,
-	FlySelectOption,
-	FlyDropdown,
 	VirtualTable,
 	IVirtualTableCellRendererDataArgs,
+	LoadingIndicator,
 } from '@getflywheel/local-components';
 import { store, actions, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
 import * as LocalRenderer from '@getflywheel/local/renderer';
-import type { BackupSnapshot, Providers } from '../../../types';
+import type { BackupSnapshot } from '../../../types';
 import DateUtils from '../../helpers/DateUtils';
 import styles from '../siteinfotools/SiteInfoToolsSection.scss';
 
@@ -27,25 +21,8 @@ interface Props {
 
 export const SelectSnapshot = (props: Props) => {
 	const { updateSiteSettings, siteSettings } = props;
-	const selectedProvider = useStoreSelector(selectors.selectEnabledProvider);
-	const selectedBackupSite = useStoreSelector(selectors.selectBackupSite);
-	const backupSnapshots = useStoreSelector(selectors.selectAllSnapshots);
-	const selectedSnapshot = useStoreSelector(selectors.selectActiveSnapshot);
-
-	useEffect(() => {
-		const getSnapshotsList = async () => {
-			if (selectedProvider && selectedBackupSite) {
-				const allSnapshots = await ipcAsync(
-					IPCASYNC_EVENTS.GET_ALL_SNAPSHOTS,
-					selectedBackupSite.uuid,
-					selectedProvider,
-				);
-
-				store.dispatch(actions.setBackupSnapshots(allSnapshots.snapshots));
-			}
-		};
-		getSnapshotsList();
-	}, []);
+	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
+	const { selectedProvider, selectedSite, backupSnapshots, selectedSnapshot, isLoading } = state;
 
 	/**
 	 * The columns defined in order and with the intended header text.
@@ -124,15 +101,25 @@ export const SelectSnapshot = (props: Props) => {
 		);
 	};
 
+	if (isLoading) {
+		return (
+			<div className="AddSiteContent">
+				<div className="Inner">
+					<LoadingIndicator big={true} dots={3}/>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="AddSiteContent">
-			<Title size="l" container={{ margin: 'l 0' }}>Select a {selectedBackupSite.name} Cloud Backup</Title>
+			<Title size="l" container={{ margin: 'l 0' }}>Select a {selectedSite.name} Cloud Backup</Title>
 			<div className="Inner">
 				<VirtualTable
 					cellRenderer={renderCell}
 					data={backupSnapshots}
 					extraData={{
-						selectedBackupSite,
+						selectedSite,
 						selectedProvider,
 					}}
 					headers={headers}

@@ -12,6 +12,7 @@ export const IPCASYNC_EVENTS = {
 	EDIT_BACKUP_DESCRIPTION: 'backups:edit-backup-description',
 	GET_ALL_SITES: 'backups:get-all-sites-for-user',
 	GET_ALL_SNAPSHOTS: 'backup:get-all-snapshots-for-site',
+	GET_REPOS_BY_SITE_ID: 'backup:get-repos-by-site-id',
 	MULTI_MACHINE_GET_AVAILABLE_PROVIDERS: 'backup:get-enabled-providers-multi-machine',
 };
 

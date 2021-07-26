@@ -21,29 +21,9 @@ const selectActiveProvider = createSelector(
 	},
 );
 
-const selectAllBackupSites = createSelector(
+const selectMultiMachineSliceState = createSelector(
 	() => store.getState(),
-	({ multiMachineRestore }) => multiMachineRestore.backupSites,
-);
-
-const selectEnabledProvider = createSelector(
-	() => store.getState(),
-	({ multiMachineRestore }) => multiMachineRestore.selectedProvider,
-);
-
-const selectBackupSite = createSelector(
-	() => store.getState(),
-	({ multiMachineRestore }) => multiMachineRestore.selectedSite,
-);
-
-const selectAllSnapshots = createSelector(
-	() => store.getState(),
-	({ multiMachineRestore }) => multiMachineRestore.backupSnapshots,
-);
-
-const selectActiveSnapshot = createSelector(
-	() => store.getState(),
-	({ multiMachineRestore }) => multiMachineRestore.selectedSnapshot,
+	({ multiMachineRestore }) => multiMachineRestore,
 );
 
 /**
@@ -51,9 +31,5 @@ const selectActiveSnapshot = createSelector(
  */
 export const selectors = {
 	selectActiveProvider,
-	selectAllBackupSites,
-	selectEnabledProvider,
-	selectBackupSite,
-	selectAllSnapshots,
-	selectActiveSnapshot,
+	selectMultiMachineSliceState,
 };
