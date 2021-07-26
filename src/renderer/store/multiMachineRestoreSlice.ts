@@ -2,7 +2,7 @@ import {
 	createSlice,
 } from '@reduxjs/toolkit';
 import type { BackupSite, BackupSnapshot, HubOAuthProviders, HubProviderRecord } from '../../types';
-import { getSitesList, getSnapshotList } from './multiMachineThunks';
+import { getSitesList, getSnapshotList, setMultiMachineProviderAndUpdateSnapshots } from './multiMachineThunks';
 
 /**
  * State for the active site.
@@ -16,7 +16,7 @@ export const multiMachineRestoreSlice = createSlice({
 		individualSiteRepoProviders: [] as HubProviderRecord[],
 		selectedSite: null as BackupSite,
 		selectedSnapshot: null as BackupSnapshot,
-		selectedProvider: null as HubOAuthProviders,
+		selectedProvider: null as HubProviderRecord,
 		isLoading: false,
 	},
 	reducers: {
@@ -52,6 +52,17 @@ export const multiMachineRestoreSlice = createSlice({
 				state.selectedProvider = action.payload.individualSiteProviders[0];
 			})
 			.addCase(getSnapshotList.rejected, (state) => {
+				state.isLoading = false;
+			})
+			.addCase(setMultiMachineProviderAndUpdateSnapshots.pending, (state) => {
+				state.isLoading = true;
+			})
+			.addCase(setMultiMachineProviderAndUpdateSnapshots.fulfilled, (state, action) => {
+				state.isLoading = false;
+				state.backupSnapshots = action.payload.snapshots.snapshots;
+				state.selectedProvider = action.payload.provider;
+			})
+			.addCase(setMultiMachineProviderAndUpdateSnapshots.rejected, (state) => {
 				state.isLoading = false;
 			});
 	},

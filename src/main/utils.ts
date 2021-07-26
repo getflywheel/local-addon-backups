@@ -1,6 +1,6 @@
 import { getServiceContainer, SiteData } from '@getflywheel/local/main';
-import type { Site, GenericObject, Providers } from '../types';
-import { HubOAuthProviders } from '../types';
+import type { Site, GenericObject, Providers, HubProviderRecord } from '../types';
+import { HubOAuthProviders, Providers as ProviderNames} from '../types';
 
 const serviceContainer = getServiceContainer().cradle;
 
@@ -44,6 +44,15 @@ export const providerToHubProvider = (provider: Providers) => {
 			return HubOAuthProviders.Google;
 		default:
 			return HubOAuthProviders.Dropbox;
+	}
+};
+
+export const hubProviderRecordToProvider = (provider: HubProviderRecord) => {
+	switch (provider.id) {
+		case 'google':
+			return ProviderNames.Drive;
+		default:
+			return ProviderNames.Dropbox;
 	}
 };
 

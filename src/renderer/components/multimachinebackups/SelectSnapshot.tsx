@@ -12,6 +12,7 @@ import * as LocalRenderer from '@getflywheel/local/renderer';
 import type { BackupSnapshot } from '../../../types';
 import DateUtils from '../../helpers/DateUtils';
 import styles from '../siteinfotools/SiteInfoToolsSection.scss';
+import { ProviderDropdown } from '../siteinfotools/ProviderDropdown';
 
 
 interface Props {
@@ -22,7 +23,16 @@ interface Props {
 export const SelectSnapshot = (props: Props) => {
 	const { updateSiteSettings, siteSettings } = props;
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
-	const { selectedProvider, selectedSite, backupSnapshots, selectedSnapshot, isLoading } = state;
+	const {
+		selectedProvider,
+		selectedSite,
+		backupSnapshots,
+		selectedSnapshot,
+		isLoading,
+		individualSiteRepoProviders,
+
+	} = state;
+	console.log(state);
 
 	/**
 	 * The columns defined in order and with the intended header text.
@@ -115,6 +125,11 @@ export const SelectSnapshot = (props: Props) => {
 		<div className="AddSiteContent">
 			<Title size="l" container={{ margin: 'l 0' }}>Select a {selectedSite.name} Cloud Backup</Title>
 			<div className="Inner">
+				<ProviderDropdown
+					enabledProviders={individualSiteRepoProviders}
+					activeSiteProvider={selectedProvider}
+					multiMachineSelect={true}
+				/>
 				<VirtualTable
 					cellRenderer={renderCell}
 					data={backupSnapshots}

@@ -12,7 +12,7 @@ import {
 } from './main/hubQueries';
 import { createBackup } from './main/services/backupService';
 import { restoreFromBackup } from './main/services/restoreService';
-import { getSiteDataFromDisk } from './main/utils';
+import { getSiteDataFromDisk, hubProviderRecordToProvider } from './main/utils';
 import { cloneFromBackup } from './main/services/cloneFromBackupService';
 import { IPCASYNC_EVENTS } from './constants';
 import { createIpcAsyncError, createIpcAsyncResult } from './helpers/createIpcAsyncResponse';
@@ -225,15 +225,11 @@ export default function (): void {
 	LocalMain.HooksMain.addAction(
 		'siteAdded',
 		async (site: Site) => {
-			console.log(site);
 			const { provider, snapshotID, repoID } = site.cloudBackupMeta;
 
-			if (provider === HubProviderNames.Google) {
-				return await restoreFromBackup({ site, provider: ProviderNames.Drive, snapshotID, repoID });
-			}
-			// todo - tyler - clean up this typing so the default provider isn't dropbox
-			return await restoreFromBackup({ site, provider: ProviderNames.Dropbox, snapshotID, repoID });
+			const providerID = hubProviderRecordToProvider(provider);
 
+			return await restoreFromBackup({ site, provider: providerID, snapshotID, repoID });
 			// todo - tyler - after running restore from backup, update hosts file with new domain url
 		},
 	);

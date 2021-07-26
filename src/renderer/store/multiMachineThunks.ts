@@ -4,7 +4,7 @@ import { ipcAsync } from '@getflywheel/local/renderer';
 import type { AppState } from './store';
 
 import * as LocalRenderer from '@getflywheel/local/renderer';
-import { BackupRepo } from '../../types';
+import { BackupRepo, HubProviderRecord } from '../../types';
 
 
 const getSitesList = createAsyncThunk('multiMachineBackupsGetSites', async () => {
@@ -27,7 +27,7 @@ const getSitesList = createAsyncThunk('multiMachineBackupsGetSites', async () =>
 	}
 });
 
-const getSnapshotList = createAsyncThunk('multiMachineBackupsGetSnapshots', async (_, { dispatch, getState }) => {
+const getSnapshotList = createAsyncThunk('multiMachineBackupsGetSnapshots', async (_, { getState }) => {
 	try {
 		const state = getState() as AppState;
 		const { backupProviders, selectedSite } = state.multiMachineRestore;
@@ -65,7 +65,31 @@ const getSnapshotList = createAsyncThunk('multiMachineBackupsGetSnapshots', asyn
 	}
 });
 
+const setMultiMachineProviderAndUpdateSnapshots = createAsyncThunk('multiMachineBackupsSetProviderAndUpdateSnapshots',
+	async (provider: HubProviderRecord, { getState }) => {
+		const state = getState() as AppState;
+		const { selectedSite } = state.multiMachineRestore;
+
+		try {
+			const snapshots = await ipcAsync(
+				IPCASYNC_EVENTS.GET_ALL_SNAPSHOTS,
+				selectedSite.uuid,
+				provider.id,
+			);
+
+			return {
+				snapshots,
+				provider,
+			};
+		} catch (error) {
+			console.log(error);
+			// throw warning banner
+			return error;
+		}
+	});
+
 export {
 	getSitesList,
 	getSnapshotList,
+	setMultiMachineProviderAndUpdateSnapshots,
 };
