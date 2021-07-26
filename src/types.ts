@@ -11,7 +11,7 @@ export interface Site extends SiteBase {
 	cloudBackupMeta?: {
 		createdFromCloudBackup?: boolean,
 		snapshotID?: string,
-		provider?: string,
+		provider?: HubProviderRecord,
 		repoID?: string,
 	};
 }

@@ -10,14 +10,19 @@ import GoogleDriveIcon from '../../assets/google-drive.svg';
 import DropboxIcon from '../../assets/dropbox.svg';
 import type { HubProviderRecord } from '../../../types';
 import { HubOAuthProviders } from '../../../types';
+import classnames from 'classnames';
+import { launchBrowserToHubBackups } from '../../helpers/launchBrowser';
 import {
 	actions,
 	store,
-	useStoreSelector,
 } from '../../store/store';
-import classnames from 'classnames';
-import { launchBrowserToHubBackups } from '../../helpers/launchBrowser';
-import { selectors } from '../../store/selectors';
+
+interface Props {
+	enabledProviders: HubProviderRecord[];
+	activeSiteProvider: HubProviderRecord;
+	multiMachineSelect: boolean;
+	siteId?: string;
+}
 
 const renderProviderIcon = (provider: HubProviderRecord): React.ReactNode => {
 	switch (provider.id) {
@@ -67,10 +72,8 @@ const renderDropdownProviderItem = (provider?: HubProviderRecord, isActiveProvid
 	isActiveProvider,
 );
 
-export const ProviderDropdown = () => {
-	const { enabledProviders } = useStoreSelector((state) => state.providers);
-	const siteId = useStoreSelector((state) => state.activeSite.id);
-	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
+export const ProviderDropdown = (props: Props) => {
+	const { enabledProviders, activeSiteProvider, multiMachineSelect, siteId } = props;
 	const dropdownItems: React.ComponentProps<typeof FlyDropdown>['items'] = [];
 
 	if (enabledProviders?.length) {
@@ -78,18 +81,22 @@ export const ProviderDropdown = () => {
 			dropdownItems.push({
 				color: 'none',
 				content: renderDropdownProviderItem(provider, activeSiteProvider === provider),
-				onClick: () => store.dispatch(actions.updateBackupProviderPersistAndUpdateSnapshots({
-					siteId,
-					providerId: provider.id,
-				})),
+				onClick: multiMachineSelect
+					? () => store.dispatch(actions.setMultiMachineProviderAndUpdateSnapshots(provider))
+					: () => store.dispatch(actions.updateBackupProviderPersistAndUpdateSnapshots({
+						siteId,
+						providerId: provider.id,
+					})),
 			});
 		});
 
-		dropdownItems.push({
-			color: 'none',
-			content: renderDropdownConnectItem('Add or Manage Provider'),
-			onClick: launchBrowserToHubBackups,
-		});
+		if (!multiMachineSelect) {
+			dropdownItems.push({
+				color: 'none',
+				content: renderDropdownConnectItem('Add or Manage Provider'),
+				onClick: launchBrowserToHubBackups,
+			});
+		}
 	} else {
 		dropdownItems.push({
 			color: 'none',
@@ -101,7 +108,7 @@ export const ProviderDropdown = () => {
 	return (
 		<div className={styles.ProviderDropdown_Cont}>
 			<span className={styles.ProviderDropdown_Label}>
-				Back up to
+				{multiMachineSelect ? 'Create new site from' : 'Back up to'}
 			</span>
 			<FlyDropdown
 				className={styles.ProviderDropdown}
