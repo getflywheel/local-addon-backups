@@ -17,12 +17,14 @@ export interface ModalContentsProps {
 
 export const BackupEditDescriptionContents = (props: ModalContentsProps) => {
 	const [description, updateDescription] = useState('');
+	const { site, snapshot } = props;
+	const { configObject } = snapshot;
 
 	const updateDescriptionGQL = () => {
 		store.dispatch(actions.editSnapshotMetaData({
-			siteId: props.site.id,
-			metaData: { ...props.snapshot.configObject, description },
-			snapshot: props.snapshot,
+			siteId: site.id,
+			metaData: { ...configObject, description },
+			snapshot: snapshot,
 		}));
 
 		FlyModal.onRequestClose();
@@ -37,7 +39,7 @@ export const BackupEditDescriptionContents = (props: ModalContentsProps) => {
 			<BasicInput
 				autoFocus
 				value={description}
-				placeholder={props.snapshot.configObject.description}
+				placeholder={configObject.description}
 				onChange={(e) => updateDescription(e.target.value)}
 				maxLength={50}
 			/>
