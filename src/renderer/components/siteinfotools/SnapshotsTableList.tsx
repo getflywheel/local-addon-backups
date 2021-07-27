@@ -203,7 +203,7 @@ const LoadMoreWhenVisibleCell = ({ site }) => {
 const renderDescription = (description?: string) => {
 	if (!description) {
 		return (
-			<LoadingIndicator style={{ margin: 0 }} dots={3} />
+			<LoadingIndicator style={{ margin: 0 }} color="Gray" />
 		);
 	}
 
