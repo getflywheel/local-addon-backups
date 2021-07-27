@@ -10,6 +10,10 @@ import { ChooseCreateSite } from './renderer/components/multimachinebackups/Choo
 import { SelectSiteBackup } from './renderer/components/multimachinebackups/SelectSiteBackup';
 import { SelectSnapshot } from './renderer/components/multimachinebackups/SelectSnapshot';
 import * as LocalRenderer from '@getflywheel/local/renderer';
+import {
+	Stepper,
+	Step,
+} from '@getflywheel/local-components';
 
 setupListeners();
 
@@ -69,7 +73,7 @@ export default function (context): void {
 	});
 
 	hooks.addFilter('AddSiteUserFlow:NewSiteEnvironment', (newSiteEnvironmentProps) => {
-		if (newSiteEnvironmentProps.siteSettings.cloudBackupMeta.createdFromCloudBackup === true) {
+		if (newSiteEnvironmentProps.siteSettings.cloudBackupMeta?.createdFromCloudBackup) {
 			const continueCreateSite = () => {
 				LocalRenderer.sendIPCEvent('addSite', {
 					newSiteInfo: newSiteEnvironmentProps.siteSettings,
@@ -84,10 +88,65 @@ export default function (context): void {
 
 			newSiteEnvironmentProps.onContinue = continueCreateSite;
 			newSiteEnvironmentProps.onGoBack = onGoBack;
+			newSiteEnvironmentProps.buttonText = 'Restore Site';
 
 			return newSiteEnvironmentProps;
 		}
 
 		return newSiteEnvironmentProps;
+	});
+
+	hooks.addFilter('AddSiteUserFlow:RenderBreadcrumbs', (breadcrumbsData) => {
+		const { localHistory, siteSettings } = breadcrumbsData;
+
+		const newStepper = () => (
+			<Stepper>
+				<Step
+					key={1}
+					number={1}
+					done={localHistory.location.pathname !== '/main/add-site/'}
+					active={localHistory.location.pathname === '/main/add-site/'}
+				>
+					Select Site
+				</Step>
+				<Step
+					key={2}
+					number={2}
+					done={localHistory.location.pathname === '/main/add-site/environment'}
+					active={localHistory.location.pathname === '/main/add-site/select-snapshot'}
+				>
+					Select Backup
+				</Step>
+				<Step
+					key={3}
+					number={3}
+					done={false}
+					active={localHistory.location.pathname === '/main/add-site/environment'}
+				>
+					Setup Environment
+				</Step>
+			</Stepper>
+		);
+
+		switch (localHistory.location.pathname) {
+			case '/main/add-site':
+				breadcrumbsData.defaultStepper = () => null;
+				break;
+			case '/main/add-site/select-site-backup':
+				breadcrumbsData.defaultStepper = () => newStepper();
+				break;
+			case '/main/add-site/select-snapshot':
+				breadcrumbsData.defaultStepper = () => newStepper();
+				break;
+		}
+
+		if (
+			siteSettings.cloudBackupMeta?.createdFromCloudBackup
+			&& localHistory.location.pathname === '/main/add-site/environment'
+		) {
+			breadcrumbsData.defaultStepper = () => newStepper();
+		}
+
+		return breadcrumbsData;
 	});
 }
