@@ -93,13 +93,17 @@ export default function (context): void {
 			return newSiteEnvironmentProps;
 		}
 
+		newSiteEnvironmentProps.onGoBack = () => {
+			LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/add');
+		};
+
 		return newSiteEnvironmentProps;
 	});
 
 	hooks.addFilter('AddSiteUserFlow:RenderBreadcrumbs', (breadcrumbsData) => {
 		const { localHistory, siteSettings } = breadcrumbsData;
 
-		const newStepper = () => (
+		const cloudBackupStepper = () => (
 			<Stepper>
 				<Step
 					key={1}
@@ -133,10 +137,10 @@ export default function (context): void {
 				breadcrumbsData.defaultStepper = () => null;
 				break;
 			case '/main/add-site/select-site-backup':
-				breadcrumbsData.defaultStepper = () => newStepper();
+				breadcrumbsData.defaultStepper = () => cloudBackupStepper();
 				break;
 			case '/main/add-site/select-snapshot':
-				breadcrumbsData.defaultStepper = () => newStepper();
+				breadcrumbsData.defaultStepper = () => cloudBackupStepper();
 				break;
 		}
 
@@ -144,7 +148,7 @@ export default function (context): void {
 			siteSettings.cloudBackupMeta?.createdFromCloudBackup
 			&& localHistory.location.pathname === '/main/add-site/environment'
 		) {
-			breadcrumbsData.defaultStepper = () => newStepper();
+			breadcrumbsData.defaultStepper = () => cloudBackupStepper();
 		}
 
 		return breadcrumbsData;
