@@ -3,16 +3,17 @@ import {
 	PrimaryButton,
 	Title,
 	FlySelect,
+	TextButton,
 } from '@getflywheel/local-components';
 import { store, actions, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
 import * as LocalRenderer from '@getflywheel/local/renderer';
 import * as Local from '@getflywheel/local';
 import path from 'path';
-import { BackupSite } from '../../../types';
+import { BackupSite, NewSiteInfoWithCloudMeta } from '../../../types';
 
 interface Props {
-	siteSettings: Local.NewSiteInfo
+	siteSettings: NewSiteInfoWithCloudMeta
 	updateSiteSettings: (...any) => any
 	formatSiteNicename: (siteName: string) => string
 	defaultLocalSettings: any
@@ -80,6 +81,12 @@ export const SelectSiteBackup = (props: Props) => {
 		LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/select-snapshot');
 	};
 
+	const onGoBack = () => {
+		delete siteSettings.cloudBackupMeta;
+
+		LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site');
+	};
+
 	const continueDisabled = (selectedSite === null);
 
 	return (
@@ -103,6 +110,12 @@ export const SelectSiteBackup = (props: Props) => {
 			>
 				Continue
 			</PrimaryButton>
+			<TextButton
+				className="GoBack"
+				onClick={onGoBack}
+			>
+				Go Back
+			</TextButton>
 		</div>
 	);
 };

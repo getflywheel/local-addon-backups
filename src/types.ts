@@ -1,4 +1,5 @@
-import type { Site as SiteBase } from '@getflywheel/local';
+import { LocalState } from '@apollo/client/core/LocalState';
+import type { Site as SiteBase, NewSiteInfo } from '@getflywheel/local';
 
 export type GenericObject = { [key: string]: any };
 
@@ -8,6 +9,15 @@ export type GenericObject = { [key: string]: any };
  */
 export interface Site extends SiteBase {
 	localBackupRepoID?: string;
+	cloudBackupMeta?: {
+		createdFromCloudBackup?: boolean,
+		snapshotID?: string,
+		provider?: HubProviderRecord,
+		repoID?: string,
+	};
+}
+
+export interface NewSiteInfoWithCloudMeta extends NewSiteInfo {
 	cloudBackupMeta?: {
 		createdFromCloudBackup?: boolean,
 		snapshotID?: string,

@@ -5,6 +5,7 @@ import {
 	VirtualTable,
 	IVirtualTableCellRendererDataArgs,
 	LoadingIndicator,
+	TextButton,
 } from '@getflywheel/local-components';
 import { store, actions, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
@@ -32,7 +33,6 @@ export const SelectSnapshot = (props: Props) => {
 		individualSiteRepoProviders,
 
 	} = state;
-	console.log(state);
 
 	/**
 	 * The columns defined in order and with the intended header text.
@@ -76,6 +76,10 @@ export const SelectSnapshot = (props: Props) => {
 
 	const onContinue = () => {
 		LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/environment');
+	};
+
+	const onGoBack = () => {
+		LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/select-site-backup');
 	};
 
 	const continueDisabled = (selectedSnapshot === null);
@@ -151,6 +155,12 @@ export const SelectSnapshot = (props: Props) => {
 			>
 				Continue
 			</PrimaryButton>
+			<TextButton
+				className="GoBack"
+				onClick={onGoBack}
+			>
+				Go Back
+			</TextButton>
 		</div>
 	);
 };
