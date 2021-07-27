@@ -35,6 +35,15 @@ const editSnapshotMetaData = createAsyncThunk<
 			siteId,
 			rejectWithValue,
 			(details) => {
+				if (details.isResult) {
+					showSiteBanner({
+						siteID: details.siteId,
+						variant: 'success',
+						id: details.bannerId,
+						message: `Backup description updated.`,
+					});
+				}
+
 				if (details.isErrorAndUncaptured) {
 					showSiteBanner({
 						icon: 'warning',

@@ -110,6 +110,17 @@ export const snapshotsSlice = createSlice({
 				},
 			});
 		});
+		builder.addCase(editSnapshotMetaData.pending, (state, { meta, payload }) => {
+			const { snapshot }: { snapshot: BackupSnapshot } = meta.arg;
+
+			snapshotsEntityAdapter.upsertOne(state.items, {
+				...snapshot,
+				configObject: {
+					...snapshot.configObject,
+					description: null,
+				},
+			});
+		});
 	},
 });
 
