@@ -45,9 +45,11 @@ export const ChooseCreateSite = () => {
 					default={radioState}
 					options={{
 						createnew: {
+							key: 'create-new-site',
 							label: 'Create a new site',
 						},
 						usebackup: {
+							key: 'use-cloud-backup',
 							label: 'Restore a site from Cloud Backups Add-on',
 							className: 'TID_NewSiteEnvironment_RadioBlockItem_Custom',
 						},
