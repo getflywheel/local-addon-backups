@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
 	FlyModal,
 	BasicInput,
@@ -47,6 +47,5 @@ export const BackupEditDescriptionContents = (props: ModalContentsProps) => {
 				Update Description
 			</PrimaryButton>
 		</div>
-	)
+	);
 };
-

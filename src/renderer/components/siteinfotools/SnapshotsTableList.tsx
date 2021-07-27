@@ -200,6 +200,16 @@ const LoadMoreWhenVisibleCell = ({ site }) => {
 	);
 };
 
+const renderDescription = (description?: string) => {
+	if (!description) {
+		return (
+			<LoadingIndicator style={{ margin: 0 }} dots={3} />
+		);
+	}
+
+	return description;
+};
+
 const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 	const { colKey, cellData, isHeader, extraData } = dataArgs;
 	const { site, provider } = extraData;
@@ -230,7 +240,7 @@ const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 	}
 
 	switch (colKey) {
-		case 'configObject': return cellData.description;
+		case 'configObject': return renderDescription(cellData.description);
 		case 'moremenu': return renderCellMoreMenu(snapshot, site, provider);
 		case 'updatedAt': return renderDate(cellData, snapshot);
 	}
