@@ -6,6 +6,7 @@ import {
 	IVirtualTableCellRendererDataArgs,
 	LoadingIndicator,
 	TextButton,
+	Banner,
 } from '@getflywheel/local-components';
 import { store, actions, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
@@ -14,6 +15,7 @@ import type { BackupSnapshot } from '../../../types';
 import DateUtils from '../../helpers/DateUtils';
 import styles from '../siteinfotools/SiteInfoToolsSection.scss';
 import { ProviderDropdown } from '../siteinfotools/ProviderDropdown';
+import { ErrorBannerContainer } from './ErrorBannerContainer';
 
 
 interface Props {
@@ -126,41 +128,44 @@ export const SelectSnapshot = (props: Props) => {
 	}
 
 	return (
-		<div className="AddSiteContent">
-			<Title size="l" container={{ margin: 'l 0' }}>Select a {selectedSite.name} Cloud Backup</Title>
-			<div className="Inner">
-				<ProviderDropdown
-					enabledProviders={individualSiteRepoProviders}
-					activeSiteProvider={selectedProvider}
-					multiMachineSelect={true}
-				/>
-				<VirtualTable
-					cellRenderer={renderCell}
-					data={backupSnapshots}
-					extraData={{
-						selectedSite,
-						selectedProvider,
-					}}
-					headers={headers}
-					headersCapitalize={'none'}
-					headersWeight={500}
-					rowHeightSize={70}
-					rowHeaderHeightSize={'l'}
-				/>
+		<>
+			<ErrorBannerContainer />
+			<div className="AddSiteContent">
+				<Title size="l" container={{ margin: 'l 0' }}>Select a {selectedSite.name} Cloud Backup</Title>
+				<div className="Inner">
+					<ProviderDropdown
+						enabledProviders={individualSiteRepoProviders}
+						activeSiteProvider={selectedProvider}
+						multiMachineSelect={true}
+					/>
+					<VirtualTable
+						cellRenderer={renderCell}
+						data={backupSnapshots}
+						extraData={{
+							selectedSite,
+							selectedProvider,
+						}}
+						headers={headers}
+						headersCapitalize={'none'}
+						headersWeight={500}
+						rowHeightSize={70}
+						rowHeaderHeightSize={'l'}
+					/>
+				</div>
+				<PrimaryButton
+					className="Continue"
+					onClick={onContinue}
+					disabled={continueDisabled}
+				>
+					Continue
+				</PrimaryButton>
+				<TextButton
+					className="GoBack"
+					onClick={onGoBack}
+				>
+					Go Back
+				</TextButton>
 			</div>
-			<PrimaryButton
-				className="Continue"
-				onClick={onContinue}
-				disabled={continueDisabled}
-			>
-				Continue
-			</PrimaryButton>
-			<TextButton
-				className="GoBack"
-				onClick={onGoBack}
-			>
-				Go Back
-			</TextButton>
-		</div>
+		</>
 	);
 };

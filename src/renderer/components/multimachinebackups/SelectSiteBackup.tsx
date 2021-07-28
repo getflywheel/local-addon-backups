@@ -11,6 +11,7 @@ import * as LocalRenderer from '@getflywheel/local/renderer';
 import * as Local from '@getflywheel/local';
 import path from 'path';
 import { BackupSite, NewSiteInfoWithCloudMeta } from '../../../types';
+import { ErrorBannerContainer } from './ErrorBannerContainer';
 
 interface Props {
 	siteSettings: NewSiteInfoWithCloudMeta
@@ -90,32 +91,35 @@ export const SelectSiteBackup = (props: Props) => {
 	const continueDisabled = (selectedSite === null);
 
 	return (
-		<div className="AddSiteContent">
-			<Title size="l" container={{ margin: 'l 0' }}>Select a site to restore</Title>
-			<div className="Inner">
-				<h3>Select a site with a Cloud Backup</h3>
-				<div className="FormField">
-					<FlySelect
-						onChange={(value) => onSiteSelect(value)}
-						options={flySelectSites}
-						emptyPlaceholder="No backups available"
-						placeholder="Select a site"
-					/>
+		<>
+			<ErrorBannerContainer />
+			<div className="AddSiteContent">
+				<Title size="l" container={{ margin: 'l 0' }}>Select a site to restore</Title>
+				<div className="Inner">
+					<h3>Select a site with a Cloud Backup</h3>
+					<div className="FormField">
+						<FlySelect
+							onChange={(value) => onSiteSelect(value)}
+							options={flySelectSites}
+							emptyPlaceholder="No backups available"
+							placeholder="Select a site"
+						/>
+					</div>
 				</div>
+				<PrimaryButton
+					className="Continue"
+					onClick={onContinue}
+					disabled={continueDisabled}
+				>
+					Continue
+				</PrimaryButton>
+				<TextButton
+					className="GoBack"
+					onClick={onGoBack}
+				>
+					Go Back
+				</TextButton>
 			</div>
-			<PrimaryButton
-				className="Continue"
-				onClick={onContinue}
-				disabled={continueDisabled}
-			>
-				Continue
-			</PrimaryButton>
-			<TextButton
-				className="GoBack"
-				onClick={onGoBack}
-			>
-				Go Back
-			</TextButton>
-		</div>
+		</>
 	);
 };

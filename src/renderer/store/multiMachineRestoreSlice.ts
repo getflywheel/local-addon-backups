@@ -1,5 +1,5 @@
 import {
-	createSlice,
+	createSlice, SerializedError,
 } from '@reduxjs/toolkit';
 import type { BackupSite, BackupSnapshot, HubOAuthProviders, HubProviderRecord } from '../../types';
 import { getSitesList, getSnapshotList, setMultiMachineProviderAndUpdateSnapshots } from './multiMachineThunks';
@@ -18,6 +18,8 @@ export const multiMachineRestoreSlice = createSlice({
 		selectedSnapshot: null as BackupSnapshot,
 		selectedProvider: null as HubProviderRecord,
 		isLoading: false,
+		isErrored: false,
+		activeError: null as SerializedError,
 	},
 	reducers: {
 		setSelectedSite: (state, action) => {
@@ -39,8 +41,10 @@ export const multiMachineRestoreSlice = createSlice({
 				state.backupProviders = action.payload.availableProviders;
 				state.backupSites = action.payload.allSites;
 			})
-			.addCase(getSitesList.rejected, (state) => {
+			.addCase(getSitesList.rejected, (state, action) => {
 				state.isLoading = false;
+				state.isErrored = true;
+				state.activeError = action.payload;
 			})
 			.addCase(getSnapshotList.pending, (state) => {
 				state.isLoading = true;
@@ -51,8 +55,10 @@ export const multiMachineRestoreSlice = createSlice({
 				state.individualSiteRepoProviders = action.payload.individualSiteProviders;
 				state.selectedProvider = action.payload.individualSiteProviders[0];
 			})
-			.addCase(getSnapshotList.rejected, (state) => {
+			.addCase(getSnapshotList.rejected, (state, action) => {
 				state.isLoading = false;
+				state.isErrored = true;
+				state.activeError = action.payload;
 			})
 			.addCase(setMultiMachineProviderAndUpdateSnapshots.pending, (state) => {
 				state.isLoading = true;
@@ -62,8 +68,10 @@ export const multiMachineRestoreSlice = createSlice({
 				state.backupSnapshots = action.payload.snapshots.snapshots;
 				state.selectedProvider = action.payload.provider;
 			})
-			.addCase(setMultiMachineProviderAndUpdateSnapshots.rejected, (state) => {
+			.addCase(setMultiMachineProviderAndUpdateSnapshots.rejected, (state, action) => {
 				state.isLoading = false;
+				state.isErrored = true;
+				state.activeError = action.payload;
 			});
 	},
 });

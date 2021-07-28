@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { IPCASYNC_EVENTS } from '../../constants';
+import { IPCASYNC_EVENTS, MULTI_MACHINE_BACKUP_ERRORS } from '../../constants';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import type { AppState } from './store';
 
@@ -7,7 +7,7 @@ import * as LocalRenderer from '@getflywheel/local/renderer';
 import { BackupRepo, HubProviderRecord } from '../../types';
 
 
-const getSitesList = createAsyncThunk('multiMachineBackupsGetSites', async () => {
+const getSitesList = createAsyncThunk('multiMachineBackupsGetSites', async (_, { rejectWithValue }) => {
 	try {
 		const availableProviders = await ipcAsync(
 			IPCASYNC_EVENTS.MULTI_MACHINE_GET_AVAILABLE_PROVIDERS,
@@ -17,17 +17,28 @@ const getSitesList = createAsyncThunk('multiMachineBackupsGetSites', async () =>
 			IPCASYNC_EVENTS.GET_ALL_SITES,
 		);
 
+		if (!availableProviders.length) {
+			// Could not find any providers, please check you have providers enabled
+			return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_PROVIDERS_FOUND);
+		}
+
+		if (!allSites.length) {
+			// Could not find any sites on the cloud, please make sure you're logged into the right Hub account
+			return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_SITES_FOUND);
+		}
+
 		LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/select-site-backup');
 
 		return { availableProviders, allSites };
 	} catch (error) {
-		console.log(error);
-		// throw warning banner
-		return error;
+		// Could not authenticate connection
+		return rejectWithValue(error.toString());
 	}
 });
 
-const getSnapshotList = createAsyncThunk('multiMachineBackupsGetSnapshots', async (_, { getState }) => {
+const getSnapshotList = createAsyncThunk('multiMachineBackupsGetSnapshots', async (
+	_, { getState, rejectWithValue },
+) => {
 	try {
 		const state = getState() as AppState;
 		const { backupProviders, selectedSite } = state.multiMachineRestore;
@@ -53,20 +64,26 @@ const getSnapshotList = createAsyncThunk('multiMachineBackupsGetSnapshots', asyn
 				individualSiteProviders[0].id,
 			);
 
+			if (!snapshots.snapshots.length) {
+				// Could not find any backups of this site, please make sure you're connected to a storage provider
+				return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_SNAPSHOTS_FOUND);
+			}
+
 			return {
 				snapshots,
 				individualSiteProviders,
 			};
 		}
+
+		return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_CONNECTED_PROVIDERS_FOR_SITE);
 	} catch (error) {
-		console.log(error);
 		// throw warning banner
-		return error;
+		return rejectWithValue(error.toString());
 	}
 });
 
 const setMultiMachineProviderAndUpdateSnapshots = createAsyncThunk('multiMachineBackupsSetProviderAndUpdateSnapshots',
-	async (provider: HubProviderRecord, { getState }) => {
+	async (provider: HubProviderRecord, { getState, rejectWithValue }) => {
 		const state = getState() as AppState;
 		const { selectedSite } = state.multiMachineRestore;
 
@@ -77,14 +94,18 @@ const setMultiMachineProviderAndUpdateSnapshots = createAsyncThunk('multiMachine
 				provider.id,
 			);
 
+			if (!snapshots.snapshots.length) {
+				// Could not find any backups of this site, please make sure you're connected to a storage provider
+				return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_SNAPSHOTS_FOUND);
+			}
+
 			return {
 				snapshots,
 				provider,
 			};
 		} catch (error) {
-			console.log(error);
 			// throw warning banner
-			return error;
+			return rejectWithValue(error.toString());
 		}
 	});
 

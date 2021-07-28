@@ -106,7 +106,7 @@ export default function (context): void {
 		const cloudBackupStepper = () => (
 			<Stepper>
 				<Step
-					key={1}
+					key={'choose-site'}
 					number={1}
 					done={localHistory.location.pathname !== '/main/add-site/'}
 					active={localHistory.location.pathname === '/main/add-site/'}
@@ -114,7 +114,7 @@ export default function (context): void {
 					Select Site
 				</Step>
 				<Step
-					key={2}
+					key={'choose-snapshot'}
 					number={2}
 					done={localHistory.location.pathname === '/main/add-site/environment'}
 					active={localHistory.location.pathname === '/main/add-site/select-snapshot'}
@@ -122,7 +122,7 @@ export default function (context): void {
 					Select Backup
 				</Step>
 				<Step
-					key={3}
+					key={'choose-environment'}
 					number={3}
 					done={false}
 					active={localHistory.location.pathname === '/main/add-site/environment'}
