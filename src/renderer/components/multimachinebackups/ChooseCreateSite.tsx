@@ -28,6 +28,10 @@ export const ChooseCreateSite = () => {
 		}
 	};
 
+	const onPromoBannerDismiss = () => {
+		console.log('test');
+	}
+
 	if (isLoading) {
 		return (
 			<div className="AddSiteContent">
@@ -61,7 +65,14 @@ export const ChooseCreateSite = () => {
 							},
 						}}
 					/>
-					{}
+					<Banner
+						className={styles.promoBanner}
+						variant="neutral"
+						onDismiss={onPromoBannerDismiss}
+						icon="none"
+					>
+						<p>&#127881; You can now restore a site from a Cloud Backup! Select to restore a site to get started.</p>
+					</Banner>
 				</div>
 				<PrimaryButton
 					className="Continue"

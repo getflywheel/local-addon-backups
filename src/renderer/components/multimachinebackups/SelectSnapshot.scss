@@ -1,0 +1,88 @@
+.innerContainer {
+	width: 644px;
+	align-self: center;
+	display: flex;
+	flex-grow: 1;
+	flex-direction: column;
+	justify-content: center;
+	align-items: left;
+	width: 50%;
+	min-width: 590px;
+	padding: 0 0 50px;
+}
+
+.dropdownPadding {
+	padding-bottom: 20px;
+}
+
+.radioColumn {
+	flex: 0 0 50px;
+}
+
+.createdColumn {
+	flex: 0 0 150px;
+}
+
+.virtualTablePlaceholder {
+	height: 458px;
+	display: flex;
+	justify-content: center;
+	overflow-y: auto;
+}
+
+.loading {
+	align-self: center;
+}
+
+.noProviderState {
+	align-self: center;
+	color: #5D5E5E;
+}
+
+.radio {
+	font-size: 1.5rem;
+	color: #51bb7b;
+	display: grid;
+	grid-template-columns: min-content auto;
+	grid-gap: 0.5em;
+	cursor: pointer;
+}
+
+.radio__input {
+	display: flex;
+	justify-content: center;
+	input {
+		opacity: 0;
+		width: 0;
+		height: 0;
+	}
+}
+
+.radio__control {
+	display: block;
+	width: 1em;
+	height: 1em;
+	border-radius: 50%;
+	border: 1px solid currentColor;
+}
+
+.radio__before {
+	.radio__control {
+	  display: grid;
+	  place-items: center;
+	}
+
+	input + .radio__control::before {
+	  content: "";
+	  width: 7px;
+	  height: 7px;
+	  box-shadow: inset 6px 6px currentColor;
+	  border-radius: 50%;
+	  transition: 180ms transform ease-in-out;
+	  transform: scale(0);
+	}
+
+	input:checked + .radio__control::before {
+	  transform: scale(1);
+	}
+}
