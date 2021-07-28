@@ -17,9 +17,13 @@ export const IPCASYNC_EVENTS = {
 };
 
 export const MULTI_MACHINE_BACKUP_ERRORS = {
+	// User has no connected backup providers on Hub
 	NO_PROVIDERS_FOUND: 'No providers found!',
+	// User has not created any site backups on Hub
 	NO_SITES_FOUND: 'No sites found!',
+	// User created a backup, and then disconnected the provider so the backups are inaccessible
 	NO_SNAPSHOTS_FOUND: 'No snapshots found!',
+	// Same as above
 	NO_CONNECTED_PROVIDERS_FOR_SITE: 'No connected providers found for this site!',
 };
 

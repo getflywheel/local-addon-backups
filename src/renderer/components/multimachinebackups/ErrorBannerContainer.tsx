@@ -2,15 +2,11 @@ import React from 'react';
 import {
 	Banner,
 } from '@getflywheel/local-components';
-import { useStoreSelector } from '../../store/store';
+import { store, actions, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
 import styles from './ErrorBannerContainer.scss';
 import { SerializedError } from '@reduxjs/toolkit';
 import { MULTI_MACHINE_BACKUP_ERRORS } from '../../../constants';
-
-// interface Props {
-
-// }
 
 export const ErrorBannerContainer = () => {
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
@@ -20,7 +16,7 @@ export const ErrorBannerContainer = () => {
 	if (!isErrored) {
 		return null;
 	}
-	console.log(activeError);
+
 	if (activeError) {
 		switch (activeError) {
 			case MULTI_MACHINE_BACKUP_ERRORS.NO_PROVIDERS_FOUND:
@@ -41,12 +37,19 @@ export const ErrorBannerContainer = () => {
 		}
 	}
 
-	// 'We could not fetch your sites. Please verify you're logged into your Local account and try again.'
-	// 'We could not authenticate your connection. Please verify you are logged into your account and try again.'
-	// 'There was an error retrieving your Cloud Backups. Please verify your account is connected to a storage provider and try again.'
+	const handleOnDismiss = () => {
+		store.dispatch(actions.setIsErrored(false));
+	};
+
 	return (
 		<div className={styles.bannerContainer}>
-			<Banner variant='error' icon='warning'>{bannerText}</Banner>
+			<Banner
+				variant='error'
+				icon='warning'
+				onDismiss={handleOnDismiss}
+			>
+				{bannerText}
+			</Banner>
 		</div>
 	);
 };
