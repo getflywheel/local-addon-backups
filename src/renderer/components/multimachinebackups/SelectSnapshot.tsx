@@ -6,7 +6,7 @@ import {
 	IVirtualTableCellRendererDataArgs,
 	LoadingIndicator,
 	TextButton,
-	Banner,
+	Tooltip,
 } from '@getflywheel/local-components';
 import classnames from 'classnames';
 import { store, actions, useStoreSelector } from '../../store/store';
@@ -167,13 +167,37 @@ export const SelectSnapshot = (props: Props) => {
 						}
 					</div>
 				</div>
-				<PrimaryButton
-					className="Continue"
-					onClick={onContinue}
-					disabled={continueDisabled}
-				>
-					Continue
-				</PrimaryButton>
+
+				{/* wrap button in tooltip if continue is disabled */}
+				{continueDisabled
+					?
+					<Tooltip
+						className={secondStyles.tooltip}
+						content={(
+							<>
+								Please select a backup before continuing.
+							</>
+						)}
+						popperOffsetModifier={{ offset: [0, 0] }}
+						position="top-start"
+					>
+						<PrimaryButton
+							className="Continue"
+							onClick={onContinue}
+							disabled={continueDisabled}
+						>
+							Continue
+						</PrimaryButton>
+					</Tooltip>
+					:
+					<PrimaryButton
+						className="Continue"
+						onClick={onContinue}
+						disabled={continueDisabled}
+					>
+						Continue
+					</PrimaryButton>
+				}
 				<TextButton
 					className="GoBack"
 					onClick={onGoBack}
