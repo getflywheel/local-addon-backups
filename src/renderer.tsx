@@ -13,6 +13,7 @@ import * as LocalRenderer from '@getflywheel/local/renderer';
 import {
 	Stepper,
 	Step,
+	TextButton,
 } from '@getflywheel/local-components';
 
 setupListeners();
@@ -153,4 +154,21 @@ export default function (context): void {
 
 		return breadcrumbsData;
 	});
+
+	hooks.addContent(
+		'NewSiteSite_AfterContent',
+		() => {
+			const goBack = () => {
+				LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site');
+			};
+			return (
+				<TextButton
+					className="GoBack"
+					onClick={goBack}
+				>
+					Go Back
+				</TextButton>
+			);
+		},
+	);
 }

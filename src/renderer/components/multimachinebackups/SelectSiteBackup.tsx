@@ -4,6 +4,7 @@ import {
 	Title,
 	FlySelect,
 	TextButton,
+	Tooltip,
 } from '@getflywheel/local-components';
 import { store, actions, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
@@ -100,7 +101,6 @@ export const SelectSiteBackup = (props: Props) => {
 					<div className="FormRow">
 						<div className="FormField">
 							<FlySelect
-								// className={styles.formField}
 								onChange={(value) => onSiteSelect(value)}
 								options={flySelectSites}
 								emptyPlaceholder="No backups available"
@@ -109,13 +109,37 @@ export const SelectSiteBackup = (props: Props) => {
 						</div>
 					</div>
 				</div>
-				<PrimaryButton
-					className="Continue"
-					onClick={onContinue}
-					disabled={continueDisabled}
-				>
-					Continue
-				</PrimaryButton>
+
+				{/* wrap button in tooltip if continue is disabled */}
+				{continueDisabled
+					?
+					<Tooltip
+						className={styles.tooltip}
+						content={(
+							<>
+								Please select a site before continuing.
+							</>
+						)}
+						popperOffsetModifier={{ offset: [0, 0] }}
+						position="top-start"
+					>
+						<PrimaryButton
+							className="Continue"
+							onClick={onContinue}
+							disabled={continueDisabled}
+						>
+						Continue
+						</PrimaryButton>
+					</Tooltip>
+					:
+					<PrimaryButton
+						className="Continue"
+						onClick={onContinue}
+						disabled={continueDisabled}
+					>
+						Continue
+					</PrimaryButton>
+				}
 				<TextButton
 					className="GoBack"
 					onClick={onGoBack}
