@@ -4,10 +4,13 @@ import {
 	RadioBlock,
 	Title,
 	ProgressBar,
+	Banner,
 } from '@getflywheel/local-components';
 import * as LocalRenderer from '@getflywheel/local/renderer';
 import { store, actions, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
+import styles from './ChooseCreateSite.scss';
+import { ErrorBannerContainer } from './ErrorBannerContainer';
 
 export const ChooseCreateSite = () => {
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
@@ -37,32 +40,36 @@ export const ChooseCreateSite = () => {
 	}
 
 	return (
-		<div className="AddSiteContent">
-			<Title size="l" container={{ margin: 'l 0' }}>Select the type of site you want to add</Title>
-			<div className="Inner">
-				<RadioBlock
-					onChange={(name) => setRadioState(name)}
-					default={radioState}
-					options={{
-						createnew: {
-							key: 'create-new-site',
-							label: 'Create a new site',
-						},
-						usebackup: {
-							key: 'use-cloud-backup',
-							label: 'Restore a site from Cloud Backups Add-on',
-							className: 'TID_NewSiteEnvironment_RadioBlockItem_Custom',
-						},
-					}}
-				/>
-				{}
+		<>
+			<ErrorBannerContainer />
+			<div className="AddSiteContent">
+				<Title size="l" container={{ margin: 'l 0' }}>Select the type of site you want to add</Title>
+				<div className="Inner">
+					<RadioBlock
+						className={styles.radioBlock}
+						onChange={(name) => setRadioState(name)}
+						default={radioState}
+						options={{
+							createnew: {
+								key: 'create-new-site',
+								label: 'Create a new site',
+							},
+							usebackup: {
+								key: 'use-cloud-backup',
+								label: 'Restore a site from Cloud Backups Add-on',
+								className: 'TID_NewSiteEnvironment_RadioBlockItem_Custom',
+							},
+						}}
+					/>
+					{}
+				</div>
+				<PrimaryButton
+					className="Continue"
+					onClick={onContinue}
+				>
+					Continue
+				</PrimaryButton>
 			</div>
-			<PrimaryButton
-				className="Continue"
-				onClick={onContinue}
-			>
-				Continue
-			</PrimaryButton>
-		</div>
+		</>
 	);
 };
