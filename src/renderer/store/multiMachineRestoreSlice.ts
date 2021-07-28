@@ -30,6 +30,10 @@ export const multiMachineRestoreSlice = createSlice({
 			state.selectedSnapshot = action.payload;
 			return state;
 		},
+		setIsErrored: (state, action) => {
+			state.isErrored = action.payload;
+			return state;
+		},
 	},
 	extraReducers: (builder) => {
 		builder

@@ -18,12 +18,10 @@ const getSitesList = createAsyncThunk('multiMachineBackupsGetSites', async (_, {
 		);
 
 		if (!availableProviders.length) {
-			// Could not find any providers, please check you have providers enabled
 			return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_PROVIDERS_FOUND);
 		}
 
 		if (!allSites.length) {
-			// Could not find any sites on the cloud, please make sure you're logged into the right Hub account
 			return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_SITES_FOUND);
 		}
 
@@ -31,7 +29,6 @@ const getSitesList = createAsyncThunk('multiMachineBackupsGetSites', async (_, {
 
 		return { availableProviders, allSites };
 	} catch (error) {
-		// Could not authenticate connection
 		return rejectWithValue(error.toString());
 	}
 });
@@ -65,7 +62,6 @@ const getSnapshotList = createAsyncThunk('multiMachineBackupsGetSnapshots', asyn
 			);
 
 			if (!snapshots.snapshots.length) {
-				// Could not find any backups of this site, please make sure you're connected to a storage provider
 				return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_SNAPSHOTS_FOUND);
 			}
 
@@ -77,7 +73,6 @@ const getSnapshotList = createAsyncThunk('multiMachineBackupsGetSnapshots', asyn
 
 		return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_CONNECTED_PROVIDERS_FOR_SITE);
 	} catch (error) {
-		// throw warning banner
 		return rejectWithValue(error.toString());
 	}
 });
@@ -95,7 +90,6 @@ const setMultiMachineProviderAndUpdateSnapshots = createAsyncThunk('multiMachine
 			);
 
 			if (!snapshots.snapshots.length) {
-				// Could not find any backups of this site, please make sure you're connected to a storage provider
 				return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_SNAPSHOTS_FOUND);
 			}
 
@@ -104,7 +98,6 @@ const setMultiMachineProviderAndUpdateSnapshots = createAsyncThunk('multiMachine
 				provider,
 			};
 		} catch (error) {
-			// throw warning banner
 			return rejectWithValue(error.toString());
 		}
 	});
