@@ -201,7 +201,7 @@ const LoadMoreWhenVisibleCell = ({ site }) => {
 };
 
 const renderDescription = (description?: string) => {
-	if (!description) {
+	if (description === null) {
 		return (
 			<LoadingIndicator style={{ margin: 0 }} color="Gray" />
 		);

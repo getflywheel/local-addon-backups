@@ -15,3 +15,6 @@ export const IPCASYNC_EVENTS = {
 export const metaDataFileName = '.local-backups-site-meta-data.json';
 
 export const backupSQLDumpFile = 'local-backup-addon-database-dump.sql';
+
+// max char length for form inputs
+export const INPUT_MAX = 50;
