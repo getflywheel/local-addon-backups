@@ -11,6 +11,7 @@ import type { Site } from '@getflywheel/local';
 import styles from './BackupContents.scss';
 import { fetchSiteSizeInMB } from './fetchSiteSizeInMB';
 import { getIgnoreFilePath } from '../../../helpers/ignoreFilesPattern';
+import { INPUT_MAX } from '../../../constants';
 
 const remote = require('@electron/remote');
 
@@ -76,7 +77,7 @@ export const BackupContents = (props: ModalContentsProps) => {
 				<BasicInput
 					value={inputDescriptionData}
 					onChange={onInputChange}
-					maxlength={50}
+					maxlength={INPUT_MAX}
 				/>
 
 				<Title size="m" style={{ paddingTop: 15 }}>Ignore files</Title>

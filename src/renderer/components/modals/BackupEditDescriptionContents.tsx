@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
 	FlyModal,
 	BasicInput,
@@ -10,6 +10,7 @@ import styles from './BackupEditDescriptionContents.scss';
 import type { Site } from '@getflywheel/local';
 import { BackupSnapshot } from '../../../types';
 import { actions, store } from '../../store/store';
+import { INPUT_MAX } from '../../../constants';
 export interface ModalContentsProps {
 	site: Site;
 	snapshot: BackupSnapshot;
@@ -20,7 +21,7 @@ export const BackupEditDescriptionContents = (props: ModalContentsProps) => {
 	const { site, snapshot } = props;
 	const { configObject } = snapshot;
 
-	const updateDescriptionGQL = () => {
+	const updateDescriptionGQL = useCallback(() => {
 		store.dispatch(actions.editSnapshotMetaData({
 			siteId: site.id,
 			metaData: { ...configObject, description },
@@ -28,7 +29,7 @@ export const BackupEditDescriptionContents = (props: ModalContentsProps) => {
 		}));
 
 		FlyModal.onRequestClose();
-	};
+	}, [description]);
 
 	return (
 		<div>
@@ -41,7 +42,7 @@ export const BackupEditDescriptionContents = (props: ModalContentsProps) => {
 				value={description}
 				placeholder={configObject.description}
 				onChange={(e) => updateDescription(e.target.value)}
-				maxLength={50}
+				maxLength={INPUT_MAX}
 			/>
 			<PrimaryButton
 				onClick={updateDescriptionGQL}
