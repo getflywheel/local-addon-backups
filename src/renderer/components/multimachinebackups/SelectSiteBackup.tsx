@@ -8,10 +8,10 @@ import {
 import { store, actions, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
 import * as LocalRenderer from '@getflywheel/local/renderer';
-import * as Local from '@getflywheel/local';
 import path from 'path';
 import { BackupSite, NewSiteInfoWithCloudMeta } from '../../../types';
 import { ErrorBannerContainer } from './ErrorBannerContainer';
+import styles from './SelectSiteBackup.scss';
 
 interface Props {
 	siteSettings: NewSiteInfoWithCloudMeta
@@ -95,15 +95,18 @@ export const SelectSiteBackup = (props: Props) => {
 			<ErrorBannerContainer />
 			<div className="AddSiteContent">
 				<Title size="l" container={{ margin: 'l 0' }}>Select a site to restore</Title>
-				<div className="Inner">
-					<h3>Select a site with a Cloud Backup</h3>
-					<div className="FormField">
-						<FlySelect
-							onChange={(value) => onSiteSelect(value)}
-							options={flySelectSites}
-							emptyPlaceholder="No backups available"
-							placeholder="Select a site"
-						/>
+				<div className={styles.innerContainer}>
+					<h2 className={styles.headerPadding}>Select a site with a Cloud Backup</h2>
+					<div className="FormRow">
+						<div className="FormField">
+							<FlySelect
+								// className={styles.formField}
+								onChange={(value) => onSiteSelect(value)}
+								options={flySelectSites}
+								emptyPlaceholder="No backups available"
+								placeholder="Select a site"
+							/>
+						</div>
 					</div>
 				</div>
 				<PrimaryButton

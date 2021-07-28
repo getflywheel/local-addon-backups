@@ -1,0 +1,16 @@
+.innerContainer {
+	width: 644px;
+	align-self: center;
+	display: flex;
+	flex-grow: 1;
+	flex-direction: column;
+	justify-content: center;
+	align-items: left;
+	width: 50%;
+	min-width: 590px;
+	padding: 0 0 50px;
+}
+
+.headerPadding {
+	padding-bottom: 12px;
+}
