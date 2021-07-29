@@ -1,4 +1,5 @@
 import React from 'react';
+import shortid from 'shortid';
 import {
 	PrimaryButton,
 	Title,
@@ -13,6 +14,7 @@ import path from 'path';
 import { BackupSite, NewSiteInfoWithCloudMeta } from '../../../types';
 import { ErrorBannerContainer } from './ErrorBannerContainer';
 import styles from './SelectSiteBackup.scss';
+import { IPCASYNC_EVENTS } from '../../../constants';
 
 interface Props {
 	siteSettings: NewSiteInfoWithCloudMeta
@@ -38,7 +40,8 @@ export const SelectSiteBackup = (props: Props) => {
 	});
 
 	const generateSiteSettingsData = (site: BackupSite) => {
-		const formattedSiteName = `${formatSiteNicename(site.name)}-clone`;
+		// todo - tyler - check with design to see if we want to implement a site name field instead of generating a hash for uniqueness
+		const formattedSiteName = `${formatSiteNicename(site.name)}-${shortid.generate()}`;
 
 		const formattedSiteDomain = `${formattedSiteName}${defaultLocalSettings['new-site-defaults'].tld}`;
 

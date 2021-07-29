@@ -7,6 +7,7 @@ import {
 	LoadingIndicator,
 	TextButton,
 	Tooltip,
+	Button,
 } from '@getflywheel/local-components';
 import classnames from 'classnames';
 import { store, actions, useStoreSelector } from '../../store/store';
@@ -35,7 +36,8 @@ export const SelectSnapshot = (props: Props) => {
 		selectedSnapshot,
 		isLoading,
 		individualSiteRepoProviders,
-
+		currentSnapshotsPage,
+		totalSnapshotsPages,
 	} = state;
 
 	/**
@@ -46,6 +48,8 @@ export const SelectSnapshot = (props: Props) => {
 		{ key: 'created_at', value: 'Created', className: secondStyles.createdColumn },
 		{ key: 'configObject', value: 'Description' },
 	];
+
+	const hasMore = currentSnapshotsPage < totalSnapshotsPages;
 
 	const renderDate = (createdAt: string) => {
 		const [monDayYear, time] = DateUtils.formatDate(createdAt);
@@ -86,6 +90,10 @@ export const SelectSnapshot = (props: Props) => {
 		LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/select-site-backup');
 	};
 
+	const onClickLoadMore = () => {
+		store.dispatch(actions.requestSubsequentSnapshots());
+	};
+
 	const continueDisabled = (selectedSnapshot === null);
 
 	const renderRadioButton = (snapshot: BackupSnapshot) => (
@@ -117,8 +125,8 @@ export const SelectSnapshot = (props: Props) => {
 
 		switch (colKey) {
 			case 'radioselect': return renderRadioButton(rowData);
-			case 'configObject': return cellData.description;
 			case 'created_at': return renderDate(cellData);
+			case 'configObject': return cellData.description;
 		}
 		return (
 			<div>
@@ -141,9 +149,7 @@ export const SelectSnapshot = (props: Props) => {
 						/>
 					</div>
 					<div className={secondStyles.virtualTablePlaceholder}>
-						{isLoading &&
-							<LoadingIndicator className={secondStyles.loading} big={true} dots={3}/>
-						}
+						{isLoading && <LoadingIndicator className={secondStyles.loading} dots={3}/>}
 						{!isLoading && backupSnapshots.length &&
 							<VirtualTable
 								className={virtualTableStyles.SnapshotsTableList_VirtualTable}
@@ -160,6 +166,14 @@ export const SelectSnapshot = (props: Props) => {
 								rowHeaderHeightSize={'l'}
 							/>
 						}
+						{hasMore &&
+							<Button
+								className={secondStyles.loadMore}
+								onClick={onClickLoadMore}
+							>
+								Load more
+							</Button>
+						}
 						{!isLoading && !backupSnapshots.length &&
 							<div className={secondStyles.noProviderState}>
 								No storage provider connected.
@@ -167,7 +181,6 @@ export const SelectSnapshot = (props: Props) => {
 						}
 					</div>
 				</div>
-
 				{/* wrap button in tooltip if continue is disabled */}
 				{continueDisabled
 					?

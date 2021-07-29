@@ -102,8 +102,35 @@ const setMultiMachineProviderAndUpdateSnapshots = createAsyncThunk('multiMachine
 		}
 	});
 
+const requestSubsequentSnapshots = createAsyncThunk('multiMachineBackupsRequestSubsequentSnapshots',
+	async (_, { getState, rejectWithValue }) => {
+		const state = getState() as AppState;
+		const { selectedSite, currentSnapshotsPage, selectedProvider } = state.multiMachineRestore;
+		const nextPage = currentSnapshotsPage + 1;
+		try {
+			const snapshots = await ipcAsync(
+				IPCASYNC_EVENTS.GET_ALL_SNAPSHOTS,
+				selectedSite.uuid,
+				selectedProvider.id,
+				nextPage,
+			);
+
+			if (!snapshots.snapshots.length) {
+				return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_SNAPSHOTS_FOUND);
+			}
+
+			return {
+				snapshots,
+			};
+		} catch (error) {
+			return rejectWithValue(error.toString());
+		}
+	},
+);
+
 export {
 	getSitesList,
 	getSnapshotList,
 	setMultiMachineProviderAndUpdateSnapshots,
+	requestSubsequentSnapshots,
 };
