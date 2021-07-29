@@ -30,7 +30,7 @@ export const ChooseCreateSite = () => {
 
 	const onPromoBannerDismiss = () => {
 		console.log('test');
-	}
+	};
 
 	if (isLoading) {
 		return (
