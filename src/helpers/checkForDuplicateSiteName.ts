@@ -6,7 +6,7 @@ const {
 } = serviceContainer;
 
 export const checkForDuplicateSiteName = async (siteName: string) => {
-	const coolSitedata = siteData.getSites();
+	const allSiteData = siteData.getSites();
 
 	const formattedSiteName = formatSiteNicename(siteName);
 	const newSiteDomain = `${formattedSiteName}.local`;
@@ -14,7 +14,7 @@ export const checkForDuplicateSiteName = async (siteName: string) => {
 	let matchesExistingDomains = false;
 	let matchesExistingNames = false;
 
-	for (const site of Object.values(coolSitedata)) {
+	for (const site of Object.values(allSiteData)) {
 		if (site.domain === newSiteDomain) {
 			matchesExistingDomains = true;
 		}

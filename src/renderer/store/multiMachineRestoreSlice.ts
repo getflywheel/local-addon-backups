@@ -1,8 +1,13 @@
 import {
 	createSlice, SerializedError,
 } from '@reduxjs/toolkit';
-import type { BackupSite, BackupSnapshot, HubOAuthProviders, HubProviderRecord } from '../../types';
-import { getSitesList, getSnapshotList, setMultiMachineProviderAndUpdateSnapshots } from './multiMachineThunks';
+import type { BackupSite, BackupSnapshot, HubProviderRecord } from '../../types';
+import {
+	getSitesList,
+	getSnapshotList,
+	setMultiMachineProviderAndUpdateSnapshots,
+	requestSubsequentSnapshots,
+} from './multiMachineThunks';
 
 /**
  * State for the active site.
@@ -20,6 +25,8 @@ export const multiMachineRestoreSlice = createSlice({
 		isLoading: false,
 		isErrored: false,
 		activeError: null as SerializedError,
+		currentSnapshotsPage: null as number,
+		totalSnapshotsPages: null as number,
 	},
 	reducers: {
 		setSelectedSite: (state, action) => {
@@ -50,6 +57,7 @@ export const multiMachineRestoreSlice = createSlice({
 				state.isErrored = true;
 				state.activeError = action.payload;
 			})
+			// getSnapshotList cases
 			.addCase(getSnapshotList.pending, (state) => {
 				state.isLoading = true;
 			})
@@ -58,12 +66,15 @@ export const multiMachineRestoreSlice = createSlice({
 				state.backupSnapshots = action.payload.snapshots.snapshots;
 				state.individualSiteRepoProviders = action.payload.individualSiteProviders;
 				state.selectedProvider = action.payload.individualSiteProviders[0];
+				state.currentSnapshotsPage = action.payload.snapshots.pagination.currentPage;
+				state.totalSnapshotsPages = action.payload.snapshots.pagination.lastPage;
 			})
 			.addCase(getSnapshotList.rejected, (state, action) => {
 				state.isLoading = false;
 				state.isErrored = true;
 				state.activeError = action.payload;
 			})
+			// setMultiMachineProviderAndUpdateSnapshots cases
 			.addCase(setMultiMachineProviderAndUpdateSnapshots.pending, (state) => {
 				state.isLoading = true;
 			})
@@ -71,11 +82,28 @@ export const multiMachineRestoreSlice = createSlice({
 				state.isLoading = false;
 				state.backupSnapshots = action.payload.snapshots.snapshots;
 				state.selectedProvider = action.payload.provider;
+				state.currentSnapshotsPage = action.payload.snapshots.pagination.currentPage;
+				state.totalSnapshotsPages = action.payload.snapshots.pagination.lastPage;
 			})
 			.addCase(setMultiMachineProviderAndUpdateSnapshots.rejected, (state, action) => {
 				state.isLoading = false;
 				state.isErrored = true;
 				state.activeError = action.payload;
+			})
+			// requestSubsequentSnapshots cases
+			.addCase(requestSubsequentSnapshots.pending, (state) => {
+				state.isLoading = true;
+			})
+			.addCase(requestSubsequentSnapshots.fulfilled, (state, action) => {
+				action.payload.snapshots.snapshots.forEach(
+					(snapshot: BackupSnapshot) => state.backupSnapshots.push(snapshot),
+				);
+				state.isLoading = false;
+				state.currentSnapshotsPage = action.payload.snapshots.pagination.currentPage;
+				state.totalSnapshotsPages = action.payload.snapshots.pagination.lastPage;
+			})
+			.addCase(requestSubsequentSnapshots.rejected, (state) => {
+				state.isLoading = false;
 			});
 	},
 });

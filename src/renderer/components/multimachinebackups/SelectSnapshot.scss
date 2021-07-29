@@ -26,11 +26,15 @@
 .virtualTablePlaceholder {
 	height: 458px;
 	display: flex;
-	justify-content: center;
+	flex-direction: column;
+	align-items: center;
+	justify-content: space-between;
 	overflow-y: auto;
 }
 
 .loading {
+	margin-top: 100px;
+	justify-self: center;
 	align-self: center;
 }
 
@@ -91,4 +95,9 @@
 	position: absolute;
 	bottom: 30px;
 	right: 30px;
+}
+
+.loadMore {
+	margin-top: 30px;
+	justify-self: flex-end;
 }

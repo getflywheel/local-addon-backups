@@ -175,8 +175,10 @@ export default function (): void {
 		},
 		{
 			channel: IPCASYNC_EVENTS.GET_ALL_SNAPSHOTS,
-			callback: async (siteUUID: string, provider: HubOAuthProviders) => {
+			callback: async (siteUUID: string, provider: HubOAuthProviders, requestedPage?: number) => {
 				const repos = await getBackupReposByProviderID(provider);
+
+				const paginationNumber = requestedPage ? requestedPage : 0;
 
 				let repoID: number;
 
@@ -187,7 +189,7 @@ export default function (): void {
 				});
 
 				if (repoID) {
-					const snapshots = await getBackupSnapshotsByRepo(repoID, 20, 0);
+					const snapshots = await getBackupSnapshotsByRepo(repoID, 3, paginationNumber);
 
 					// Hub returns the "config" data as a single string, so we need to convert back to object
 					snapshots.snapshots.forEach((snapshot) => {
