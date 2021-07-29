@@ -34,7 +34,7 @@ export const BackupEditDescriptionContents = (props: ModalContentsProps) => {
 	return (
 		<div>
 			<Title size="l" container={{ margin: 'm 0' }}>
-				Edit Cloud Backup description
+				Edit backup description
 			</Title>
 			<Divider className={styles.Divider} />
 			<BasicInput
