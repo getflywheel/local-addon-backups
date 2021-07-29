@@ -9,6 +9,7 @@ import { client } from './renderer/localClient/localGraphQLClient';
 import { ChooseCreateSite } from './renderer/components/multimachinebackups/ChooseCreateSite';
 import { SelectSiteBackup } from './renderer/components/multimachinebackups/SelectSiteBackup';
 import { SelectSnapshot } from './renderer/components/multimachinebackups/SelectSnapshot';
+import { CloseButtonWithStore } from './renderer/components/multimachinebackups/CloseButtonWithStore';
 import * as LocalRenderer from '@getflywheel/local/renderer';
 import {
 	Stepper,
@@ -37,6 +38,7 @@ export default function (context): void {
 	const ChooseCreateSiteHOC = withApolloProvider(withStoreProvider(ChooseCreateSite));
 	const SelectSiteBackupHOC = withApolloProvider(withStoreProvider(SelectSiteBackup));
 	const SelectSnapshotHOC = withApolloProvider(withStoreProvider(SelectSnapshot));
+	const CloseButtonHOC = withStoreProvider(CloseButtonWithStore);
 
 	hooks.addFilter('siteInfoToolsItem', (items) => {
 		items.push({
@@ -57,7 +59,7 @@ export default function (context): void {
 		return statuses;
 	});
 
-	hooks.addFilter('AddSiteUserFlow:RoutesArray', (routes, path) => {
+	hooks.addFilter('AddSiteIndexJS:RoutesArray', (routes, path) => {
 		routes.forEach((route) => {
 			if (route.path === `${path}/`) {
 				route.path = `${path}/add`;
@@ -73,7 +75,7 @@ export default function (context): void {
 		return routes;
 	});
 
-	hooks.addFilter('AddSiteUserFlow:NewSiteEnvironment', (newSiteEnvironmentProps) => {
+	hooks.addFilter('AddSiteIndexJS:NewSiteEnvironment', (newSiteEnvironmentProps) => {
 		if (newSiteEnvironmentProps.siteSettings.cloudBackupMeta?.createdFromCloudBackup) {
 			const continueCreateSite = () => {
 				LocalRenderer.sendIPCEvent('addSite', {
@@ -101,7 +103,7 @@ export default function (context): void {
 		return newSiteEnvironmentProps;
 	});
 
-	hooks.addFilter('AddSiteUserFlow:RenderBreadcrumbs', (breadcrumbsData) => {
+	hooks.addFilter('AddSiteIndexJS:RenderBreadcrumbs', (breadcrumbsData) => {
 		const { localHistory, siteSettings } = breadcrumbsData;
 
 		const cloudBackupStepper = () => (
@@ -153,6 +155,18 @@ export default function (context): void {
 		}
 
 		return breadcrumbsData;
+	});
+
+	hooks.addFilter('AddSiteIndexJS:RenderCloseButton', (closeButtonData) => {
+		const closeButtonModified = () => (
+			<CloseButtonHOC
+				onClose={closeButtonData.onCloseButton()}
+			/>
+		);
+
+		closeButtonData.closeButton = () => closeButtonModified();
+
+		return closeButtonData;
 	});
 
 	hooks.addContent(
