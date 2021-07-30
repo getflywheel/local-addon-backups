@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { IPCASYNC_EVENTS, MULTI_MACHINE_BACKUP_ERRORS } from '../../constants';
+import { IPCASYNC_EVENTS, LOCAL_ROUTES, MULTI_MACHINE_BACKUP_ERRORS } from '../../constants';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import type { AppState } from './store';
 
@@ -25,7 +25,7 @@ const getSitesList = createAsyncThunk('multiMachineBackupsGetSites', async (_, {
 			return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_SITES_FOUND);
 		}
 
-		LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/select-site-backup');
+		LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_BACKUP_SITE);
 
 		return { availableProviders, allSites };
 	} catch (error) {

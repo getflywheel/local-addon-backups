@@ -14,7 +14,7 @@ import path from 'path';
 import { BackupSite, NewSiteInfoWithCloudMeta } from '../../../types';
 import { ErrorBannerContainer } from './ErrorBannerContainer';
 import styles from './SelectSiteBackup.scss';
-import { IPCASYNC_EVENTS } from '../../../constants';
+import { IPCASYNC_EVENTS, LOCAL_ROUTES } from '../../../constants';
 
 interface Props {
 	siteSettings: NewSiteInfoWithCloudMeta
@@ -82,8 +82,7 @@ export const SelectSiteBackup = (props: Props) => {
 
 	const onContinue = () => {
 		store.dispatch(actions.getSnapshotList());
-		// todo - tyler - replace route with constant
-		LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/select-snapshot');
+		LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_BACKUP_SNAPSHOT);
 	};
 
 	const onGoBack = () => {
@@ -91,7 +90,7 @@ export const SelectSiteBackup = (props: Props) => {
 
 		store.dispatch(actions.setSelectedSite(null));
 
-		LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site');
+		LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_START);
 	};
 
 	const continueDisabled = (selectedSite === null);

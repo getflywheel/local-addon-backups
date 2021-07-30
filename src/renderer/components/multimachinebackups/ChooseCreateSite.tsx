@@ -11,6 +11,7 @@ import { store, actions, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
 import styles from './ChooseCreateSite.scss';
 import { ErrorBannerContainer } from './ErrorBannerContainer';
+import { LOCAL_ROUTES } from '../../../constants';
 
 export const ChooseCreateSite = () => {
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
@@ -19,8 +20,7 @@ export const ChooseCreateSite = () => {
 
 	const onContinue = () => {
 		if (radioState === 'createnew') {
-			// todo - tyler - update all these routes to use constants within the addon
-			LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/add');
+			LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_CREATE_NEW);
 		}
 
 		if (radioState === 'usebackup') {
