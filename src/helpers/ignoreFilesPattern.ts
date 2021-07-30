@@ -6,7 +6,7 @@ import type { Site } from '../types';
 
 export const excludePatterns = ['conf'];
 
-export const localBackupsIgnoreFileName = '.localbackupaddonignore';
+export const localBackupsIgnoreFileName = '.localbackupaddonignore.txt';
 
 // Returns an array of directories within the site folder that we want to include in the backup
 // Filters out the 'conf' directory and any `.` files
