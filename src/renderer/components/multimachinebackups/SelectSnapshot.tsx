@@ -87,6 +87,9 @@ export const SelectSnapshot = (props: Props) => {
 	};
 
 	const onGoBack = () => {
+		store.dispatch(actions.setSelectedSnapshot(null));
+		store.dispatch(actions.setSelectedProvider(null));
+
 		LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/select-site-backup');
 	};
 
@@ -108,6 +111,7 @@ export const SelectSnapshot = (props: Props) => {
 						name='snapshotSelect'
 						value={snapshot.hash}
 						onChange={(value) => onRadioChange(value)}
+						checked={selectedSnapshot ? selectedSnapshot.hash === snapshot.hash : false}
 					/>
 					<span className={secondStyles.radio__control}></span>
 				</span>

@@ -105,14 +105,13 @@ export default function (context): void {
 
 	hooks.addFilter('AddSiteIndexJS:RenderBreadcrumbs', (breadcrumbsData) => {
 		const { localHistory, siteSettings } = breadcrumbsData;
-
 		const cloudBackupStepper = () => (
 			<Stepper>
 				<Step
 					key={'choose-site'}
 					number={1}
-					done={localHistory.location.pathname !== '/main/add-site/'}
-					active={localHistory.location.pathname === '/main/add-site/'}
+					done={localHistory.location.pathname !== '/main/add-site/select-site-backup'}
+					active={localHistory.location.pathname === '/main/add-site/select-site-backup'}
 				>
 					Select Site
 				</Step>
@@ -140,8 +139,6 @@ export default function (context): void {
 				breadcrumbsData.defaultStepper = () => null;
 				break;
 			case '/main/add-site/select-site-backup':
-				breadcrumbsData.defaultStepper = () => cloudBackupStepper();
-				break;
 			case '/main/add-site/select-snapshot':
 				breadcrumbsData.defaultStepper = () => cloudBackupStepper();
 				break;
@@ -157,17 +154,11 @@ export default function (context): void {
 		return breadcrumbsData;
 	});
 
-	hooks.addFilter('AddSiteIndexJS:RenderCloseButton', (closeButtonData) => {
-		const closeButtonModified = () => (
-			<CloseButtonHOC
-				onClose={closeButtonData.onCloseButton()}
-			/>
-		);
-
-		closeButtonData.closeButton = () => closeButtonModified();
-
-		return closeButtonData;
-	});
+	hooks.addFilter('AddSiteIndexJS:RenderCloseButton', (closeButtonData) => () => (
+		<CloseButtonHOC
+			onClose={closeButtonData.onCloseButton()}
+		/>
+	));
 
 	hooks.addContent(
 		'NewSiteSite_AfterContent',

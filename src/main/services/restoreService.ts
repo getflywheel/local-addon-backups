@@ -310,13 +310,13 @@ export const restoreFromBackup = async (opts: {
 				logger.info(`${actionLabel} [site id: ${site.id}]`);
 			})
 			.onDone(() => restoreService.stop())
-			.onStop(() => {
+			.onStop(async () => {
 				serviceState.inProgressStateMachine = null;
 				// eslint-disable-next-line no-underscore-dangle
 				const error: ErrorState = JSON.parse(restoreService._state.context.error ?? null);
 				const siteModel = new LocalSiteModel(site);
 
-				siteProcessManager.restart(siteModel);
+				await siteProcessManager.restart(siteModel);
 
 				sendIPCEvent('updateSiteStatus', site.id, initialSiteStatus);
 

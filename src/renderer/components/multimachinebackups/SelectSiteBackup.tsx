@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import shortid from 'shortid';
 import {
 	PrimaryButton,
@@ -89,6 +89,8 @@ export const SelectSiteBackup = (props: Props) => {
 	const onGoBack = () => {
 		delete siteSettings.cloudBackupMeta;
 
+		store.dispatch(actions.setSelectedSite(null));
+
 		LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site');
 	};
 
@@ -108,6 +110,7 @@ export const SelectSiteBackup = (props: Props) => {
 								options={flySelectSites}
 								emptyPlaceholder="No backups available"
 								placeholder="Select a site"
+								value={selectedSite ? selectedSite.uuid : undefined}
 							/>
 						</div>
 					</div>

@@ -58,7 +58,7 @@ export async function getBackupSite (localBackupRepoID: string): Promise<BackupS
 	return data?.backupSites?.[0];
 }
 
-export async function getAllBackupSites (): Promise<BackupSite> {
+export async function getBackupSitesByRepoID (repoID: string): Promise<BackupSite> {
 	const { data } = await localHubClient.query({
 		query: gql`
 			query getBackupSite ($repoID: String) {
@@ -70,6 +70,9 @@ export async function getAllBackupSites (): Promise<BackupSite> {
 				}
 			}
 		`,
+		variables: {
+			repoID: repoID,
+		},
 	});
 
 	return data?.backupSites;

@@ -9,6 +9,7 @@ import {
 	updateBackupSnapshot,
 	getAllBackupSites,
 	getBackupReposBySiteID,
+	getBackupSitesByRepoID,
 } from './main/hubQueries';
 import { createBackup } from './main/services/backupService';
 import { restoreFromBackup } from './main/services/restoreService';
@@ -152,8 +153,25 @@ export default function (): void {
 		},
 		{
 			channel: IPCASYNC_EVENTS.GET_ALL_SITES,
-			callback: async () =>
-				await getAllBackupSites(),
+			callback: async () => {
+				// get available providers
+				const providers = await getEnabledBackupProviders();
+
+				// get all repos for each active provider
+				const repos = await Promise.all(
+					providers.map(async (provider: HubProviderRecord) =>
+						await getBackupReposByProviderID(provider.id)));
+				// flatten array
+				const allRepos = repos.reduce((acc, curVal) => acc.concat(curVal), []);
+
+				// get all sites for all repos
+				const backupSites = await Promise.all(allRepos.map(async (repo) =>
+					await getBackupSitesByRepoID(repo.hash)));
+				// flatten array
+				const allBackupSites = backupSites.reduce((acc, curVal) => acc.concat(curVal), []);
+
+				return allBackupSites;
+			},
 		},
 		{
 			channel: IPCASYNC_EVENTS.GET_REPOS_BY_SITE_ID,
@@ -227,12 +245,15 @@ export default function (): void {
 	LocalMain.HooksMain.addAction(
 		'siteAdded',
 		async (site: Site) => {
-			const { provider, snapshotID, repoID } = site.cloudBackupMeta;
+			if (site.cloudBackupMeta && site.cloudBackupMeta.createdFromCloudBackup) {
+				const { provider, snapshotID, repoID } = site.cloudBackupMeta;
 
-			const providerID = hubProviderRecordToProvider(provider);
+				const providerID = hubProviderRecordToProvider(provider);
 
-			return await restoreFromBackup({ site, provider: providerID, snapshotID, repoID });
-			// todo - tyler - after running restore from backup, update hosts file with new domain url
+				await restoreFromBackup({ site, provider: providerID, snapshotID, repoID });
+
+				LocalMain.sendIPCEvent('changeSiteDomainToHost', site);
+			}
 		},
 	);
 }
