@@ -21,6 +21,7 @@ import styles from '../siteinfotools/SiteInfoToolsSection.scss';
 import secondStyles from './SelectSnapshot.scss';
 import virtualTableStyles from '../siteinfotools/SnapshotsTableList.scss';
 import { LOCAL_ROUTES } from '../../../constants';
+import { selectMultiMachineActiveSiteSnapshots } from '../../store/multiMachineRestoreSlice';
 
 interface Props {
 	updateSiteSettings: any
@@ -30,10 +31,10 @@ interface Props {
 export const SelectSnapshot = (props: Props) => {
 	const { updateSiteSettings, siteSettings } = props;
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
+	const allSnapshots = useStoreSelector(selectMultiMachineActiveSiteSnapshots);
 	const {
 		selectedProvider,
 		selectedSite,
-		backupSnapshots,
 		selectedSnapshot,
 		isLoading,
 		individualSiteRepoProviders,
@@ -41,6 +42,7 @@ export const SelectSnapshot = (props: Props) => {
 		totalSnapshotsPages,
 	} = state;
 
+	console.log('snapshots: ', allSnapshots);
 	/**
 	 * The columns defined in order and with the intended header text.
 	 */
@@ -69,7 +71,7 @@ export const SelectSnapshot = (props: Props) => {
 
 	const onRadioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const snapshotHash = event.currentTarget.value;
-		const selectedSnapshot = backupSnapshots.find((snapshot) => snapshotHash === snapshot.hash);
+		const selectedSnapshot = allSnapshots.find((snapshot) => snapshotHash === snapshot.hash);
 		store.dispatch(actions.setSelectedSnapshot(selectedSnapshot));
 
 		updateSiteSettings({
@@ -155,11 +157,11 @@ export const SelectSnapshot = (props: Props) => {
 					</div>
 					<div className={secondStyles.virtualTablePlaceholder}>
 						{isLoading && <LoadingIndicator className={secondStyles.loading} dots={3}/>}
-						{!isLoading && backupSnapshots.length &&
+						{!isLoading && allSnapshots.length &&
 							<VirtualTable
 								className={virtualTableStyles.SnapshotsTableList_VirtualTable}
 								cellRenderer={renderCell}
-								data={backupSnapshots}
+								data={allSnapshots}
 								extraData={{
 									selectedSite,
 									selectedProvider,
@@ -179,7 +181,7 @@ export const SelectSnapshot = (props: Props) => {
 								Load more
 							</Button>
 						}
-						{!isLoading && !backupSnapshots.length &&
+						{!isLoading && !allSnapshots.length &&
 							<div className={secondStyles.noProviderState}>
 								No storage provider connected.
 							</div>

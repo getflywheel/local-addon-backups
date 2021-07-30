@@ -1,5 +1,5 @@
 import {
-	createSlice, SerializedError,
+	createSlice, SerializedError, createEntityAdapter, createSelector,
 } from '@reduxjs/toolkit';
 import type { BackupSite, BackupSnapshot, HubProviderRecord } from '../../types';
 import {
@@ -8,15 +8,24 @@ import {
 	setMultiMachineProviderAndUpdateSnapshots,
 	requestSubsequentSnapshots,
 } from './multiMachineThunks';
+import { AppState } from './store';
+
+
+const snapshotsEntityAdapter = createEntityAdapter<BackupSnapshot>({
+	selectId: (snapshot) => snapshot.id,
+	// regardless of the order received, do this additional sort by descending updated date/time
+	sortComparer: (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+});
+
 
 /**
- * State for the active site.
+ * State for multi-machine backup workflow.
  */
 export const multiMachineRestoreSlice = createSlice({
 	name: 'multiMachineRestore',
 	initialState: {
 		backupSites: [] as BackupSite[],
-		backupSnapshots: [] as BackupSnapshot[],
+		backupSnapshots: snapshotsEntityAdapter.getInitialState(),
 		backupProviders: [] as HubProviderRecord[],
 		individualSiteRepoProviders: [] as HubProviderRecord[],
 		selectedSite: null as BackupSite,
@@ -67,7 +76,8 @@ export const multiMachineRestoreSlice = createSlice({
 			})
 			.addCase(getSnapshotList.fulfilled, (state, action) => {
 				state.isLoading = false;
-				state.backupSnapshots = action.payload.snapshots.snapshots;
+				// state.backupSnapshots = action.payload.snapshots.snapshots;
+				snapshotsEntityAdapter.setAll(state.backupSnapshots, action.payload.snapshots.snapshots);
 				state.individualSiteRepoProviders = action.payload.individualSiteProviders;
 				state.selectedProvider = action.payload.individualSiteProviders[0];
 				state.currentSnapshotsPage = action.payload.snapshots.pagination.currentPage;
@@ -111,3 +121,14 @@ export const multiMachineRestoreSlice = createSlice({
 			});
 	},
 });
+
+const snapshotsEntityAdapterSnapshots = snapshotsEntityAdapter.getSelectors<AppState>(
+	(state) => state.multiMachineRestore.backupSnapshots,
+);
+
+export const selectMultiMachineActiveSiteSnapshots = createSelector(
+	[
+		snapshotsEntityAdapterSnapshots.selectAll,
+	],
+	(selectAll) => selectAll,
+);
