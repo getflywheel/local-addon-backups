@@ -16,6 +16,7 @@ import {
 	Step,
 	TextButton,
 } from '@getflywheel/local-components';
+import { LOCAL_ROUTES } from './constants';
 
 setupListeners();
 
@@ -62,14 +63,14 @@ export default function (context): void {
 	hooks.addFilter('AddSiteIndexJS:RoutesArray', (routes, path) => {
 		routes.forEach((route) => {
 			if (route.path === `${path}/`) {
-				route.path = `${path}/add`;
+				route.path = LOCAL_ROUTES.ADD_SITE_CREATE_NEW;
 			}
 		});
 
 		routes.push(
 			{ key: 'add-site-choose', path: `${path}/`, component: ChooseCreateSiteHOC },
-			{ key: 'add-site-select-site-backup', path: `${path}/select-site-backup`, component: SelectSiteBackupHOC },
-			{ key: 'add-site-select-snapshot', path: `${path}/select-snapshot`, component: SelectSnapshotHOC },
+			{ key: 'add-site-select-site-backup', path: LOCAL_ROUTES.ADD_SITE_BACKUP_SITE, component: SelectSiteBackupHOC },
+			{ key: 'add-site-select-snapshot', path: LOCAL_ROUTES.ADD_SITE_BACKUP_SNAPSHOT, component: SelectSnapshotHOC },
 		);
 
 		return routes;
@@ -86,7 +87,7 @@ export default function (context): void {
 			};
 
 			const onGoBack = () => {
-				LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/select-snapshot');
+				LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_BACKUP_SNAPSHOT);
 			};
 
 			newSiteEnvironmentProps.onContinue = continueCreateSite;
@@ -97,7 +98,7 @@ export default function (context): void {
 		}
 
 		newSiteEnvironmentProps.onGoBack = () => {
-			LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/add');
+			LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_CREATE_NEW);
 		};
 
 		return newSiteEnvironmentProps;
@@ -110,16 +111,16 @@ export default function (context): void {
 				<Step
 					key={'choose-site'}
 					number={1}
-					done={localHistory.location.pathname !== '/main/add-site/select-site-backup'}
-					active={localHistory.location.pathname === '/main/add-site/select-site-backup'}
+					done={localHistory.location.pathname !== LOCAL_ROUTES.ADD_SITE_BACKUP_SITE}
+					active={localHistory.location.pathname === LOCAL_ROUTES.ADD_SITE_BACKUP_SITE}
 				>
 					Select Site
 				</Step>
 				<Step
 					key={'choose-snapshot'}
 					number={2}
-					done={localHistory.location.pathname === '/main/add-site/environment'}
-					active={localHistory.location.pathname === '/main/add-site/select-snapshot'}
+					done={localHistory.location.pathname === LOCAL_ROUTES.ADD_SITE_ENVIRONMENT}
+					active={localHistory.location.pathname === LOCAL_ROUTES.ADD_SITE_BACKUP_SNAPSHOT}
 				>
 					Select Backup
 				</Step>
@@ -127,7 +128,7 @@ export default function (context): void {
 					key={'choose-environment'}
 					number={3}
 					done={false}
-					active={localHistory.location.pathname === '/main/add-site/environment'}
+					active={localHistory.location.pathname === LOCAL_ROUTES.ADD_SITE_ENVIRONMENT}
 				>
 					Setup Environment
 				</Step>
@@ -135,18 +136,18 @@ export default function (context): void {
 		);
 
 		switch (localHistory.location.pathname) {
-			case '/main/add-site':
+			case LOCAL_ROUTES.ADD_SITE_START:
 				breadcrumbsData.defaultStepper = () => null;
 				break;
-			case '/main/add-site/select-site-backup':
-			case '/main/add-site/select-snapshot':
+			case LOCAL_ROUTES.ADD_SITE_BACKUP_SITE:
+			case LOCAL_ROUTES.ADD_SITE_BACKUP_SNAPSHOT:
 				breadcrumbsData.defaultStepper = () => cloudBackupStepper();
 				break;
 		}
 
 		if (
 			siteSettings.cloudBackupMeta?.createdFromCloudBackup
-			&& localHistory.location.pathname === '/main/add-site/environment'
+			&& localHistory.location.pathname === LOCAL_ROUTES.ADD_SITE_ENVIRONMENT
 		) {
 			breadcrumbsData.defaultStepper = () => cloudBackupStepper();
 		}
@@ -164,7 +165,7 @@ export default function (context): void {
 		'NewSiteSite_AfterContent',
 		() => {
 			const goBack = () => {
-				LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site');
+				LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_START);
 			};
 			return (
 				<TextButton

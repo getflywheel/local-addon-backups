@@ -20,6 +20,7 @@ import { ErrorBannerContainer } from './ErrorBannerContainer';
 import styles from '../siteinfotools/SiteInfoToolsSection.scss';
 import secondStyles from './SelectSnapshot.scss';
 import virtualTableStyles from '../siteinfotools/SnapshotsTableList.scss';
+import { LOCAL_ROUTES } from '../../../constants';
 
 interface Props {
 	updateSiteSettings: any
@@ -83,14 +84,14 @@ export const SelectSnapshot = (props: Props) => {
 	};
 
 	const onContinue = () => {
-		LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/environment');
+		LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_ENVIRONMENT);
 	};
 
 	const onGoBack = () => {
 		store.dispatch(actions.setSelectedSnapshot(null));
 		store.dispatch(actions.setSelectedProvider(null));
 
-		LocalRenderer.sendIPCEvent('goToRoute', '/main/add-site/select-site-backup');
+		LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_BACKUP_SITE);
 	};
 
 	const onClickLoadMore = () => {
