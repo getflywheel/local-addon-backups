@@ -260,7 +260,7 @@ export const SnapshotsTableList = ({ site }: Props) => {
 	const {
 		isLoadingEnabledProviders,
 	} = useStoreSelector((state) => state.providers);
-
+	console.log('tylers snapshot log', snapshotsPlusBackingupPlaceholder);
 	if ((activePagingDetails?.isLoading && activePagingDetails.offset === 1) ||
 		isLoadingEnabledProviders
 	) {
