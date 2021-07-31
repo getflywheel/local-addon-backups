@@ -1,3 +1,5 @@
+@import '~@getflywheel/local-components/src/styles/_partials/index';
+
 .innerContainer {
 	width: 644px;
 	align-self: center;
@@ -100,4 +102,12 @@
 .loadMore {
 	margin-top: 30px;
 	justify-self: flex-end;
+}
+
+.SnapshotsTableList_LoadingCont {
+	display: flex;
+	height: 100%;
+	align-items: center;
+	margin-left: 55px;
+	@include theme-color-gray-else-gray25;
 }
