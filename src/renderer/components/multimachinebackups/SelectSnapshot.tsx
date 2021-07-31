@@ -48,7 +48,7 @@ export const SelectSnapshot = (props: Props) => {
 	 */
 	const headers: React.ComponentProps<typeof VirtualTable>['headers'] = [
 		{ key: 'radioselect', value: '', className: secondStyles.radioColumn },
-		{ key: 'created_at', value: 'Created', className: secondStyles.createdColumn },
+		{ key: 'createdAt', value: 'Created', className: secondStyles.createdColumn },
 		{ key: 'configObject', value: 'Description' },
 	];
 
@@ -132,7 +132,7 @@ export const SelectSnapshot = (props: Props) => {
 
 		switch (colKey) {
 			case 'radioselect': return renderRadioButton(rowData);
-			case 'created_at': return renderDate(cellData);
+			case 'createdAt': return renderDate(cellData);
 			case 'configObject': return cellData.description;
 		}
 		return (

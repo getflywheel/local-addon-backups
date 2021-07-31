@@ -13,8 +13,8 @@ import { AppState } from './store';
 
 const snapshotsEntityAdapter = createEntityAdapter<BackupSnapshot>({
 	selectId: (snapshot) => snapshot.id,
-	// regardless of the order received, do this additional sort by descending updated date/time
-	sortComparer: (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+	// regardless of the order received, do this additional sort by descending created date/time
+	sortComparer: (a, b) => (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
 });
 
 
@@ -109,9 +109,7 @@ export const multiMachineRestoreSlice = createSlice({
 				state.isLoading = true;
 			})
 			.addCase(requestSubsequentSnapshots.fulfilled, (state, action) => {
-				action.payload.snapshots.snapshots.forEach(
-					(snapshot: BackupSnapshot) => state.backupSnapshots.push(snapshot),
-				);
+				snapshotsEntityAdapter.upsertMany(state.backupSnapshots, action.payload.snapshots.snapshots);
 				state.isLoading = false;
 				state.currentSnapshotsPage = action.payload.snapshots.pagination.currentPage;
 				state.totalSnapshotsPages = action.payload.snapshots.pagination.lastPage;
