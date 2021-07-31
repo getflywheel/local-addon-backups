@@ -207,7 +207,7 @@ export default function (): void {
 				});
 
 				if (repoID) {
-					const snapshots = await getBackupSnapshotsByRepo(repoID, 3, paginationNumber);
+					const snapshots = await getBackupSnapshotsByRepo(repoID, SNAPSHOTS_PAGE_LIMIT, paginationNumber);
 
 					// Hub returns the "config" data as a single string, so we need to convert back to object
 					snapshots.snapshots.forEach((snapshot) => {

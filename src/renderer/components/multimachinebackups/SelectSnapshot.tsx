@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useRef} from 'react';
 import {
 	PrimaryButton,
 	Title,
@@ -21,7 +21,12 @@ import styles from '../siteinfotools/SiteInfoToolsSection.scss';
 import secondStyles from './SelectSnapshot.scss';
 import virtualTableStyles from '../siteinfotools/SnapshotsTableList.scss';
 import { LOCAL_ROUTES } from '../../../constants';
-import { selectMultiMachineActiveSiteSnapshots } from '../../store/multiMachineRestoreSlice';
+import {
+	selectMultiMachineActiveSiteSnapshots,
+	MULTI_MACHINE_SNAPSHOTS_HAS_MORE,
+	LOADING_MULTI_MACHINE_SNAPSHOTS,
+} from '../../store/multiMachineRestoreSlice';
+import useOnScreen from '../../helpers/useOnScreen';
 
 interface Props {
 	updateSiteSettings: any
@@ -37,12 +42,13 @@ export const SelectSnapshot = (props: Props) => {
 		selectedSite,
 		selectedSnapshot,
 		isLoading,
+		isLoadingMoreSnapshots,
 		individualSiteRepoProviders,
 		currentSnapshotsPage,
 		totalSnapshotsPages,
+		isErrored,
 	} = state;
 
-	console.log('snapshots: ', allSnapshots);
 	/**
 	 * The columns defined in order and with the intended header text.
 	 */
@@ -96,10 +102,6 @@ export const SelectSnapshot = (props: Props) => {
 		LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_BACKUP_SITE);
 	};
 
-	const onClickLoadMore = () => {
-		store.dispatch(actions.requestSubsequentSnapshots());
-	};
-
 	const continueDisabled = (selectedSnapshot === null);
 
 	const renderRadioButton = (snapshot: BackupSnapshot) => (
@@ -123,11 +125,49 @@ export const SelectSnapshot = (props: Props) => {
 		</div>
 	);
 
+	const LoadMoreWhenVisibleCell = () => {
+		const ref = useRef();
+		const isVisible = useOnScreen(ref);
+
+		if (isVisible && hasMore && !isLoading && !isErrored) {
+			// asynchronous get snapshots given the site and provider
+			store.dispatch(actions.requestSubsequentSnapshots());
+		}
+
+		return (
+			<div
+				ref={ref}
+				className={secondStyles.SnapshotsTableList_LoadingCont}
+			/>
+		);
+	};
+
 	const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 		const { colKey, cellData, isHeader, rowData } = dataArgs;
+		const snapshot = dataArgs.rowData as BackupSnapshot;
 
 		if (isHeader) {
 			return cellData;
+		}
+
+		if (snapshot.hash === MULTI_MACHINE_SNAPSHOTS_HAS_MORE) {
+			// don't render any cells other than the middle description/configObject one
+			if (colKey !== 'configObject') {
+				return null;
+			}
+
+			return <LoadMoreWhenVisibleCell />;
+		} if (snapshot.hash === LOADING_MULTI_MACHINE_SNAPSHOTS) {
+			// don't render any cells other than the middle description/configObject one
+			if (colKey !== 'configObject') {
+				return null;
+			}
+
+			return (
+				<div className={secondStyles.SnapshotsTableList_LoadingCont}>
+					<LoadingIndicator dots={3} />
+				</div>
+			);
 		}
 
 		switch (colKey) {
@@ -172,14 +212,6 @@ export const SelectSnapshot = (props: Props) => {
 								rowHeightSize={70}
 								rowHeaderHeightSize={'l'}
 							/>
-						}
-						{hasMore &&
-							<Button
-								className={secondStyles.loadMore}
-								onClick={onClickLoadMore}
-							>
-								Load more
-							</Button>
 						}
 						{!isLoading && !allSnapshots.length &&
 							<div className={secondStyles.noProviderState}>

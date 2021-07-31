@@ -17,6 +17,8 @@ const snapshotsEntityAdapter = createEntityAdapter<BackupSnapshot>({
 	sortComparer: (a, b) => (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
 });
 
+export const LOADING_MULTI_MACHINE_SNAPSHOTS = 'paging_is_loading_multi_machine_snapshots';
+export const MULTI_MACHINE_SNAPSHOTS_HAS_MORE = 'paging_has_more_multi_machine_snapshots';
 
 /**
  * State for multi-machine backup workflow.
@@ -32,6 +34,7 @@ export const multiMachineRestoreSlice = createSlice({
 		selectedSnapshot: null as BackupSnapshot,
 		selectedProvider: null as HubProviderRecord,
 		isLoading: false,
+		isLoadingMoreSnapshots: false,
 		isErrored: false,
 		activeError: null as SerializedError,
 		currentSnapshotsPage: null as number,
@@ -106,16 +109,16 @@ export const multiMachineRestoreSlice = createSlice({
 			})
 			// requestSubsequentSnapshots cases
 			.addCase(requestSubsequentSnapshots.pending, (state) => {
-				state.isLoading = true;
+				state.isLoadingMoreSnapshots = true;
 			})
 			.addCase(requestSubsequentSnapshots.fulfilled, (state, action) => {
 				snapshotsEntityAdapter.upsertMany(state.backupSnapshots, action.payload.snapshots.snapshots);
-				state.isLoading = false;
+				state.isLoadingMoreSnapshots = false;
 				state.currentSnapshotsPage = action.payload.snapshots.pagination.currentPage;
 				state.totalSnapshotsPages = action.payload.snapshots.pagination.lastPage;
 			})
 			.addCase(requestSubsequentSnapshots.rejected, (state) => {
-				state.isLoading = false;
+				state.isLoadingMoreSnapshots = false;
 			});
 	},
 });
@@ -127,6 +130,38 @@ const snapshotsEntityAdapterSnapshots = snapshotsEntityAdapter.getSelectors<AppS
 export const selectMultiMachineActiveSiteSnapshots = createSelector(
 	[
 		snapshotsEntityAdapterSnapshots.selectAll,
+		(state: AppState) => state.multiMachineRestore.currentSnapshotsPage,
+		(state: AppState) => state.multiMachineRestore.totalSnapshotsPages,
+		(state: AppState) => state.multiMachineRestore.isLoading,
+		(state: AppState) => state.multiMachineRestore.isLoadingMoreSnapshots,
 	],
-	(selectAll) => selectAll,
+	(
+		selectAll,
+		currentSnapshotsPage,
+		totalSnapshotsPages,
+		isLoading,
+		isLoadingMoreSnapshots,
+	) => {
+		const hasMore = currentSnapshotsPage < totalSnapshotsPages;
+
+		return [
+			...selectAll,
+			...(hasMore && !isLoading && !isLoadingMoreSnapshots
+				? [{
+					hash: MULTI_MACHINE_SNAPSHOTS_HAS_MORE,
+					id: -1,
+					repoID: -1,
+				} as BackupSnapshot]
+				: []
+			),
+			...(hasMore && isLoadingMoreSnapshots
+				? [{
+					hash: LOADING_MULTI_MACHINE_SNAPSHOTS,
+					id: -1,
+					repoID: -1,
+				} as BackupSnapshot]
+				: []
+			),
+		];
+	},
 );
