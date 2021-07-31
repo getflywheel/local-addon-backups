@@ -332,10 +332,11 @@ export async function getBackupSnapshotsByRepo (repoId: number, limit: number, o
 
 	return {
 		pagination: data?.backupSnapshots?.paginatorInfo,
-		snapshots: data?.backupSnapshots?.data?.map(({ repo_id: repoID, updated_at: updatedAt, ...rest }) => ({
+		snapshots: data?.backupSnapshots?.data?.map(({ repo_id: repoID, updated_at: updatedAt, created_at: createdAt, ...rest }) => ({
 			...rest,
 			repoID,
 			updatedAt,
+			createdAt,
 		})),
 	};
 }

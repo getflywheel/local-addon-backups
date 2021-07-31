@@ -89,6 +89,7 @@ export interface BackupSnapshot {
 	updatedAt?: number;
 	config?: string;
 	configObject?: GenericObject;
+	createdAt?: number;
 	siteId: string;
 }
 
