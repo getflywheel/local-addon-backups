@@ -48,7 +48,7 @@ export const BackupContents = (props: ModalContentsProps) => {
 	};
 
 	const onClickEditIgnore = async (site: Site) => {
-		const ignoreFilePath = getIgnoreFilePath(site);
+		const ignoreFilePath = await getIgnoreFilePath(site);
 		shell.openPath(ignoreFilePath);
 	};
 
