@@ -7,6 +7,7 @@ import { selectors } from '../../store/selectors';
 import styles from './ErrorBannerContainer.scss';
 import { SerializedError } from '@reduxjs/toolkit';
 import { MULTI_MACHINE_BACKUP_ERRORS } from '../../../constants';
+import { launchBrowserToHubBackups } from '../../helpers/launchBrowser';
 
 export const ErrorBannerContainer = () => {
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
@@ -20,19 +21,13 @@ export const ErrorBannerContainer = () => {
 	if (activeError) {
 		switch (activeError) {
 			case MULTI_MACHINE_BACKUP_ERRORS.NO_PROVIDERS_FOUND:
-				bannerText = activeError;
-				break;
 			case MULTI_MACHINE_BACKUP_ERRORS.NO_SITES_FOUND:
-				bannerText = activeError;
-				break;
 			case MULTI_MACHINE_BACKUP_ERRORS.NO_CONNECTED_PROVIDERS_FOR_SITE:
-				bannerText = activeError;
-				break;
 			case MULTI_MACHINE_BACKUP_ERRORS.NO_SNAPSHOTS_FOUND:
 				bannerText = activeError;
 				break;
 			default:
-				bannerText = 'We could not authenticate your connection. Please verify you are logged into your account and try again.' as SerializedError;
+				bannerText = MULTI_MACHINE_BACKUP_ERRORS.GENERIC_HUB_CONNECTION_ERROR as SerializedError;
 				break;
 		}
 	}
@@ -47,6 +42,8 @@ export const ErrorBannerContainer = () => {
 				variant='error'
 				icon='warning'
 				onDismiss={handleOnDismiss}
+				buttonText='Go to account'
+				buttonOnClick={launchBrowserToHubBackups}
 			>
 				{bannerText}
 			</Banner>

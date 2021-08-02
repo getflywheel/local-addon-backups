@@ -4,6 +4,7 @@ import {
 import type { BackupSite, BackupSnapshot, HubProviderRecord } from '../../types';
 import {
 	getSitesList,
+	getProvidersList,
 	getSnapshotList,
 	setMultiMachineProviderAndUpdateSnapshots,
 	requestSubsequentSnapshots,
@@ -65,10 +66,22 @@ export const multiMachineRestoreSlice = createSlice({
 			})
 			.addCase(getSitesList.fulfilled, (state, action) => {
 				state.isLoading = false;
-				state.backupProviders = action.payload.availableProviders;
 				state.backupSites = action.payload.allSites;
 			})
 			.addCase(getSitesList.rejected, (state, action) => {
+				state.isLoading = false;
+				state.isErrored = true;
+				state.activeError = action.payload;
+			})
+			// getProviderList cases
+			.addCase(getProvidersList.pending, (state) => {
+				state.isLoading = true;
+			})
+			.addCase(getProvidersList.fulfilled, (state, action) => {
+				state.isLoading = false;
+				state.backupProviders = action.payload.availableProviders;
+			})
+			.addCase(getProvidersList.rejected, (state, action) => {
 				state.isLoading = false;
 				state.isErrored = true;
 				state.activeError = action.payload;
@@ -97,7 +110,7 @@ export const multiMachineRestoreSlice = createSlice({
 			})
 			.addCase(setMultiMachineProviderAndUpdateSnapshots.fulfilled, (state, action) => {
 				state.isLoading = false;
-				state.backupSnapshots = action.payload.snapshots.snapshots;
+				snapshotsEntityAdapter.setAll(state.backupSnapshots, action.payload.snapshots.snapshots);
 				state.selectedProvider = action.payload.provider;
 				state.currentSnapshotsPage = action.payload.snapshots.pagination.currentPage;
 				state.totalSnapshotsPages = action.payload.snapshots.pagination.lastPage;

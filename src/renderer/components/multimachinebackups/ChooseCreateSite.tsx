@@ -1,22 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
 	PrimaryButton,
 	RadioBlock,
 	Title,
 	ProgressBar,
 	Banner,
+	Tooltip,
+	TextButton,
 } from '@getflywheel/local-components';
 import * as LocalRenderer from '@getflywheel/local/renderer';
 import { store, actions, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
 import styles from './ChooseCreateSite.scss';
 import { ErrorBannerContainer } from './ErrorBannerContainer';
-import { LOCAL_ROUTES } from '../../../constants';
+import { LOCAL_ROUTES, IPCASYNC_EVENTS } from '../../../constants';
+import { launchBrowserToHubBackups } from '../../helpers/launchBrowser';
 
 export const ChooseCreateSite = () => {
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
-	const { isLoading } = state;
+	const { isLoading, isErrored } = state;
 	const [radioState, setRadioState] = useState('createnew');
+	const [showBanner, setShowBanner] = useState(false);
+
+	useEffect(() => {
+		store.dispatch(actions.getProvidersList());
+		const getUserDataShowPromoBanner = async () => {
+			const showBanner = await LocalRenderer.ipcAsync(IPCASYNC_EVENTS.SHOULD_LOAD_PROMO_BANNER);
+
+			if (showBanner.show === true) {
+				setShowBanner(true);
+			}
+		};
+		getUserDataShowPromoBanner();
+	}, []);
 
 	const onContinue = () => {
 		if (radioState === 'createnew') {
@@ -28,8 +44,9 @@ export const ChooseCreateSite = () => {
 		}
 	};
 
-	const onPromoBannerDismiss = () => {
-		console.log('test');
+	const onPromoBannerDismiss = async () => {
+		await LocalRenderer.ipcAsync(IPCASYNC_EVENTS.REMOVE_PROMO_BANNER);
+		setShowBanner(false);
 	};
 
 	if (isLoading) {
@@ -45,7 +62,6 @@ export const ChooseCreateSite = () => {
 
 	return (
 		<>
-			<ErrorBannerContainer />
 			<div className="AddSiteContent">
 				<Title size="l" container={{ margin: 'l 0' }}>Select the type of site you want to add</Title>
 				<div className="Inner">
@@ -62,17 +78,38 @@ export const ChooseCreateSite = () => {
 								key: 'use-cloud-backup',
 								label: 'Restore a site from Cloud Backups Add-on',
 								className: 'TID_NewSiteEnvironment_RadioBlockItem_Custom',
+								disabled: isErrored,
+								container: {
+									element:
+									<Tooltip
+										className={styles.tooltip}
+										showDelay={2}
+										content={(
+											<div>
+												<p>Uh oh! You don’t have a
+													<br/>
+													storage provider
+													<br/>
+													connected to your account.
+												</p>
+												<TextButton onClick={launchBrowserToHubBackups}>Manage providers</TextButton>
+											</div>
+										)}
+										popperOffsetModifier={{ offset: [0, 10] }}
+										position="top"
+									/>,
+								},
 							},
 						}}
 					/>
-					<Banner
+					{showBanner && <Banner
 						className={styles.promoBanner}
 						variant="neutral"
 						onDismiss={onPromoBannerDismiss}
 						icon="none"
 					>
-						<p>&#127881; You can now restore a site from a Cloud Backup! Select to restore a site to get started.</p>
-					</Banner>
+						<p>&#127881;</p><p>You can now restore a site from a Cloud Backup! Select to restore a site to get started.</p>
+					</Banner>}
 				</div>
 				<PrimaryButton
 					className="Continue"
