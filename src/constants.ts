@@ -11,20 +11,23 @@ export const IPCASYNC_EVENTS = {
 	CHECK_FOR_DUPLICATE_NAME: 'backups:check-for-duplicate-sitename',
 	EDIT_BACKUP_DESCRIPTION: 'backups:edit-backup-description',
 	GET_ALL_SITES: 'backups:get-all-sites-for-user',
-	GET_ALL_SNAPSHOTS: 'backup:get-all-snapshots-for-site',
-	GET_REPOS_BY_SITE_ID: 'backup:get-repos-by-site-id',
-	MULTI_MACHINE_GET_AVAILABLE_PROVIDERS: 'backup:get-enabled-providers-multi-machine',
+	GET_ALL_SNAPSHOTS: 'backups:get-all-snapshots-for-site',
+	GET_REPOS_BY_SITE_ID: 'backups:get-repos-by-site-id',
+	MULTI_MACHINE_GET_AVAILABLE_PROVIDERS: 'backups:get-enabled-providers-multi-machine',
+	SHOULD_LOAD_PROMO_BANNER: 'backups:should-load-promo-banner',
+	REMOVE_PROMO_BANNER: 'backups:remove-promo-banner',
 };
 
 export const MULTI_MACHINE_BACKUP_ERRORS = {
 	// User has no connected backup providers on Hub
-	NO_PROVIDERS_FOUND: 'No providers found!',
+	NO_PROVIDERS_FOUND: 'No connected storage providers found for your Local account! Please connect at least one and try again.',
 	// User has not created any site backups on Hub
-	NO_SITES_FOUND: 'No sites found!',
+	NO_SITES_FOUND: 'No site backups found for your Local account user! Please create one or try another account.',
 	// User created a backup, and then disconnected the provider so the backups are inaccessible
-	NO_SNAPSHOTS_FOUND: 'No snapshots found!',
+	NO_SNAPSHOTS_FOUND: 'We couldn\'t find any backups created for this site. Please try another provider or Local account.',
 	// Same as above
 	NO_CONNECTED_PROVIDERS_FOR_SITE: 'No connected providers found for this site!',
+	GENERIC_HUB_CONNECTION_ERROR: 'We could not authenticate your connection. Please verify you are logged into your Local account and try again.',
 };
 
 export const LOCAL_ROUTES = {
@@ -34,6 +37,8 @@ export const LOCAL_ROUTES = {
 	ADD_SITE_ENVIRONMENT: '/main/add-site/environment',
 	ADD_SITE_CREATE_NEW: '/main/add-site/add',
 };
+
+export const SHOW_CLOUD_BACKUPS_PROMO_BANNER = 'showCloudBackupsPromoBanner';
 
 export const metaDataFileName = '.local-backups-site-meta-data.json';
 

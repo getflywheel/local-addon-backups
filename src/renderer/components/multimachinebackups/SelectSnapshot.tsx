@@ -188,15 +188,15 @@ export const SelectSnapshot = (props: Props) => {
 			<div className="AddSiteContent">
 				<Title size="l" container={{ margin: 'l 0' }}>Select a {selectedSite.name} Cloud Backup</Title>
 				<div className={secondStyles.innerContainer}>
-					<div className={secondStyles.dropdownPadding}>
+					{!isLoading && <div className={secondStyles.dropdownPadding}>
 						<ProviderDropdown
 							enabledProviders={individualSiteRepoProviders}
 							activeSiteProvider={selectedProvider}
 							multiMachineSelect={true}
 						/>
-					</div>
+					</div>}
 					<div className={secondStyles.virtualTablePlaceholder}>
-						{isLoading && <LoadingIndicator className={secondStyles.loading} dots={3}/>}
+						{isLoading && <LoadingIndicator big={true} className={secondStyles.loading} dots={3}/>}
 						{!isLoading && allSnapshots.length &&
 							<VirtualTable
 								className={virtualTableStyles.SnapshotsTableList_VirtualTable}

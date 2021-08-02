@@ -7,19 +7,27 @@ import * as LocalRenderer from '@getflywheel/local/renderer';
 import { BackupRepo, HubProviderRecord } from '../../types';
 
 
-const getSitesList = createAsyncThunk('multiMachineBackupsGetSites', async (_, { rejectWithValue }) => {
+const getProvidersList = createAsyncThunk('multiMachineBackupsGetProviders', async (_, { rejectWithValue }) => {
 	try {
-		const availableProviders = await ipcAsync(
+		const availableProviders = await LocalRenderer.ipcAsync(
 			IPCASYNC_EVENTS.MULTI_MACHINE_GET_AVAILABLE_PROVIDERS,
 		);
 
+		if (!availableProviders.length) {
+			return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_CONNECTED_PROVIDERS_FOR_SITE);
+		}
+
+		return { availableProviders };
+	} catch (error) {
+		return rejectWithValue(error.toString());
+	}
+});
+
+const getSitesList = createAsyncThunk('multiMachineBackupsGetSites', async (_, { rejectWithValue }) => {
+	try {
 		const allSites = await ipcAsync(
 			IPCASYNC_EVENTS.GET_ALL_SITES,
 		);
-
-		if (!availableProviders.length) {
-			return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_PROVIDERS_FOUND);
-		}
 
 		if (!allSites.length) {
 			return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_SITES_FOUND);
@@ -27,7 +35,7 @@ const getSitesList = createAsyncThunk('multiMachineBackupsGetSites', async (_, {
 
 		LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_BACKUP_SITE);
 
-		return { availableProviders, allSites };
+		return { allSites };
 	} catch (error) {
 		return rejectWithValue(error.toString());
 	}
@@ -130,6 +138,7 @@ const requestSubsequentSnapshots = createAsyncThunk('multiMachineBackupsRequestS
 
 export {
 	getSitesList,
+	getProvidersList,
 	getSnapshotList,
 	setMultiMachineProviderAndUpdateSnapshots,
 	requestSubsequentSnapshots,

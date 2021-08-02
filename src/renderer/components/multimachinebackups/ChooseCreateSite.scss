@@ -1,4 +1,16 @@
 .promoBanner {
 	margin-top: 50px;
 	border-radius: 4px;
+
+	span {
+		display: flex;
+	}
+}
+
+.radioBlock {
+	div > label {
+		display: flex !important;
+		flex-direction: column !important;
+		justify-content: center;
+	}
 }

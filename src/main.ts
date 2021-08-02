@@ -15,7 +15,7 @@ import { createBackup } from './main/services/backupService';
 import { restoreFromBackup } from './main/services/restoreService';
 import { getSiteDataFromDisk, hubProviderRecordToProvider } from './main/utils';
 import { cloneFromBackup } from './main/services/cloneFromBackupService';
-import { IPCASYNC_EVENTS } from './constants';
+import { IPCASYNC_EVENTS, SHOW_CLOUD_BACKUPS_PROMO_BANNER } from './constants';
 import { createIpcAsyncError, createIpcAsyncResult } from './helpers/createIpcAsyncResponse';
 import { getServiceContainer } from '@getflywheel/local/main';
 import { checkForDuplicateSiteName } from './helpers/checkForDuplicateSiteName';
@@ -220,6 +220,14 @@ export default function (): void {
 				return [];
 			},
 		},
+		{
+			channel: IPCASYNC_EVENTS.SHOULD_LOAD_PROMO_BANNER,
+			callback: async () => await LocalMain.UserData.get(SHOW_CLOUD_BACKUPS_PROMO_BANNER),
+		},
+		{
+			channel: IPCASYNC_EVENTS.REMOVE_PROMO_BANNER,
+			callback: async () => await LocalMain.UserData.remove(SHOW_CLOUD_BACKUPS_PROMO_BANNER),
+		},
 	];
 
 	listenerConfigs.forEach(({ channel, callback }) => {
@@ -256,4 +264,14 @@ export default function (): void {
 			}
 		},
 	);
+
+	LocalMain.HooksMain.addFilter('migrations', (defaultMigrations) => ({
+		...defaultMigrations,
+		cloudBackupsAddon: {
+			label: 'Cloud Backups Addon Migration',
+			migrate: () => {
+				LocalMain.UserData.set(SHOW_CLOUD_BACKUPS_PROMO_BANNER, { show: true });
+			},
+		},
+	}));
 }
