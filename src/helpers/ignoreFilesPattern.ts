@@ -23,7 +23,7 @@ export const getFilteredSiteFiles = (site: Site) => {
 
 // returns the path to the site specific ignore file for the site backup
 // handles copying the default ignore file into the site prior to site backup
-export const getIgnoreFilePath = (site: Site) => {
+export const getIgnoreFilePath = async (site: Site) => {
 	let defaultIgnoreFilePath = path.join(__dirname, '..', 'resources', 'default-ignore-file');
 
 	if (!fs.existsSync(defaultIgnoreFilePath)) {
@@ -32,7 +32,14 @@ export const getIgnoreFilePath = (site: Site) => {
 
 	const expandedSitePath = formatHomePath(site.path);
 
+	const formerLocalBackupsIgnoreFileName = '.localbackupaddonignore';
+
+	const formerIgnoreFilePath = path.join(expandedSitePath, formerLocalBackupsIgnoreFileName);
 	const ignoreFilePath = path.join(expandedSitePath, localBackupsIgnoreFileName);
+
+	if (fs.existsSync(formerIgnoreFilePath)) {
+		await fs.rename(formerIgnoreFilePath, ignoreFilePath);
+	}
 
 	if (!fs.existsSync(ignoreFilePath)) {
 		fs.copySync(defaultIgnoreFilePath, ignoreFilePath);

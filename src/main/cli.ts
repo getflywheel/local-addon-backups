@@ -223,7 +223,7 @@ export async function createSnapshot (site: Site, provider: Providers, encryptio
 		throw new Error(`No backup repo id found for ${site.name}`);
 	}
 
-	const ignoreFilePath = getIgnoreFilePath(site);
+	const ignoreFilePath = await getIgnoreFilePath(site);
 
 	const flags = [
 		'--json',
