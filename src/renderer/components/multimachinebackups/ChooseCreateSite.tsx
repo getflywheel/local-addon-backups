@@ -12,17 +12,20 @@ import * as LocalRenderer from '@getflywheel/local/renderer';
 import { store, actions, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
 import styles from './ChooseCreateSite.scss';
-import { ErrorBannerContainer } from './ErrorBannerContainer';
-import { LOCAL_ROUTES, IPCASYNC_EVENTS } from '../../../constants';
+import { LOCAL_ROUTES, IPCASYNC_EVENTS, MULTI_MACHINE_BACKUP_ERRORS } from '../../../constants';
 import { launchBrowserToHubBackups } from '../../helpers/launchBrowser';
 
 export const ChooseCreateSite = () => {
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
-	const { isLoading, isErrored } = state;
+	const { isLoading, providerIsErrored, activeError } = state;
 	const [radioState, setRadioState] = useState('createnew');
 	const [showBanner, setShowBanner] = useState(false);
+	const noProvidersFound = activeError === MULTI_MACHINE_BACKUP_ERRORS.NO_CONNECTED_PROVIDERS_FOR_SITE;
+	const noConnectionToHub = activeError === MULTI_MACHINE_BACKUP_ERRORS.GENERIC_HUB_CONNECTION_ERROR;
 
 	useEffect(() => {
+		store.dispatch(actions.setProviderIsErrored(null));
+		store.dispatch(actions.setActiveError(null));
 		store.dispatch(actions.getProvidersList());
 		const getUserDataShowPromoBanner = async () => {
 			const showBanner = await LocalRenderer.ipcAsync(IPCASYNC_EVENTS.SHOULD_LOAD_PROMO_BANNER);
@@ -78,26 +81,35 @@ export const ChooseCreateSite = () => {
 								key: 'use-cloud-backup',
 								label: 'Restore a site from Cloud Backups Add-on',
 								className: 'TID_NewSiteEnvironment_RadioBlockItem_Custom',
-								disabled: isErrored,
+								disabled: providerIsErrored,
 								container: {
 									element:
-									<Tooltip
-										className={styles.tooltip}
-										showDelay={2}
-										content={(
-											<div>
-												<p>Uh oh! You don’t have a
-													<br/>
-													storage provider
-													<br/>
-													connected to your account.
-												</p>
-												<TextButton onClick={launchBrowserToHubBackups}>Manage providers</TextButton>
-											</div>
-										)}
-										popperOffsetModifier={{ offset: [0, 10] }}
-										position="top"
-									/>,
+									(providerIsErrored
+										? <Tooltip
+											className={styles.tooltip}
+											showDelay={2}
+											content={(
+												<div>
+													{noProvidersFound &&
+													<p>Uh oh! You don’t have a
+														<br/>
+														storage provider
+														<br/>
+														connected to your account.
+													</p>}
+													{noConnectionToHub &&
+													<p>Uh oh! We couldn't connect
+														<br/>
+														to your Local account.
+													</p>}
+													<TextButton onClick={launchBrowserToHubBackups}>Manage providers</TextButton>
+												</div>
+											)}
+											popperOffsetModifier={{ offset: [0, 12] }}
+											position="top"
+										/>
+										: <></>
+									),
 								},
 							},
 						}}

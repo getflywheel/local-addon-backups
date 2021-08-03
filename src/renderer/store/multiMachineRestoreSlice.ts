@@ -37,6 +37,7 @@ export const multiMachineRestoreSlice = createSlice({
 		isLoading: false,
 		isLoadingMoreSnapshots: false,
 		isErrored: false,
+		providerIsErrored: false,
 		activeError: null as SerializedError,
 		currentSnapshotsPage: null as number,
 		totalSnapshotsPages: null as number,
@@ -56,6 +57,14 @@ export const multiMachineRestoreSlice = createSlice({
 		},
 		setIsErrored: (state, action) => {
 			state.isErrored = action.payload;
+			return state;
+		},
+		setProviderIsErrored: (state, action) => {
+			state.providerIsErrored = action.payload;
+			return state;
+		},
+		setActiveError: (state, action) => {
+			state.activeError = action.payload;
 			return state;
 		},
 	},
@@ -83,7 +92,7 @@ export const multiMachineRestoreSlice = createSlice({
 			})
 			.addCase(getProvidersList.rejected, (state, action) => {
 				state.isLoading = false;
-				state.isErrored = true;
+				state.providerIsErrored = true;
 				state.activeError = action.payload;
 			})
 			// getSnapshotList cases
