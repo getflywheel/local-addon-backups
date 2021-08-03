@@ -13,7 +13,12 @@ const getProvidersList = createAsyncThunk('multiMachineBackupsGetProviders', asy
 			IPCASYNC_EVENTS.MULTI_MACHINE_GET_AVAILABLE_PROVIDERS,
 		);
 
-		if (!availableProviders.length) {
+		// presence of a message on the response object means we got a connection error
+		if (availableProviders.message) {
+			return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.GENERIC_HUB_CONNECTION_ERROR);
+		}
+
+		if (!availableProviders[0]) {
 			return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_CONNECTED_PROVIDERS_FOR_SITE);
 		}
 
@@ -29,11 +34,11 @@ const getSitesList = createAsyncThunk('multiMachineBackupsGetSites', async (_, {
 			IPCASYNC_EVENTS.GET_ALL_SITES,
 		);
 
+		LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_BACKUP_SITE);
+
 		if (!allSites.length) {
 			return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_SITES_FOUND);
 		}
-
-		LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_BACKUP_SITE);
 
 		return { allSites };
 	} catch (error) {
