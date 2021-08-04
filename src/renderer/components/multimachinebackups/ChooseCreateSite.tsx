@@ -30,7 +30,7 @@ export const ChooseCreateSite = () => {
 		const getUserDataShowPromoBanner = async () => {
 			const showBanner = await LocalRenderer.ipcAsync(IPCASYNC_EVENTS.SHOULD_LOAD_PROMO_BANNER);
 
-			if (showBanner.show === true) {
+			if (showBanner && showBanner?.show === true) {
 				setShowBanner(true);
 			}
 		};
@@ -91,18 +91,21 @@ export const ChooseCreateSite = () => {
 											content={(
 												<div>
 													{noProvidersFound &&
-													<p>Uh oh! You don’t have a
+													<p className={styles.extraPadding}>
+														Uh oh!
 														<br/>
+														You don’t have a
 														storage provider
-														<br/>
 														connected to your account.
 													</p>}
 													{noConnectionToHub &&
-													<p>Uh oh! We couldn't connect
+													<p className={styles.extraPadding}>
+														Uh oh!
 														<br/>
+														We couldn't connect
 														to your Local account.
 													</p>}
-													<TextButton onClick={launchBrowserToHubBackups}>Manage providers</TextButton>
+													<TextButton onClick={launchBrowserToHubBackups}>Manage Account</TextButton>
 												</div>
 											)}
 											popperOffsetModifier={{ offset: [0, 12] }}

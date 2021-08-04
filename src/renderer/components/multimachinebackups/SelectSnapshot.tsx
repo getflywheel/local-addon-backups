@@ -24,7 +24,6 @@ import { LOCAL_ROUTES } from '../../../constants';
 import {
 	selectMultiMachineActiveSiteSnapshots,
 	MULTI_MACHINE_SNAPSHOTS_HAS_MORE,
-	LOADING_MULTI_MACHINE_SNAPSHOTS,
 } from '../../store/multiMachineRestoreSlice';
 import useOnScreen from '../../helpers/useOnScreen';
 
@@ -53,18 +52,27 @@ export const SelectSnapshot = (props: Props) => {
 	 * The columns defined in order and with the intended header text.
 	 */
 	const headers: React.ComponentProps<typeof VirtualTable>['headers'] = [
-		{ key: 'radioselect', value: '', className: secondStyles.radioColumn },
-		{ key: 'createdAt', value: 'Created', className: secondStyles.createdColumn },
+		{ key: 'radioselect', value: '', className: classnames(
+			secondStyles.radioColumn,
+		) },
+		{ key: 'createdAt', value: 'Created', className: classnames(
+			secondStyles.createdColumn,
+		) },
 		{ key: 'configObject', value: 'Description' },
 	];
 
 	const hasMore = currentSnapshotsPage < totalSnapshotsPages;
 
-	const renderDate = (createdAt: string) => {
+	const renderDate = (createdAt: string, rowSelected: boolean) => {
 		const [monDayYear, time] = DateUtils.formatDate(createdAt);
-
 		return (
-			<div className={styles.SnapshotsTableList_DateCell}>
+			<div className={classnames(
+				secondStyles.createdColumn,
+				styles.SnapshotsTableList_DateCell,
+				(!rowSelected)
+					? secondStyles.faded
+					: undefined
+			)}>
 				<div className={virtualTableStyles.SnapshotsTableList_DateCell_MonDayYear}>
 					{ monDayYear }
 				</div>
@@ -75,8 +83,8 @@ export const SelectSnapshot = (props: Props) => {
 		);
 	};
 
-	const onRadioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		const snapshotHash = event.currentTarget.value;
+	const onRowSelect = (dataArgs: IVirtualTableCellRendererDataArgs) => {
+		const snapshotHash = dataArgs.rowData.hash;
 		const selectedSnapshot = allSnapshots.find((snapshot) => snapshotHash === snapshot.hash);
 		store.dispatch(actions.setSelectedSnapshot(selectedSnapshot));
 
@@ -105,7 +113,7 @@ export const SelectSnapshot = (props: Props) => {
 	const continueDisabled = (selectedSnapshot === null);
 
 	const renderRadioButton = (snapshot: BackupSnapshot) => (
-		<div>
+		<div className={secondStyles.radioColumn}>
 			<label className={classnames(
 				secondStyles.radio,
 				secondStyles.radio__before,
@@ -115,7 +123,6 @@ export const SelectSnapshot = (props: Props) => {
 						type='radio'
 						name='snapshotSelect'
 						value={snapshot.hash}
-						onChange={(value) => onRadioChange(value)}
 						checked={selectedSnapshot ? selectedSnapshot.hash === snapshot.hash : false}
 					/>
 					<span className={secondStyles.radio__control}></span>
@@ -142,9 +149,20 @@ export const SelectSnapshot = (props: Props) => {
 		);
 	};
 
+	const renderRow = (dataArgs: IVirtualTableCellRendererDataArgs) => (
+		<div
+			className={secondStyles.rowRenderer}
+			onClick={() => onRowSelect(dataArgs)}
+		>
+			{ dataArgs.children }
+		</div>
+	);
+
 	const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 		const { colKey, cellData, isHeader, rowData } = dataArgs;
 		const snapshot = dataArgs.rowData as BackupSnapshot;
+		const currentSnapshotRowHash = dataArgs.rowData?.hash;
+		const rowSelected = currentSnapshotRowHash === selectedSnapshot?.hash;
 
 		if (isHeader) {
 			return cellData;
@@ -152,32 +170,30 @@ export const SelectSnapshot = (props: Props) => {
 
 		if (snapshot.hash === MULTI_MACHINE_SNAPSHOTS_HAS_MORE) {
 			// don't render any cells other than the middle description/configObject one
-			if (colKey !== 'configObject') {
+			if (colKey !== 'createdAt') {
 				return null;
 			}
 
 			return <LoadMoreWhenVisibleCell />;
-		} if (snapshot.hash === LOADING_MULTI_MACHINE_SNAPSHOTS) {
-			// don't render any cells other than the middle description/configObject one
-			if (colKey !== 'configObject') {
-				return null;
-			}
-
-			return (
-				<div className={secondStyles.SnapshotsTableList_LoadingCont}>
-					<LoadingIndicator dots={3} />
-				</div>
-			);
 		}
 
 		switch (colKey) {
 			case 'radioselect': return renderRadioButton(rowData);
-			case 'createdAt': return renderDate(cellData);
-			case 'configObject': return cellData.description;
+			case 'createdAt': return renderDate(cellData, rowSelected);
+			case 'configObject':
+				return (
+					<div className={
+						(!rowSelected)
+							? secondStyles.faded
+							: undefined
+					}>
+						{cellData.description}
+					</div>
+				);
 		}
 		return (
 			<div>
-				{ dataArgs.cellData }
+				{ cellData }
 			</div>
 		);
 	};
@@ -186,7 +202,7 @@ export const SelectSnapshot = (props: Props) => {
 		<>
 			<ErrorBannerContainer />
 			<div className="AddSiteContent">
-				<Title size="l" container={{ margin: 'l 0' }}>Select a {selectedSite.name} Cloud Backup</Title>
+				<Title size="l" container={{ margin: 'l 0' }}>Select a {selectedSite?.name} Cloud Backup</Title>
 				<div className={secondStyles.innerContainer}>
 					{!isLoading && <div className={secondStyles.dropdownPadding}>
 						<ProviderDropdown
@@ -201,10 +217,12 @@ export const SelectSnapshot = (props: Props) => {
 							<VirtualTable
 								className={virtualTableStyles.SnapshotsTableList_VirtualTable}
 								cellRenderer={renderCell}
+								rowRenderer={renderRow}
 								data={allSnapshots}
 								extraData={{
 									selectedSite,
 									selectedProvider,
+									selectedSnapshot,
 								}}
 								headers={headers}
 								headersCapitalize={'none'}
@@ -218,6 +236,11 @@ export const SelectSnapshot = (props: Props) => {
 								No storage provider connected.
 							</div>
 						}
+					</div>
+					<div className={secondStyles.loadingMoreSnapshotsContainer}>
+						<div className={secondStyles.SnapshotsTableList_LoadingCont}>
+							{isLoadingMoreSnapshots && <LoadingIndicator dots={3} />}
+						</div>
 					</div>
 				</div>
 				{/* wrap button in tooltip if continue is disabled */}
