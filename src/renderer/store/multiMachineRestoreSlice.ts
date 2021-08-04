@@ -43,6 +43,14 @@ export const multiMachineRestoreSlice = createSlice({
 		totalSnapshotsPages: null as number,
 	},
 	reducers: {
+		resetMultiMachineRestoreState: (state) => {
+			state.backupSites = [];
+			state.selectedSite = null as BackupSite;
+			state.selectedSnapshot = null as BackupSnapshot;
+			state.isErrored = false;
+			state.activeError = null as SerializedError;
+			return state;
+		},
 		setSelectedSite: (state, action) => {
 			state.selectedSite = action.payload;
 			return state;
@@ -120,6 +128,7 @@ export const multiMachineRestoreSlice = createSlice({
 			.addCase(setMultiMachineProviderAndUpdateSnapshots.fulfilled, (state, action) => {
 				state.isLoading = false;
 				snapshotsEntityAdapter.setAll(state.backupSnapshots, action.payload.snapshots.snapshots);
+				state.selectedSnapshot = null;
 				state.selectedProvider = action.payload.provider;
 				state.currentSnapshotsPage = action.payload.snapshots.pagination.currentPage;
 				state.totalSnapshotsPages = action.payload.snapshots.pagination.lastPage;
@@ -171,14 +180,6 @@ export const selectMultiMachineActiveSiteSnapshots = createSelector(
 			...(hasMore && !isLoading && !isLoadingMoreSnapshots
 				? [{
 					hash: MULTI_MACHINE_SNAPSHOTS_HAS_MORE,
-					id: -1,
-					repoID: -1,
-				} as BackupSnapshot]
-				: []
-			),
-			...(hasMore && isLoadingMoreSnapshots
-				? [{
-					hash: LOADING_MULTI_MACHINE_SNAPSHOTS,
 					id: -1,
 					repoID: -1,
 				} as BackupSnapshot]
