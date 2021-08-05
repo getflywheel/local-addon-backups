@@ -60,6 +60,7 @@ export default function (context): void {
 		return statuses;
 	});
 
+	// add new routes and components to Local core
 	hooks.addFilter('AddSiteIndexJS:RoutesArray', (routes, path) => {
 		routes.forEach((route) => {
 			if (route.path === `${path}/`) {
@@ -76,6 +77,7 @@ export default function (context): void {
 		return routes;
 	});
 
+	// optionally modify NewSiteEnvironment component functionality in Local core
 	hooks.addFilter('AddSiteIndexJS:NewSiteEnvironment', (newSiteEnvironmentProps) => {
 		if (newSiteEnvironmentProps.siteSettings.cloudBackupMeta?.createdFromCloudBackup) {
 			const continueCreateSite = () => {
@@ -104,6 +106,7 @@ export default function (context): void {
 		return newSiteEnvironmentProps;
 	});
 
+	// add a new breadcrumbs stepper to the Add Site user flow
 	hooks.addFilter('AddSiteIndexJS:RenderBreadcrumbs', (breadcrumbsData) => {
 		const { localHistory, siteSettings } = breadcrumbsData;
 		const cloudBackupStepper = () => (
@@ -155,18 +158,25 @@ export default function (context): void {
 		return breadcrumbsData;
 	});
 
-	hooks.addFilter('AddSiteIndexJS:RenderCloseButton', (closeButtonData) => () => (
-		<CloseButtonHOC
-			onClose={closeButtonData.onCloseButton()}
-		/>
-	));
+	// modify the "close button" functionality for the Add Site user flow
+	hooks.addFilter('AddSiteIndexJS:RenderCloseButton', (closeButtonData) => {
+		closeButtonData.closeButton = () => (
+			<CloseButtonHOC
+				onClose={closeButtonData.onCloseButton()}
+			/>
+		);
 
+		return closeButtonData;
+	});
+
+	// add a "go back" button to the first step in the default Add Site user flow
 	hooks.addContent(
 		'NewSiteSite_AfterContent',
 		() => {
 			const goBack = () => {
 				LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_START);
 			};
+
 			return (
 				<TextButton
 					className="GoBack"

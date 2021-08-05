@@ -1,10 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { IPCASYNC_EVENTS, LOCAL_ROUTES, MULTI_MACHINE_BACKUP_ERRORS } from '../../constants';
+import * as LocalRenderer from '@getflywheel/local/renderer';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import type { AppState } from './store';
-
-import * as LocalRenderer from '@getflywheel/local/renderer';
 import { BackupRepo, HubProviderRecord } from '../../types';
+import { IPCASYNC_EVENTS, LOCAL_ROUTES, MULTI_MACHINE_BACKUP_ERRORS } from '../../constants';
 
 
 const getProvidersList = createAsyncThunk('multiMachineBackupsGetProviders', async (_, { rejectWithValue }) => {
@@ -34,6 +33,7 @@ const getSitesList = createAsyncThunk('multiMachineBackupsGetSites', async (_, {
 			IPCASYNC_EVENTS.GET_ALL_SITES,
 		);
 
+		// todo - tyler - refactor to remove this logic from the thunk actions
 		LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_BACKUP_SITE);
 
 		if (!allSites.length) {
@@ -53,13 +53,14 @@ const getSnapshotList = createAsyncThunk('multiMachineBackupsGetSnapshots', asyn
 		const state = getState() as AppState;
 		const { backupProviders, selectedSite } = state.multiMachineRestore;
 
-		// query repo by site id
+		// return all repos that have a backup of the selected site's ID
 		const siteRepos = await ipcAsync(
 			IPCASYNC_EVENTS.GET_REPOS_BY_SITE_ID,
 			selectedSite.id,
 		);
 
-		// determine if the site the user has selected has snapshots on multiple providers
+		// check all available providers to see if they match the siteRepos
+		// we only want to return the providers that have a backup of the selected site
 		const individualSiteProviders = backupProviders.filter((provider) => {
 			const matchedRepoToProvider = siteRepos.find((repo: BackupRepo) => repo.providerID === provider.id);
 			if (matchedRepoToProvider) {
