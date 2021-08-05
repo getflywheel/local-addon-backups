@@ -1,5 +1,4 @@
 import { createSelector } from '@reduxjs/toolkit';
-import state from '../../main/services/state';
 import { AppState, store } from './store';
 
 /**

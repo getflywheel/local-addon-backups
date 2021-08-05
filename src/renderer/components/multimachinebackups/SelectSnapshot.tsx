@@ -1,4 +1,4 @@
-import React, {useRef} from 'react';
+import React, { useRef } from 'react';
 import {
 	PrimaryButton,
 	Title,
@@ -7,7 +7,6 @@ import {
 	LoadingIndicator,
 	TextButton,
 	Tooltip,
-	Button,
 } from '@getflywheel/local-components';
 import classnames from 'classnames';
 import { store, actions, useStoreSelector } from '../../store/store';
@@ -17,15 +16,16 @@ import type { BackupSnapshot } from '../../../types';
 import DateUtils from '../../helpers/DateUtils';
 import { ProviderDropdown } from '../siteinfotools/ProviderDropdown';
 import { ErrorBannerContainer } from './ErrorBannerContainer';
-import styles from '../siteinfotools/SiteInfoToolsSection.scss';
-import secondStyles from './SelectSnapshot.scss';
-import virtualTableStyles from '../siteinfotools/SnapshotsTableList.scss';
 import { LOCAL_ROUTES } from '../../../constants';
 import {
 	selectMultiMachineActiveSiteSnapshots,
 	MULTI_MACHINE_SNAPSHOTS_HAS_MORE,
 } from '../../store/multiMachineRestoreSlice';
 import useOnScreen from '../../helpers/useOnScreen';
+
+import styles from './SelectSnapshot.scss';
+import siteInfoToolsStyles from '../siteinfotools/SiteInfoToolsSection.scss';
+import virtualTableStyles from '../siteinfotools/SnapshotsTableList.scss';
 
 interface Props {
 	updateSiteSettings: any
@@ -53,10 +53,10 @@ export const SelectSnapshot = (props: Props) => {
 	 */
 	const headers: React.ComponentProps<typeof VirtualTable>['headers'] = [
 		{ key: 'radioselect', value: '', className: classnames(
-			secondStyles.radioColumn,
+			styles.radioColumn,
 		) },
 		{ key: 'createdAt', value: 'Created', className: classnames(
-			secondStyles.createdColumn,
+			styles.createdColumn,
 		) },
 		{ key: 'configObject', value: 'Description' },
 	];
@@ -67,10 +67,10 @@ export const SelectSnapshot = (props: Props) => {
 		const [monDayYear, time] = DateUtils.formatDate(createdAt);
 		return (
 			<div className={classnames(
-				secondStyles.createdColumn,
-				styles.SnapshotsTableList_DateCell,
+				styles.createdColumn,
+				siteInfoToolsStyles.SnapshotsTableList_DateCell,
 				(!rowSelected)
-					? secondStyles.faded
+					? styles.faded
 					: undefined
 			)}>
 				<div className={virtualTableStyles.SnapshotsTableList_DateCell_MonDayYear}>
@@ -113,45 +113,46 @@ export const SelectSnapshot = (props: Props) => {
 	const continueDisabled = (selectedSnapshot === null);
 
 	const renderRadioButton = (snapshot: BackupSnapshot) => (
-		<div className={secondStyles.radioColumn}>
+		<div className={styles.radioColumn}>
 			<label className={classnames(
-				secondStyles.radio,
-				secondStyles.radio__before,
+				styles.radio,
+				styles.radio__before,
 			)}>
-				<span className={secondStyles.radio__input}>
+				<span className={styles.radio__input}>
 					<input
 						type='radio'
 						name='snapshotSelect'
 						value={snapshot.hash}
 						checked={selectedSnapshot ? selectedSnapshot.hash === snapshot.hash : false}
 					/>
-					<span className={secondStyles.radio__control}></span>
+					<span className={styles.radio__control}></span>
 				</span>
-				<span className={secondStyles.radio__label}></span>
+				<span className={styles.radio__label}></span>
 			</label>
 		</div>
 	);
+
 
 	const LoadMoreWhenVisibleCell = () => {
 		const ref = useRef();
 		const isVisible = useOnScreen(ref);
 
 		if (isVisible && hasMore && !isLoading && !isErrored) {
-			// asynchronous get snapshots given the site and provider
 			store.dispatch(actions.requestSubsequentSnapshots());
 		}
 
 		return (
 			<div
 				ref={ref}
-				className={secondStyles.SnapshotsTableList_LoadingCont}
+				className={styles.SnapshotsTableList_LoadingCont}
 			/>
 		);
 	};
 
+	// wrap each row in a click event handler that will save snapshot to state
 	const renderRow = (dataArgs: IVirtualTableCellRendererDataArgs) => (
 		<div
-			className={secondStyles.rowRenderer}
+			className={styles.rowRenderer}
 			onClick={() => onRowSelect(dataArgs)}
 		>
 			{ dataArgs.children }
@@ -168,6 +169,7 @@ export const SelectSnapshot = (props: Props) => {
 			return cellData;
 		}
 
+		// responsible for the "auto load more snapshots" functionality
 		if (snapshot.hash === MULTI_MACHINE_SNAPSHOTS_HAS_MORE) {
 			// don't render any cells other than the middle description/configObject one
 			if (colKey !== 'createdAt') {
@@ -184,7 +186,7 @@ export const SelectSnapshot = (props: Props) => {
 				return (
 					<div className={
 						(!rowSelected)
-							? secondStyles.faded
+							? styles.faded
 							: undefined
 					}>
 						{cellData.description}
@@ -203,16 +205,18 @@ export const SelectSnapshot = (props: Props) => {
 			<ErrorBannerContainer />
 			<div className="AddSiteContent">
 				<Title size="l" container={{ margin: 'l 0' }}>Select a {selectedSite?.name} Cloud Backup</Title>
-				<div className={secondStyles.innerContainer}>
-					{!isLoading && <div className={secondStyles.dropdownPadding}>
+				<div className={styles.innerContainer}>
+
+					{!isLoading && <div className={styles.dropdownPadding}>
 						<ProviderDropdown
 							enabledProviders={individualSiteRepoProviders}
 							activeSiteProvider={selectedProvider}
 							multiMachineSelect={true}
 						/>
 					</div>}
-					<div className={secondStyles.virtualTablePlaceholder}>
-						{isLoading && <LoadingIndicator big={true} className={secondStyles.loading} dots={3}/>}
+
+					<div className={styles.virtualTablePlaceholder}>
+						{isLoading && <LoadingIndicator big={true} className={styles.loading} dots={3}/>}
 						{!isLoading && allSnapshots.length &&
 							<VirtualTable
 								className={virtualTableStyles.SnapshotsTableList_VirtualTable}
@@ -232,22 +236,24 @@ export const SelectSnapshot = (props: Props) => {
 							/>
 						}
 						{!isLoading && !allSnapshots.length &&
-							<div className={secondStyles.noProviderState}>
+							<div className={styles.noProviderState}>
 								No storage provider connected.
 							</div>
 						}
 					</div>
-					<div className={secondStyles.loadingMoreSnapshotsContainer}>
-						<div className={secondStyles.SnapshotsTableList_LoadingCont}>
+
+					<div className={styles.loadingMoreSnapshotsContainer}>
+						<div className={styles.SnapshotsTableList_LoadingCont}>
 							{isLoadingMoreSnapshots && <LoadingIndicator dots={3} />}
 						</div>
 					</div>
+
 				</div>
 				{/* wrap button in tooltip if continue is disabled */}
 				{continueDisabled
 					?
 					<Tooltip
-						className={secondStyles.tooltip}
+						className={styles.tooltip}
 						content={(
 							<>
 								Please select a backup before continuing.

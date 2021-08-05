@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import shortid from 'shortid';
 import {
 	PrimaryButton,
@@ -14,7 +14,7 @@ import path from 'path';
 import { BackupSite, NewSiteInfoWithCloudMeta } from '../../../types';
 import { ErrorBannerContainer } from './ErrorBannerContainer';
 import styles from './SelectSiteBackup.scss';
-import { IPCASYNC_EVENTS, LOCAL_ROUTES } from '../../../constants';
+import { LOCAL_ROUTES } from '../../../constants';
 
 interface Props {
 	siteSettings: NewSiteInfoWithCloudMeta
@@ -31,6 +31,7 @@ export const SelectSiteBackup = (props: Props) => {
 
 	let flySelectSites: { [value: string]: string; } = {};
 
+	// create object required for select dropdown component
 	backupSites.forEach((site) => {
 		flySelectSites = {
 			...flySelectSites,
@@ -40,7 +41,6 @@ export const SelectSiteBackup = (props: Props) => {
 	});
 
 	const generateSiteSettingsData = (site: BackupSite) => {
-		// todo - tyler - check with design to see if we want to implement a site name field instead of generating a hash for uniqueness
 		const formattedSiteName = `${formatSiteNicename(site.name)}-${shortid.generate()}`;
 
 		const formattedSiteDomain = `${formattedSiteName}${defaultLocalSettings['new-site-defaults'].tld}`;
@@ -61,7 +61,6 @@ export const SelectSiteBackup = (props: Props) => {
 	const onSiteSelect = async (siteUUID: string) => {
 		const site: BackupSite = backupSites.find((site) => siteUUID === site.uuid);
 
-		// save site object to redux
 		store.dispatch(actions.setSelectedSite(site));
 
 		const newSiteSettings = generateSiteSettingsData(site);

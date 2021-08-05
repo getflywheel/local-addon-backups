@@ -18,7 +18,6 @@ const snapshotsEntityAdapter = createEntityAdapter<BackupSnapshot>({
 	sortComparer: (a, b) => (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
 });
 
-export const LOADING_MULTI_MACHINE_SNAPSHOTS = 'paging_is_loading_multi_machine_snapshots';
 export const MULTI_MACHINE_SNAPSHOTS_HAS_MORE = 'paging_has_more_multi_machine_snapshots';
 
 /**
@@ -27,20 +26,27 @@ export const MULTI_MACHINE_SNAPSHOTS_HAS_MORE = 'paging_has_more_multi_machine_s
 export const multiMachineRestoreSlice = createSlice({
 	name: 'multiMachineRestore',
 	initialState: {
+		// sites
 		backupSites: [] as BackupSite[],
-		backupSnapshots: snapshotsEntityAdapter.getInitialState(),
-		backupProviders: [] as HubProviderRecord[],
-		individualSiteRepoProviders: [] as HubProviderRecord[],
 		selectedSite: null as BackupSite,
+
+		// snapshots
+		backupSnapshots: snapshotsEntityAdapter.getInitialState(),
 		selectedSnapshot: null as BackupSnapshot,
-		selectedProvider: null as HubProviderRecord,
-		isLoading: false,
 		isLoadingMoreSnapshots: false,
-		isErrored: false,
-		providerIsErrored: false,
-		activeError: null as SerializedError,
 		currentSnapshotsPage: null as number,
 		totalSnapshotsPages: null as number,
+
+		//providers
+		backupProviders: [] as HubProviderRecord[],
+		individualSiteRepoProviders: [] as HubProviderRecord[],
+		selectedProvider: null as HubProviderRecord,
+		providerIsErrored: false,
+
+		// general
+		isLoading: false,
+		isErrored: false,
+		activeError: null as SerializedError,
 	},
 	reducers: {
 		resetMultiMachineRestoreState: (state) => {
@@ -175,6 +181,8 @@ export const selectMultiMachineActiveSiteSnapshots = createSelector(
 	) => {
 		const hasMore = currentSnapshotsPage < totalSnapshotsPages;
 
+		// if hub returns multiple pages of snapshots
+		// append a blank snapshot object with a unique hash to indicate this fact
 		return [
 			...selectAll,
 			...(hasMore && !isLoading && !isLoadingMoreSnapshots

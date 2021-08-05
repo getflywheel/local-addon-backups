@@ -1,13 +1,11 @@
 import * as Local from '@getflywheel/local';
 import * as LocalMain from '@getflywheel/local/main';
-import type { BackupSnapshot, HubOAuthProviders, Providers, Site, SiteMetaData } from './types';
-import { HubOAuthProviders as HubProviderNames, Providers as ProviderNames } from './types';
+import type { BackupSnapshot, HubOAuthProviders, Providers, Site, SiteMetaData, HubProviderRecord } from './types';
 import {
 	getEnabledBackupProviders,
 	getBackupReposByProviderID,
 	getBackupSnapshotsByRepo,
 	updateBackupSnapshot,
-	getAllBackupSites,
 	getBackupReposBySiteID,
 	getBackupSitesByRepoID,
 } from './main/hubQueries';
@@ -161,12 +159,14 @@ export default function (): void {
 				const repos = await Promise.all(
 					providers.map(async (provider: HubProviderRecord) =>
 						await getBackupReposByProviderID(provider.id)));
+
 				// flatten array
 				const allRepos = repos.reduce((acc, curVal) => acc.concat(curVal), []);
 
 				// get all sites for all repos
 				const backupSites = await Promise.all(allRepos.map(async (repo) =>
 					await getBackupSitesByRepoID(repo.hash)));
+
 				// flatten array
 				const allBackupSites = backupSites.reduce((acc, curVal) => acc.concat(curVal), []);
 
@@ -200,6 +200,9 @@ export default function (): void {
 
 				let repoID: number;
 
+				// check all repos for the given provider
+				// find the repo that matches the siteUUID
+				// set the repoID so we can query snapshots by repo
 				repos.forEach((repo) => {
 					if (repo.hash === siteUUID) {
 						repoID = repo.id;
@@ -222,7 +225,13 @@ export default function (): void {
 		},
 		{
 			channel: IPCASYNC_EVENTS.SHOULD_LOAD_PROMO_BANNER,
-			callback: async () => await LocalMain.UserData.get(SHOW_CLOUD_BACKUPS_PROMO_BANNER),
+			callback: async () => {
+				try {
+					return await LocalMain.UserData.get(SHOW_CLOUD_BACKUPS_PROMO_BANNER);
+				} catch (e) {
+					// noop
+				}
+			},
 		},
 		{
 			channel: IPCASYNC_EVENTS.REMOVE_PROMO_BANNER,
@@ -242,6 +251,7 @@ export default function (): void {
 		},
 	);
 
+	// add cloudBackupMeta to the newly created site object before it's saved to disk
 	LocalMain.HooksMain.addFilter(
 		'modifyAddSiteObjectBeforeCreation',
 		(site: Site, newSiteInfo) => {
@@ -250,6 +260,7 @@ export default function (): void {
 		},
 	);
 
+	// kick off backup restore after site creation is complete
 	LocalMain.HooksMain.addAction(
 		'siteAdded',
 		async (site: Site) => {
@@ -265,6 +276,7 @@ export default function (): void {
 		},
 	);
 
+	// adds a migration to show the cloud backup promo banner
 	LocalMain.HooksMain.addFilter('migrations', (defaultMigrations) => ({
 		...defaultMigrations,
 		cloudBackupsAddon: {
