@@ -43,7 +43,7 @@ export const ChooseCreateSite = () => {
 		}
 
 		if (radioState === 'usebackup') {
-			store.dispatch(actions.getSitesList());
+			LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_BACKUP_SITE);
 		}
 	};
 
@@ -56,7 +56,7 @@ export const ChooseCreateSite = () => {
 		return (
 			<div className="AddSiteContent">
 				<div className="Inner">
-					<p>Authenticating connection and fetching sites...</p>
+					<p>Authenticating connection...</p>
 					<ProgressBar stripes />
 				</div>
 			</div>

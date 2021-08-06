@@ -33,8 +33,10 @@ const getSitesList = createAsyncThunk('multiMachineBackupsGetSites', async (_, {
 			IPCASYNC_EVENTS.GET_ALL_SITES,
 		);
 
-		// todo - tyler - refactor to remove this logic from the thunk actions
-		LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_BACKUP_SITE);
+		// presence of a message on the response object means we got a connection error
+		if (allSites.message) {
+			return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.GENERIC_HUB_CONNECTION_ERROR);
+		}
 
 		if (!allSites.length) {
 			return rejectWithValue(MULTI_MACHINE_BACKUP_ERRORS.NO_SITES_FOUND);
