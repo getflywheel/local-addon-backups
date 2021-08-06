@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import shortid from 'shortid';
 import {
 	PrimaryButton,
@@ -6,6 +6,7 @@ import {
 	FlySelect,
 	TextButton,
 	Tooltip,
+	ProgressBar,
 } from '@getflywheel/local-components';
 import { store, actions, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
@@ -27,7 +28,11 @@ interface Props {
 export const SelectSiteBackup = (props: Props) => {
 	const { updateSiteSettings, siteSettings, osPath, formatSiteNicename, defaultLocalSettings } = props;
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
-	const { backupSites, selectedSite } = state;
+	const { backupSites, selectedSite, isLoading } = state;
+
+	useEffect(() => {
+		store.dispatch(actions.getSitesList());
+	}, []);
 
 	let flySelectSites: { [value: string]: string; } = {};
 
@@ -93,6 +98,17 @@ export const SelectSiteBackup = (props: Props) => {
 	};
 
 	const continueDisabled = (selectedSite === null);
+
+	if (isLoading) {
+		return (
+			<div className="AddSiteContent">
+				<div className="Inner">
+					<p>Authenticating connection and fetching sites...</p>
+					<ProgressBar stripes />
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<>
