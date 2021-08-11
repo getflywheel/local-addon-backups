@@ -62,19 +62,22 @@ export default function (context): void {
 
 	// add new routes and components to Local core
 	hooks.addFilter('AddSiteIndexJS:RoutesArray', (routes, path) => {
-		routes.forEach((route) => {
-			if (route.path === `${path}/`) {
-				route.path = LOCAL_ROUTES.ADD_SITE_CREATE_NEW;
-			}
-		});
-
-		routes.push(
+		const cloudBackupRoutes = [
 			{ key: 'add-site-choose', path: `${path}/`, component: ChooseCreateSiteHOC },
 			{ key: 'add-site-select-site-backup', path: LOCAL_ROUTES.ADD_SITE_BACKUP_SITE, component: SelectSiteBackupHOC },
 			{ key: 'add-site-select-snapshot', path: LOCAL_ROUTES.ADD_SITE_BACKUP_SNAPSHOT, component: SelectSnapshotHOC },
-		);
+		];
 
-		return routes;
+		routes.forEach((route) => {
+			if (route.path === `${path}/`) {
+				cloudBackupRoutes.push(
+					{ key: route.key, path: LOCAL_ROUTES.ADD_SITE_CREATE_NEW, component: route.component },
+				);
+			}
+			cloudBackupRoutes.push(route);
+		});
+
+		return cloudBackupRoutes;
 	});
 
 	// optionally modify NewSiteEnvironment component functionality in Local core
@@ -92,18 +95,18 @@ export default function (context): void {
 				LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_BACKUP_SNAPSHOT);
 			};
 
-			newSiteEnvironmentProps.onContinue = continueCreateSite;
-			newSiteEnvironmentProps.onGoBack = onGoBack;
-			newSiteEnvironmentProps.buttonText = 'Restore Site';
-
-			return newSiteEnvironmentProps;
+			return {
+				...newSiteEnvironmentProps,
+				onContinue: continueCreateSite,
+				onGoBack: onGoBack,
+				buttonText: 'Restore Site',
+			};
 		}
 
-		newSiteEnvironmentProps.onGoBack = () => {
-			LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_CREATE_NEW);
+		return {
+			...newSiteEnvironmentProps,
+			onGoBack: () => LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_CREATE_NEW),
 		};
-
-		return newSiteEnvironmentProps;
 	});
 
 	// add a new breadcrumbs stepper to the Add Site user flow
@@ -140,34 +143,44 @@ export default function (context): void {
 
 		switch (localHistory.location.pathname) {
 			case LOCAL_ROUTES.ADD_SITE_START:
-				breadcrumbsData.defaultStepper = () => null;
-				break;
+				return {
+					...breadcrumbsData,
+					defaultStepper: () => null,
+				};
 			case LOCAL_ROUTES.ADD_SITE_BACKUP_SITE:
 			case LOCAL_ROUTES.ADD_SITE_BACKUP_SNAPSHOT:
-				breadcrumbsData.defaultStepper = () => cloudBackupStepper();
-				break;
+				return {
+					...breadcrumbsData,
+					defaultStepper: () => cloudBackupStepper(),
+				};
 		}
 
 		if (
 			siteSettings.cloudBackupMeta?.createdFromCloudBackup
 			&& localHistory.location.pathname === LOCAL_ROUTES.ADD_SITE_ENVIRONMENT
 		) {
-			breadcrumbsData.defaultStepper = () => cloudBackupStepper();
+			return {
+				...breadcrumbsData,
+				defaultStepper: () => cloudBackupStepper(),
+			};
 		}
 
-		return breadcrumbsData;
+		return {
+			...breadcrumbsData,
+		};
 	});
 
 	// modify the "close button" functionality for the Add Site user flow
-	hooks.addFilter('AddSiteIndexJS:RenderCloseButton', (closeButtonData) => {
-		closeButtonData.closeButton = () => (
-			<CloseButtonHOC
-				onClose={closeButtonData.onCloseButton()}
-			/>
-		);
-
-		return closeButtonData;
-	});
+	hooks.addFilter('AddSiteIndexJS:RenderCloseButton', (closeButtonData) => (
+		{
+			...closeButtonData,
+			closeButton: () => (
+				<CloseButtonHOC
+					onClose={closeButtonData.onCloseButton()}
+				/>
+			),
+		}),
+	);
 
 	// add a "go back" button to the first step in the default Add Site user flow
 	hooks.addContent(
