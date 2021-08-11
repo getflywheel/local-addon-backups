@@ -196,7 +196,7 @@ export default function (): void {
 			callback: async (siteUUID: string, provider: HubOAuthProviders, requestedPage?: number) => {
 				const repos = await getBackupReposByProviderID(provider);
 
-				const paginationNumber = requestedPage ? requestedPage : 0;
+				const paginationNumber = requestedPage ?? 0;
 
 				let repoID: number;
 
