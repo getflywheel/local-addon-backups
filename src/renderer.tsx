@@ -42,22 +42,34 @@ export default function (context): void {
 	const CloseButtonHOC = withStoreProvider(CloseButtonWithStore);
 
 	hooks.addFilter('siteInfoToolsItem', (items) => {
-		items.push({
-			path: '/localBackups',
-			menuItem: 'Cloud Backups',
-			render: ({ site }) => (
-				<SiteInfoToolsSectionHOC site={site} />
-			),
+		const cloudBackupItems = [
+			{
+				path: '/localBackups',
+				menuItem: 'Cloud Backups',
+				render: ({ site }) => (
+					<SiteInfoToolsSectionHOC site={site} />
+				),
+			},
+		];
+
+		items.forEach((item) => {
+			cloudBackupItems.push(item);
 		});
 
-		return items;
+		return cloudBackupItems;
 	});
 
-	// todo - refactor to make use of this filter for backup statuses
 	hooks.addFilter('allowedSiteOverlayStatuses', (statuses: string[]) => {
-		statuses.push(...Object.values(RestoreStates));
-		statuses.push(BackupStates.creatingDatabaseSnapshot);
-		return statuses;
+		const cloudBackupStatuses: string[] = [
+			...Object.values(RestoreStates),
+			BackupStates.creatingDatabaseSnapshot,
+		];
+
+		statuses.forEach((status) => {
+			cloudBackupStatuses.push(status);
+		});
+
+		return cloudBackupStatuses;
 	});
 
 	// add new routes and components to Local core
@@ -98,7 +110,7 @@ export default function (context): void {
 			return {
 				...newSiteEnvironmentProps,
 				onContinue: continueCreateSite,
-				onGoBack: onGoBack,
+				onGoBack,
 				buttonText: 'Restore Site',
 			};
 		}
@@ -165,9 +177,7 @@ export default function (context): void {
 			};
 		}
 
-		return {
-			...breadcrumbsData,
-		};
+		return breadcrumbsData;
 	});
 
 	// modify the "close button" functionality for the Add Site user flow
