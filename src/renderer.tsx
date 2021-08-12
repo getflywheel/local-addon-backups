@@ -71,7 +71,7 @@ export default function (context): void {
 		routes.forEach((route) => {
 			if (route.path === `${path}/`) {
 				cloudBackupRoutes.push(
-					{ key: route.key, path: LOCAL_ROUTES.ADD_SITE_CREATE_NEW, component: route.component },
+					{ key: 'add-site-add', path: LOCAL_ROUTES.ADD_SITE_CREATE_NEW, component: route.component },
 				);
 			}
 			cloudBackupRoutes.push(route);
