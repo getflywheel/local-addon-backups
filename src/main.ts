@@ -19,7 +19,12 @@ import { getServiceContainer } from '@getflywheel/local/main';
 import { checkForDuplicateSiteName } from './helpers/checkForDuplicateSiteName';
 
 const serviceContainer = getServiceContainer().cradle;
-const { localLogger } = serviceContainer;
+const {
+	localLogger,
+	changeSiteDomain,
+	siteDatabase,
+	siteProcessManager,
+} = serviceContainer;
 
 const logger = localLogger.child({
 	thread: 'main',
@@ -271,7 +276,18 @@ export default function (): void {
 
 				await restoreFromBackup({ site, provider: providerID, snapshotID, repoID });
 
-				LocalMain.sendIPCEvent('changeSiteDomainToHost', site);
+				const siteToSearchReplace = new Local.Site(site);
+
+				LocalMain.sendIPCEvent('updateSiteStatus', site.id, 'provisioning');
+
+				LocalMain.sendIPCEvent('updateSiteMessage', site.id, 'Changing site domain');
+
+				await siteDatabase.waitForDB(siteToSearchReplace);
+
+				await changeSiteDomain.changeSiteDomainToHost(siteToSearchReplace);
+
+				await siteProcessManager.restart(siteToSearchReplace);
+
 			}
 		},
 	);
