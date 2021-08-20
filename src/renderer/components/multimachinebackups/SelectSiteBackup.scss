@@ -1,3 +1,5 @@
+@import '~@getflywheel/local-components/src/styles/_partials/index';
+
 .innerContainer {
 	width: 644px;
 	align-self: center;
@@ -19,4 +21,17 @@
 	position: absolute;
 	bottom: 30px;
 	right: 30px;
+}
+
+.errorText {
+	color: $red;
+	font-weight: 500;
+}
+
+.errorTextContainer {
+	margin-top: 10px;
+}
+
+.errorState {
+	box-shadow: inset 0 0 0 2px $red !important;
 }

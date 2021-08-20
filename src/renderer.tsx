@@ -2,7 +2,7 @@ import React from 'react';
 import { Provider } from 'react-redux';
 import { ApolloProvider } from '@apollo/client';
 import { RestoreStates, BackupStates } from './types';
-import { store } from './renderer/store/store';
+import { store, actions } from './renderer/store/store';
 import SiteInfoToolsSection from './renderer/components/siteinfotools/SiteInfoToolsSection';
 import { setupListeners } from './renderer/helpers/setupListeners';
 import { client } from './renderer/localClient/localGraphQLClient';
@@ -101,6 +101,9 @@ export default function (context): void {
 					goToSite: true,
 					installWP: false,
 				});
+
+				// Reset the user selected options from the add site flow.
+				store.dispatch(actions.resetMultiMachineRestoreState());
 			};
 
 			const onGoBack = () => {
@@ -111,7 +114,7 @@ export default function (context): void {
 				...newSiteEnvironmentProps,
 				onContinue: continueCreateSite,
 				onGoBack,
-				buttonText: 'Restore Site',
+				buttonText: 'Add Site',
 			};
 		}
 
@@ -132,7 +135,7 @@ export default function (context): void {
 					done={localHistory.location.pathname !== LOCAL_ROUTES.ADD_SITE_BACKUP_SITE}
 					active={localHistory.location.pathname === LOCAL_ROUTES.ADD_SITE_BACKUP_SITE}
 				>
-					Select Site
+					Select Site and Name
 				</Step>
 				<Step
 					key={'choose-snapshot'}
@@ -148,7 +151,7 @@ export default function (context): void {
 					done={false}
 					active={localHistory.location.pathname === LOCAL_ROUTES.ADD_SITE_ENVIRONMENT}
 				>
-					Setup Environment
+					Set Up Environment
 				</Step>
 			</Stepper>
 		);

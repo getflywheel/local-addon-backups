@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import shortid from 'shortid';
+import React, { useEffect, useCallback, useState } from 'react';
 import {
+	Text,
 	PrimaryButton,
 	Title,
 	FlySelect,
@@ -8,6 +8,7 @@ import {
 	Tooltip,
 	ProgressBar,
 } from '@getflywheel/local-components';
+import classNames from 'classnames';
 import { store, actions, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
 import * as LocalRenderer from '@getflywheel/local/renderer';
@@ -15,7 +16,8 @@ import path from 'path';
 import { BackupSite, NewSiteInfoWithCloudMeta } from '../../../types';
 import { ErrorBannerContainer } from './ErrorBannerContainer';
 import styles from './SelectSiteBackup.scss';
-import { LOCAL_ROUTES } from '../../../constants';
+import { LOCAL_ROUTES, IPCASYNC_EVENTS } from '../../../constants';
+
 
 interface Props {
 	siteSettings: NewSiteInfoWithCloudMeta
@@ -27,8 +29,9 @@ interface Props {
 
 export const SelectSiteBackup = (props: Props) => {
 	const { updateSiteSettings, siteSettings, osPath, formatSiteNicename, defaultLocalSettings } = props;
+	const [isDuplicateName, setIsDuplicateName] = useState(false);
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
-	const { backupSites, selectedSite, isLoading } = state;
+	const { backupSites, selectedSite, newSiteName, isLoading } = state;
 
 	useEffect(() => {
 		store.dispatch(actions.getSitesList());
@@ -45,9 +48,9 @@ export const SelectSiteBackup = (props: Props) => {
 		return flySelectSites;
 	});
 
-	const generateSiteSettingsData = (site: BackupSite) => {
-		const formattedSiteName = `${formatSiteNicename(site.name)}-${shortid.generate()}`;
-
+	const generateSiteSettingsData = useCallback(() => {
+		const { multiMachineRestore } = store.getState();
+		const formattedSiteName = formatSiteNicename(multiMachineRestore.newSiteName);
 		const formattedSiteDomain = `${formattedSiteName}${defaultLocalSettings['new-site-defaults'].tld}`;
 
 		const sitePath = path.join(defaultLocalSettings['new-site-defaults'].sitesPath, formattedSiteName);
@@ -60,21 +63,48 @@ export const SelectSiteBackup = (props: Props) => {
 			formattedSiteName,
 			formattedSiteDomain,
 			formattedSitePath,
+			siteName: multiMachineRestore.newSiteName,
 		};
-	};
+	}, [defaultLocalSettings]);
+
+	useEffect(() => {
+		updateSiteSettings({
+			...siteSettings,
+			siteName: newSiteName,
+		});
+
+		const checkSiteName = async () => {
+			const isDuplicate = await LocalRenderer.ipcAsync(
+				IPCASYNC_EVENTS.CHECK_FOR_DUPLICATE_NAME,
+				newSiteName,
+			);
+
+			setIsDuplicateName(isDuplicate);
+		};
+
+		// Wait 100ms after user has finished typing.
+		const debouncer = setTimeout(() => {
+			checkSiteName();
+		}, 100);
+
+		return () => {
+			clearTimeout(debouncer);
+		};
+	}, [newSiteName]);
+
 
 	const onSiteSelect = async (siteUUID: string) => {
 		const site: BackupSite = backupSites.find((site) => siteUUID === site.uuid);
 
 		store.dispatch(actions.setSelectedSite(site));
 
-		const newSiteSettings = generateSiteSettingsData(site);
+		const newSiteSettings = generateSiteSettingsData();
 
 		// updateSiteSettings is a function passed into props from local core
 		// used to build out the new site object
 		updateSiteSettings({
 			...siteSettings,
-			siteName: newSiteSettings.formattedSiteName,
+			siteName: newSiteSettings.siteName,
 			siteDomain: newSiteSettings.formattedSiteDomain,
 			sitePath: newSiteSettings.formattedSitePath,
 			cloudBackupMeta: {
@@ -97,7 +127,7 @@ export const SelectSiteBackup = (props: Props) => {
 		LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_START);
 	};
 
-	const continueDisabled = (selectedSite === null);
+	const continueDisabled = selectedSite === null || newSiteName === '' || isDuplicateName;
 
 	if (isLoading) {
 		return (
@@ -114,7 +144,7 @@ export const SelectSiteBackup = (props: Props) => {
 		<>
 			<ErrorBannerContainer />
 			<div className="AddSiteContent">
-				<Title size="l" container={{ margin: 'l 0' }}>Select a site to restore</Title>
+				<Title size="l" container={{ margin: 'l 0' }}>Select site with backup and name your new site</Title>
 				<div className={styles.innerContainer}>
 					<h2 className={styles.headerPadding}>Select a site with a Cloud Backup</h2>
 					<div className="FormRow">
@@ -128,6 +158,25 @@ export const SelectSiteBackup = (props: Props) => {
 							/>
 						</div>
 					</div>
+					<div className="FormRow __MarginTop_20 __MarginBottom_0">
+						<div className="FormField">
+							<label>Give the site a new unique name</label>
+							<input
+								className={classNames('TID_NewSiteSite_Input_SiteName_Small', { [styles.errorState]: isDuplicateName })}
+								type="text"
+								disabled={selectedSite === null}
+								value={newSiteName}
+								onChange={(e) => store.dispatch(actions.setNewSiteName(e.target.value))}
+							/>
+							{isDuplicateName && (
+								<div className={styles.errorTextContainer}>
+									<Text className={styles.errorText}>
+										Please give the site a unique name
+									</Text>
+								</div>
+							)}
+						</div>
+					</div>
 				</div>
 
 				{/* wrap button in tooltip if continue is disabled */}
@@ -137,7 +186,7 @@ export const SelectSiteBackup = (props: Props) => {
 						className={styles.tooltip}
 						content={(
 							<>
-								Please select a site before continuing.
+								Please select a site and name it before continuing.
 							</>
 						)}
 						popperOffsetModifier={{ offset: [0, 0] }}

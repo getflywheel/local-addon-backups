@@ -66,7 +66,7 @@ export const ChooseCreateSite = () => {
 	return (
 		<>
 			<div className="AddSiteContent">
-				<Title size="l" container={{ margin: 'l 0' }}>Select the type of site you want to add</Title>
+				<Title size="l" container={{ margin: 'l 0' }}>Create a site</Title>
 				<div className="Inner">
 					<RadioBlock
 						className={styles.radioBlock}
@@ -79,7 +79,7 @@ export const ChooseCreateSite = () => {
 							},
 							usebackup: {
 								key: 'use-cloud-backup',
-								label: 'Restore a site from Cloud Backups Add-on',
+								label: 'Create a site from Cloud Backups Add-on',
 								className: 'TID_NewSiteEnvironment_RadioBlockItem_Custom',
 								disabled: providerIsErrored,
 								container: {
@@ -123,7 +123,7 @@ export const ChooseCreateSite = () => {
 						onDismiss={onPromoBannerDismiss}
 						icon="none"
 					>
-						<p>&#127881;</p><p>You can now restore a site from a Cloud Backup! Select to restore a site to get started.</p>
+						<p>&#127881;</p><p>You can now create a site from a Cloud Backup! Select this option to get started.</p>
 					</Banner>}
 				</div>
 				<PrimaryButton

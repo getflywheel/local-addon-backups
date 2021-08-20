@@ -29,6 +29,7 @@ export const multiMachineRestoreSlice = createSlice({
 		// sites
 		backupSites: [] as BackupSite[],
 		selectedSite: null as BackupSite,
+		newSiteName: '',
 
 		// snapshots
 		backupSnapshots: snapshotsEntityAdapter.getInitialState(),
@@ -52,6 +53,7 @@ export const multiMachineRestoreSlice = createSlice({
 		resetMultiMachineRestoreState: (state) => {
 			state.backupSites = [];
 			state.selectedSite = null as BackupSite;
+			state.newSiteName = '';
 			state.selectedSnapshot = null as BackupSnapshot;
 			state.isErrored = false;
 			state.activeError = null as SerializedError;
@@ -59,6 +61,12 @@ export const multiMachineRestoreSlice = createSlice({
 		},
 		setSelectedSite: (state, action) => {
 			state.selectedSite = action.payload;
+			// Set default sitename to sitename-backup.
+			state.newSiteName = `${action.payload.name}-backup`;
+			return state;
+		},
+		setNewSiteName: (state, action) => {
+			state.newSiteName = action.payload;
 			return state;
 		},
 		setSelectedSnapshot: (state, action) => {
