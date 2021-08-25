@@ -1,7 +1,7 @@
 {
   "name": "@getflywheel/local-addon-backups",
   "productName": "Cloud Backups",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "author": "Local Team",
   "keywords": [
     "local-addon"
@@ -117,6 +117,6 @@
     "xstate"
   ],
   "engines": {
-    "local-by-flywheel": ">=5.10.5"
+    "local-by-flywheel": ">=6.1.1"
   }
 }
