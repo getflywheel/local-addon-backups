@@ -62,7 +62,9 @@ export const multiMachineRestoreSlice = createSlice({
 		setSelectedSite: (state, action) => {
 			state.selectedSite = action.payload;
 			// Set default sitename to sitename-backup.
-			state.newSiteName = `${action.payload.name}-backup`;
+			if (action.payload) {
+				state.newSiteName = `${action.payload.name}-backup`;
+			}
 			return state;
 		},
 		setNewSiteName: (state, action) => {
