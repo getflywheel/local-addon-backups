@@ -12,3 +12,4 @@ export const launchBrowser = (url: string) => ipcAsync(
 );
 
 export const launchBrowserToHubBackups = () => launchBrowser(`${URLS.LOCAL_HUB}/addons/cloud-backups`);
+export const launchBrowserToHubLogin = () => launchBrowser(`${URLS.LOCAL_HUB}/login`);

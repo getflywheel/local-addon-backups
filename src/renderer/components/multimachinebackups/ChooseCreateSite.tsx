@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
 	PrimaryButton,
 	RadioBlock,
@@ -7,21 +7,28 @@ import {
 	Banner,
 	Tooltip,
 	TextButton,
+	FlyModal,
 } from '@getflywheel/local-components';
 import * as LocalRenderer from '@getflywheel/local/renderer';
 import { store, actions, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
 import styles from './ChooseCreateSite.scss';
 import { LOCAL_ROUTES, IPCASYNC_EVENTS, MULTI_MACHINE_BACKUP_ERRORS } from '../../../constants';
-import { launchBrowserToHubBackups } from '../../helpers/launchBrowser';
+import { launchBrowserToHubBackups, launchBrowserToHubLogin } from '../../helpers/launchBrowser';
 
-export const ChooseCreateSite = () => {
+export const ChooseCreateSite = (props) => {
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
 	const { isLoading, providerIsErrored, activeError } = state;
 	const [radioState, setRadioState] = useState('createnew');
 	const [showBanner, setShowBanner] = useState(false);
 	const noProvidersFound = activeError === MULTI_MACHINE_BACKUP_ERRORS.NO_CONNECTED_PROVIDERS_FOR_SITE;
 	const noConnectionToHub = activeError === MULTI_MACHINE_BACKUP_ERRORS.GENERIC_HUB_CONNECTION_ERROR;
+
+	// Helper to close the add site modal, then call launch method.
+	const closeThenLaunch = useCallback((launchMethod) => () => {
+		LocalRenderer.sendIPCEvent('goToRoute', '/main');
+		launchMethod();
+	}, [props.onClose]);
 
 	useEffect(() => {
 		store.dispatch(actions.setProviderIsErrored(null));
@@ -90,22 +97,26 @@ export const ChooseCreateSite = () => {
 											showDelay={2}
 											content={(
 												<div>
-													{noProvidersFound &&
-													<p className={styles.extraPadding}>
-														Uh oh!
-														<br/>
-														You don’t have a
-														storage provider
-														connected to your account.
-													</p>}
-													{noConnectionToHub &&
-													<p className={styles.extraPadding}>
-														Uh oh!
-														<br/>
-														We couldn't connect
-														to your Local account.
-													</p>}
-													<TextButton onClick={launchBrowserToHubBackups}>Manage Account</TextButton>
+													{noProvidersFound && [
+														<p className={styles.extraPadding}>
+															Uh oh!
+															<br/>
+															You don’t have a
+															storage provider
+															connected to your account.
+														</p>,
+														<TextButton onClick={closeThenLaunch(launchBrowserToHubBackups)}>Manage Account</TextButton>,
+													]}
+													{noConnectionToHub && [
+														<p className={styles.extraPadding}>
+															Uh oh!
+															<br/>
+															We couldn't connect
+															to your Local account.
+														</p>,
+														<TextButton onClick={closeThenLaunch(launchBrowserToHubLogin)}>Log in to Local</TextButton>,
+													]}
+
 												</div>
 											)}
 											popperOffsetModifier={{ offset: [0, 12] }}
