@@ -97,6 +97,8 @@ async function execPromise (cmd: string, site: Site, env: { [key: string]: strin
 		exec(
 			cmd,
 			{
+				// 4 times the default.
+				maxBuffer: 1024 * 1024 * 4,
 				env: {
 					...process.env,
 					...env,
