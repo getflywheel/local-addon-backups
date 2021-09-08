@@ -18,6 +18,7 @@ import {
 } from '../../store/store';
 
 interface Props {
+	offline: boolean,
 	enabledProviders: HubProviderRecord[];
 	activeSiteProvider: HubProviderRecord;
 	multiMachineSelect: boolean;
@@ -73,10 +74,15 @@ const renderDropdownProviderItem = (provider?: HubProviderRecord, isActiveProvid
 );
 
 export const ProviderDropdown = (props: Props) => {
-	const { enabledProviders, activeSiteProvider, multiMachineSelect, siteId } = props;
+	const { offline, enabledProviders, activeSiteProvider, multiMachineSelect, siteId } = props;
 	const dropdownItems: React.ComponentProps<typeof FlyDropdown>['items'] = [];
-
-	if (enabledProviders?.length) {
+	if (offline) {
+		dropdownItems.push({
+			color: 'none',
+			content: <>Check internet connection</>,
+			onClick: null,
+		});
+	} else if (enabledProviders?.length) {
 		enabledProviders.forEach((provider) => {
 			dropdownItems.push({
 				color: 'none',
@@ -111,8 +117,9 @@ export const ProviderDropdown = (props: Props) => {
 				{multiMachineSelect ? 'Create new site from' : 'Back up to'}
 			</span>
 			<FlyDropdown
-				className={styles.ProviderDropdown}
+				className={`${styles.ProviderDropdown} ${offline ? styles.ProviderDropdownOffline : ''}`}
 				classNameList={styles.ProviderDropdown_List}
+				classNameListItem={offline ? styles.DropdownItemOffline : ''}
 				items={dropdownItems}
 				position="bottom"
 			>

@@ -30,6 +30,7 @@ import useOnScreen from '../../helpers/useOnScreen';
 import RefreshInlineSvg from '../../assets/refresh-inline.svg';
 
 interface Props {
+	offline: boolean,
 	site: Site;
 }
 
@@ -88,14 +89,16 @@ const renderTextButton = (label: React.ReactNode, isDisabled: () => boolean) => 
 	</TextButton>
 );
 
-const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubProviderRecord) => {
+const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubProviderRecord, offline: boolean) => {
 	const items: React.ComponentProps<typeof FlyDropdown>['items'] = [];
 
 	if (snapshot.hash === TABLEROW_HASH_IS_SPECIAL_PAGING_HAS_MORE) {
 		return null;
 	}
 
-	switch (snapshot.status) {
+	const status = offline ? 'offline' : snapshot.status;
+
+	switch (status) {
 		case 'started':
 		case 'running':
 			break;
@@ -114,6 +117,13 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 				color: 'none',
 				content: renderTextButton('Dismiss', () => false),
 				onClick: () => store.dispatch(actions.dismissBackupAttempt()),
+			});
+			break;
+		case 'offline':
+			items.push({
+				color: 'none',
+				content: <>Check internet connection</>,
+				onClick: null,
 			});
 			break;
 		case 'complete':
@@ -171,6 +181,7 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 		<FlyDropdown
 			caret={false}
 			className={styles.SnapshotsTableList_MoreDropdown}
+			classNameListItem={offline ? styles.DropdownItemOffline : ''}
 			items={items}
 			popperOptions={{ popperOffsetModifier: { offset: [15, 0] } }}
 		>
@@ -212,7 +223,7 @@ const renderDescription = (description?: string) => {
 
 const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 	const { colKey, cellData, isHeader, extraData } = dataArgs;
-	const { site, provider } = extraData;
+	const { site, provider, offline } = extraData;
 	const snapshot = dataArgs.rowData as BackupSnapshot;
 
 	if (isHeader) {
@@ -241,7 +252,7 @@ const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 
 	switch (colKey) {
 		case 'configObject': return renderDescription(cellData.description);
-		case 'moremenu': return renderCellMoreMenu(snapshot, site, provider);
+		case 'moremenu': return renderCellMoreMenu(snapshot, site, provider, offline);
 		case 'updatedAt': return renderDate(cellData, snapshot);
 	}
 
@@ -252,7 +263,7 @@ const renderCell = (dataArgs: IVirtualTableCellRendererDataArgs) => {
 	);
 };
 
-export const SnapshotsTableList = ({ site }: Props) => {
+export const SnapshotsTableList = ({ site, offline }: Props) => {
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 	const snapshotsPlusBackingupPlaceholder = useStoreSelector(selectSnapshotsForActiveSitePlusExtra);
 	const activePagingDetails = useStoreSelector(selectActivePagingDetails);
@@ -301,6 +312,7 @@ export const SnapshotsTableList = ({ site }: Props) => {
 				extraData={{
 					site,
 					provider: activeSiteProvider,
+					offline,
 				}}
 				headers={headers}
 				headersCapitalize={'none'}

@@ -10,11 +10,12 @@ import { selectors } from '../../store/selectors';
 import { selectActivePagingDetails } from '../../store/snapshotsSlice';
 
 interface Props {
+	offline: boolean,
 	className: string;
 	site: Site;
 }
 
-export const ToolsContent = ({ className, site }: Props) => {
+export const ToolsContent = ({ className, site, offline }: Props) => {
 	const activeSite = useStoreSelector((state) => state.activeSite);
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 	const activePagingDetails = useStoreSelector(selectActivePagingDetails);
@@ -37,7 +38,7 @@ export const ToolsContent = ({ className, site }: Props) => {
 				styles.ToolsContent,
 			)}
 		>
-			<SnapshotsTableList site={site}/>
+			<SnapshotsTableList site={site} offline={offline}/>
 		</div>
 	);
 };
