@@ -16,7 +16,7 @@
 			fill: $green-dark !important;
 		}
 
-		&:global(.FlyDropdown__Open .FlyDropdown_Caret) {
+		&:global(.FlyDropdown.Popper__Showing .FlyDropdown_Caret) {
 			background: $green-dark;
 		}
 	}
@@ -29,7 +29,7 @@
 		}
 	}
 
-	&:global(.FlyDropdown__Open .FlyDropdown_Caret) {
+	&:global(.FlyDropdown.Popper__Showing .FlyDropdown_Caret) {
 		background: $green;
 	}
 
@@ -40,6 +40,35 @@
 			z-index: 8;
 		}
 	}
+
+	&.ProviderDropdownOffline {
+		color: $gray75;
+	
+		> svg:not(.ProviderDropdown_Content_ProviderSvg) path {
+			fill: $gray75;
+		}
+	
+		&:global(.FlyDropdown.Popper__Showing .FlyDropdown_Caret) {
+			background: $gray75;
+		}
+	
+		&:hover {
+			color: $gray75;
+	
+			> svg:not(.ProviderDropdown_Content_ProviderSvg) path {
+				fill: $gray75 !important;
+			}
+	
+			&:global(.FlyDropdown.Popper__Showing .FlyDropdown_Caret) {
+				background: $gray75;
+			}
+		}
+	}
+}
+
+.DropdownItemOffline {
+	font-weight: 300;
+	padding: 10px 15px !important;
 }
 
 .ProviderDropdown_List {
@@ -83,7 +112,7 @@
 			fill: $green-dark !important;
 		}
 
-		&:global(.FlyDropdown__Open .FlyDropdown_Caret) {
+		&:global(.FlyDropdown.Popper__Showing .FlyDropdown_Caret) {
 			background: $green-dark;
 		}
 	}

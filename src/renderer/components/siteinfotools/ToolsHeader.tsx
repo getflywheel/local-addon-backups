@@ -2,7 +2,7 @@ import React from 'react';
 import styles from './ToolsHeader.scss';
 import type { Site } from '@getflywheel/local';
 import { ProviderDropdown } from './ProviderDropdown';
-import { PrimaryButton } from '@getflywheel/local-components';
+import { PrimaryButton, Tooltip } from '@getflywheel/local-components';
 import { launchBrowserToHubBackups } from '../../helpers/launchBrowser';
 import { StartBackupButton } from './StartBackupButton';
 import { RefreshButton } from './RefreshButton';
@@ -12,11 +12,12 @@ import {
 } from '../../store/store';
 
 interface Props {
+	offline: boolean,
 	site: Site;
 }
 
 export const ToolsHeader = (props: Props) => {
-	const { site } = props;
+	const { offline, site } = props;
 	const { enabledProviders } = useStoreSelector((state) => state.providers);
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 
@@ -27,22 +28,31 @@ export const ToolsHeader = (props: Props) => {
 				activeSiteProvider={activeSiteProvider}
 				multiMachineSelect={false}
 				siteId={site.id}
+				offline={offline}
 			/>
 			<div className={styles.ToolsHeaders_Right}>
-				<RefreshButton />
+				{!offline && <RefreshButton />}
 				{enabledProviders?.length
 					? (
-						<StartBackupButton site={site} />
+						<StartBackupButton site={site} offline={offline}/>
 					)
 					: (
-						<PrimaryButton
-							onClick={() => launchBrowserToHubBackups()}
-							privateOptions={{
-								padding: 'm',
-							}}
+						<Tooltip
+							content={<>Check internet connection</>}
+							popperOffsetModifier={{ offset: [-55, 10] }}
+							showDelay={300}
+							position="top-end"
 						>
-							Connect Provider
-						</PrimaryButton>
+							<PrimaryButton
+								disabled={offline}
+								onClick={() => launchBrowserToHubBackups()}
+								privateOptions={{
+									padding: 'm',
+								}}
+							>
+								Connect Provider
+							</PrimaryButton>
+						</Tooltip>
 					)
 				}
 			</div>

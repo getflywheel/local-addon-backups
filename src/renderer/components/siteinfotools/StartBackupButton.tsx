@@ -9,11 +9,12 @@ import { BackupContents } from '../modals/BackupContents';
 import { selectSnapshotsForActiveSitePlusExtra } from '../../store/snapshotsSlice';
 
 interface Props {
+	offline: boolean,
 	site: Site;
 }
 
 export const StartBackupButton = (props: Props) => {
-	const { site } = props;
+	const { offline, site } = props;
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 	const hasSnapshots = useStoreSelector(selectSnapshotsForActiveSitePlusExtra)?.length > 0;
 	const { backupIsRunning } = useStoreSelector((state) => state.director);
@@ -28,7 +29,7 @@ export const StartBackupButton = (props: Props) => {
 
 	const siteStatus = getSiteStatus(site);
 
-	let tooltipContent = <>Please start site to create a backup</>;
+	let tooltipContent = offline ? <>Check internet connection</> : <>Please start site to create a backup</>;
 
 	if (!activeSiteProvider) {
 		tooltipContent = <>Please select a provider for your backup</>;
@@ -38,7 +39,7 @@ export const StartBackupButton = (props: Props) => {
 		tooltipContent = <>Another backup or restore is already in progress</>;
 	}
 
-	const buttonDisabled = !activeSiteProvider || backupIsRunning || siteStatus !== 'running';
+	const buttonDisabled = offline || !activeSiteProvider || backupIsRunning || siteStatus !== 'running';
 
 	if (buttonDisabled) {
 		return (
