@@ -117,9 +117,9 @@ export const ProviderDropdown = (props: Props) => {
 				{multiMachineSelect ? 'Create new site from' : 'Back up to'}
 			</span>
 			<FlyDropdown
-				className={`${styles.ProviderDropdown} ${offline ? styles.ProviderDropdownOffline : ''}`}
+				className={classnames(styles.ProviderDropdown, { [styles.ProviderDropdownOffline]: offline })}
 				classNameList={styles.ProviderDropdown_List}
-				classNameListItem={offline ? styles.DropdownItemOffline : ''}
+				classNameListItem={classnames({ [styles.DropdownItemOffline]: offline })}
 				items={dropdownItems}
 				position="bottom"
 			>
