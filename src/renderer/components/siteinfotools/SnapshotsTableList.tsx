@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import styles from './SnapshotsTableList.scss';
+import classnames from 'classnames';
 import {
 	CircleWarnIcon,
 	DotsIcon,
@@ -181,7 +182,7 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 		<FlyDropdown
 			caret={false}
 			className={styles.SnapshotsTableList_MoreDropdown}
-			classNameListItem={offline ? styles.DropdownItemOffline : ''}
+			classNameListItem={classnames({ [styles.DropdownItemOffline]: offline })}
 			items={items}
 			popperOptions={{ popperOffsetModifier: { offset: [15, 0] } }}
 		>

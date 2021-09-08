@@ -40,7 +40,7 @@ const SiteInfoToolsSection = ({ site }: Props) => {
 	}
 
 	return useObserver(() => {
-		const offline = $offline.offline;
+		const { offline } = $offline;
 
 		return (
 			<div className={styles.SiteInfoToolsSection}>
