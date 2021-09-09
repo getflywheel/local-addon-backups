@@ -122,6 +122,7 @@ export const ProviderDropdown = (props: Props) => {
 				classNameListItem={classnames({ [styles.DropdownItemOffline]: offline })}
 				items={dropdownItems}
 				position="bottom"
+				useClickInsteadOfHover={!offline}
 			>
 				{enabledProviders?.length && activeSiteProvider
 					? (

@@ -185,6 +185,7 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 			classNameListItem={classnames({ [styles.DropdownItemOffline]: offline })}
 			items={items}
 			popperOptions={{ popperOffsetModifier: { offset: [15, 0] } }}
+			useClickInsteadOfHover={!offline}
 		>
 			<DotsIcon/>
 		</FlyDropdown>
