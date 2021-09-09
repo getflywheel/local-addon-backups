@@ -14,32 +14,32 @@ interface Props {
 	site: Site;
 }
 
-const SiteInfoToolsSection = ({ site }: Props) => {
-	// update active site anytime the site prop changes
-	useUpdateActiveSiteAndDataSources(site.id);
+const SiteInfoToolsSection = ({ site }: Props) => (
+	useObserver(() => {
+		// update active site anytime the site prop changes
+		useUpdateActiveSiteAndDataSources(site.id);
 
-	const {
-		hasErrorLoadingEnabledProviders,
-	} = useStoreSelector((state) => state.providers);
-	const { id } = useStoreSelector((state) => state.activeSite);
+		const {
+			hasErrorLoadingEnabledProviders,
+		} = useStoreSelector((state) => state.providers);
+		const { id } = useStoreSelector((state) => state.activeSite);
 
-	/**
-	 * @todo sometimes the query to hub fails (like if the auth token has expired)
-	 * we should handle that more gracefully
-	 */
+		/**
+		 * @todo sometimes the query to hub fails (like if the auth token has expired)
+		 * we should handle that more gracefully
+		 */
 
-	if (hasErrorLoadingEnabledProviders) {
-		return (
-			<div className={styles.SiteInfoToolsSection}>
-				<TryAgain
-					message={'There was an issue retrieving your Cloud Backups providers.'}
-					onClick={() => store.dispatch(getEnabledProvidersHub({ siteId: id }))}
-				/>
-			</div>
-		);
-	}
+		if (hasErrorLoadingEnabledProviders) {
+			return (
+				<div className={styles.SiteInfoToolsSection}>
+					<TryAgain
+						message={'There was an issue retrieving your Cloud Backups providers.'}
+						onClick={() => store.dispatch(getEnabledProvidersHub({ siteId: id }))}
+					/>
+				</div>
+			);
+		}
 
-	return useObserver(() => {
 		const { offline } = $offline;
 
 		return (
@@ -53,7 +53,7 @@ const SiteInfoToolsSection = ({ site }: Props) => {
 				/>
 			</div>
 		);
-	});
-};
+	})
+);
 
 export default SiteInfoToolsSection;
