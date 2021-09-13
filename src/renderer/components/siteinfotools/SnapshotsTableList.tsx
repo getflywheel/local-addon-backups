@@ -288,7 +288,9 @@ export const SnapshotsTableList = ({ site, offline }: Props) => {
 		return (
 			<div className={styles.SnapshotsTableList_EmptyCont}>
 				{activeSiteProvider
-					? <span>There are no Cloud Backups created on {activeSiteProvider.name} for this site yet.</span>
+					? offline
+						? <span>There was an issue retrieving your Cloud Backups from {activeSiteProvider.name}.</span>
+						: <span>There are no Cloud Backups created on {activeSiteProvider.name} for this site yet.</span>
 					: <div className={styles.SnapshotsTableList_Empty_GetStarted}>
 						<h1 className={styles.SnapshotsTableList_Empty_Header}>Getting started with Cloud Backups</h1>
 						<ul>
