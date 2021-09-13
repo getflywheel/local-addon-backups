@@ -49,7 +49,7 @@ const processAndCheckIfGlobalGraphQLError = (error: IpcAsyncResponse['error'], s
 			siteID: siteId,
 			variant: 'error',
 		});
-	} else if (error?.isHubGraphQLNetworkError) {
+	} else if (error?.isHubGraphQLNetworkError && navigator.onLine) {
 		showSiteBanner({
 			icon: 'warning',
 			id: GRAPHQL_COMMON_BANNER_ID,

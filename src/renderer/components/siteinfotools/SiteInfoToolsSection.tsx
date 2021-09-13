@@ -6,7 +6,7 @@ import { store, useStoreSelector } from '../../store/store';
 import styles from './SiteInfoToolsSection.scss';
 import { ToolsHeader } from './ToolsHeader';
 import { ToolsContent } from './ToolsContent';
-import { getEnabledProvidersHub } from '../../store/thunks';
+import { getEnabledProvidersHub, updateActiveSiteAndDataSources } from '../../store/thunks';
 import TryAgain from './TryAgain';
 import { $offline } from '@getflywheel/local/renderer';
 import { useObserver } from 'mobx-react';
@@ -16,6 +16,15 @@ interface Props {
 
 const SiteInfoToolsSection = ({ site }: Props) => (
 	useObserver(() => {
+		const { offline } = $offline;
+
+		// refresh when going from offline to online
+		React.useEffect(() => {
+			if (!offline) {
+				store.dispatch(updateActiveSiteAndDataSources({ siteId: site.id }));
+			}
+		}, [offline]);
+
 		// update active site anytime the site prop changes
 		useUpdateActiveSiteAndDataSources(site.id);
 
@@ -29,7 +38,7 @@ const SiteInfoToolsSection = ({ site }: Props) => (
 		 * we should handle that more gracefully
 		 */
 
-		if (hasErrorLoadingEnabledProviders) {
+		if (hasErrorLoadingEnabledProviders && !offline) {
 			return (
 				<div className={styles.SiteInfoToolsSection}>
 					<TryAgain
@@ -39,8 +48,6 @@ const SiteInfoToolsSection = ({ site }: Props) => (
 				</div>
 			);
 		}
-
-		const { offline } = $offline;
 
 		return (
 			<div className={styles.SiteInfoToolsSection}>
