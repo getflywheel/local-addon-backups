@@ -203,6 +203,10 @@ export default function (context): void {
 				LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_START);
 			};
 
+			const location = (document.querySelector('#root > div') as HTMLElement)?.dataset?.location;
+
+			if (location !== '/main/add-site/add') return null;
+
 			return (
 				<TextButton
 					className="GoBack"
