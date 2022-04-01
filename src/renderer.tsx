@@ -72,6 +72,16 @@ export default function (context): void {
 		return cloudBackupStatuses;
 	});
 
+	/**
+	 * Add CloudBackups as an option when creating a new site
+	 */
+	hooks.addFilter("CreateSiteIndexJS:RadioOptions", (options) => {
+		return {
+			...options,
+			"add-site/select-site-backup": { label: "Create from a Backup" },
+		};
+	});
+
 	// add new routes and components to Local core
 	hooks.addFilter('AddSiteIndexJS:RoutesArray', (routes, path) => {
 		const cloudBackupRoutes = [
