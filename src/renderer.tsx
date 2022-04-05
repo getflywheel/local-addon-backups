@@ -75,15 +75,17 @@ export default function (context): void {
 	/**
 	 * Add CloudBackups as an option when creating a new site
 	 */
-	hooks.addFilter("CreateSiteIndexJS:RadioOptions", (options) => {
+	hooks.addFilter("CreateSite:RadioOptions", (options) => {
 		return {
 			...options,
 			"add-site/select-site-backup": { label: "Create from a Backup" },
 		};
 	});
 
-	// add new routes and components to Local core
-	hooks.addFilter('AddSiteIndexJS:RoutesArray', (routes, path) => {
+	/**
+	 * Add CloudBackups as an option when creating a new site
+	 */
+	hooks.addFilter("CreateSite:Routes", (routes) => {
 		const cloudBackupRoutes = [
 			{ key: 'add-site-choose', path: `${path}/`, component: ChooseCreateSiteHOC },
 			{ key: 'add-site-select-site-backup', path: LOCAL_ROUTES.ADD_SITE_BACKUP_SITE, component: SelectSiteBackupHOC },
