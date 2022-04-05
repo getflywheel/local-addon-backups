@@ -1,41 +1,56 @@
-import React, { useState, useEffect, useCallback } from 'react';
 import {
-	PrimaryButton,
-	RadioBlock,
-	Title,
-	ProgressBar,
 	Banner,
-	Tooltip,
+	PrimaryButton,
+	ProgressBar,
+	RadioBlock,
 	TextButton,
-	FlyModal,
-} from '@getflywheel/local-components';
-import * as LocalRenderer from '@getflywheel/local/renderer';
-import { store, actions, useStoreSelector } from '../../store/store';
-import { selectors } from '../../store/selectors';
-import styles from './ChooseCreateSite.scss';
-import { LOCAL_ROUTES, IPCASYNC_EVENTS, MULTI_MACHINE_BACKUP_ERRORS } from '../../../constants';
-import { launchBrowserToHubBackups, launchBrowserToHubLogin } from '../../helpers/launchBrowser';
+	Title,
+	Tooltip,
+} from "@getflywheel/local-components";
+import * as LocalRenderer from "@getflywheel/local/renderer";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+	IPCASYNC_EVENTS,
+	LOCAL_ROUTES,
+	MULTI_MACHINE_BACKUP_ERRORS,
+} from "../../../constants";
+import {
+	launchBrowserToHubBackups,
+	launchBrowserToHubLogin,
+} from "../../helpers/launchBrowser";
+import { selectors } from "../../store/selectors";
+import { actions, store, useStoreSelector } from "../../store/store";
+import styles from "./ChooseCreateSite.scss";
 
 export const ChooseCreateSite = (props) => {
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
 	const { isLoading, providerIsErrored, activeError } = state;
-	const [radioState, setRadioState] = useState('createnew');
+	const [radioState, setRadioState] = useState("createnew");
 	const [showBanner, setShowBanner] = useState(false);
-	const noProvidersFound = activeError === MULTI_MACHINE_BACKUP_ERRORS.NO_CONNECTED_PROVIDERS_FOR_SITE;
-	const noConnectionToHub = activeError === MULTI_MACHINE_BACKUP_ERRORS.GENERIC_HUB_CONNECTION_ERROR;
+	const noProvidersFound =
+		activeError ===
+		MULTI_MACHINE_BACKUP_ERRORS.NO_CONNECTED_PROVIDERS_FOR_SITE;
+	const noConnectionToHub =
+		activeError ===
+		MULTI_MACHINE_BACKUP_ERRORS.GENERIC_HUB_CONNECTION_ERROR;
 
 	// Helper to close the add site modal, then call launch method.
-	const closeThenLaunch = useCallback((launchMethod) => () => {
-		LocalRenderer.sendIPCEvent('goToRoute', '/main');
-		launchMethod();
-	}, [props.onClose]);
+	const closeThenLaunch = useCallback(
+		(launchMethod) => () => {
+			LocalRenderer.sendIPCEvent("goToRoute", "/main");
+			launchMethod();
+		},
+		[props.onClose]
+	);
 
 	useEffect(() => {
 		store.dispatch(actions.setProviderIsErrored(null));
 		store.dispatch(actions.setActiveError(null));
 		store.dispatch(actions.getProvidersList());
 		const getUserDataShowPromoBanner = async () => {
-			const showBanner = await LocalRenderer.ipcAsync(IPCASYNC_EVENTS.SHOULD_LOAD_PROMO_BANNER);
+			const showBanner = await LocalRenderer.ipcAsync(
+				IPCASYNC_EVENTS.SHOULD_LOAD_PROMO_BANNER
+			);
 
 			if (showBanner && showBanner?.show === true) {
 				setShowBanner(true);
@@ -45,12 +60,18 @@ export const ChooseCreateSite = (props) => {
 	}, []);
 
 	const onContinue = () => {
-		if (radioState === 'createnew') {
-			LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_CREATE_NEW);
+		if (radioState === "createnew") {
+			LocalRenderer.sendIPCEvent(
+				"goToRoute",
+				LOCAL_ROUTES.ADD_SITE_CREATE_NEW
+			);
 		}
 
-		if (radioState === 'usebackup') {
-			LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_BACKUP_SITE);
+		if (radioState === "usebackup") {
+			LocalRenderer.sendIPCEvent(
+				"goToRoute",
+				LOCAL_ROUTES.ADD_SITE_BACKUP_SITE
+			);
 		}
 	};
 
@@ -73,7 +94,9 @@ export const ChooseCreateSite = (props) => {
 	return (
 		<>
 			<div className="AddSiteContent">
-				<Title size="l" container={{ margin: 'l 0' }}>Create a site</Title>
+				<Title size="l" container={{ margin: "l 0" }}>
+					Create a site
+				</Title>
 				<div className="Inner">
 					<RadioBlock
 						className={styles.radioBlock}
@@ -81,66 +104,93 @@ export const ChooseCreateSite = (props) => {
 						default={radioState}
 						options={{
 							createnew: {
-								key: 'create-new-site',
-								label: 'Create a new site',
+								key: "create-new-site",
+								label: "Create a new site",
 							},
 							usebackup: {
-								key: 'use-cloud-backup',
-								label: 'Create a site from Cloud Backups Add-on',
-								className: 'TID_NewSiteEnvironment_RadioBlockItem_Custom',
+								key: "use-cloud-backup",
+								label: "Create a site from Cloud Backups Add-on",
+								className:
+									"TID_NewSiteEnvironment_RadioBlockItem_Custom",
 								disabled: providerIsErrored,
 								container: {
-									element:
-									(providerIsErrored
-										? <Tooltip
+									element: providerIsErrored ? (
+										<Tooltip
 											className={styles.tooltip}
 											showDelay={2}
-											content={(
+											content={
 												<div>
 													{noProvidersFound && [
-														<p className={styles.extraPadding}>
+														<p
+															className={
+																styles.extraPadding
+															}
+														>
 															Uh oh!
-															<br/>
+															<br />
 															You don’t have a
 															storage provider
-															connected to your account.
+															connected to your
+															account.
 														</p>,
-														<TextButton onClick={closeThenLaunch(launchBrowserToHubBackups)}>Manage Account</TextButton>,
+														<TextButton
+															onClick={closeThenLaunch(
+																launchBrowserToHubBackups
+															)}
+														>
+															Manage Account
+														</TextButton>,
 													]}
 													{noConnectionToHub && [
-														<p className={styles.extraPadding}>
+														<p
+															className={
+																styles.extraPadding
+															}
+														>
 															Uh oh!
-															<br/>
+															<br />
 															We couldn't connect
-															to your Local account.
+															to your Local
+															account.
 														</p>,
-														<TextButton onClick={closeThenLaunch(launchBrowserToHubLogin)}>Log in to Local</TextButton>,
+														<TextButton
+															onClick={closeThenLaunch(
+																launchBrowserToHubLogin
+															)}
+														>
+															Log in to Local
+														</TextButton>,
 													]}
-
 												</div>
-											)}
-											popperOffsetModifier={{ offset: [0, 12] }}
+											}
+											popperOffsetModifier={{
+												offset: [0, 12],
+											}}
 											position="top"
 										/>
-										: <></>
+									) : (
+										<></>
 									),
 								},
 							},
 						}}
 					/>
-					{showBanner && <Banner
-						className={styles.promoBanner}
-						variant="neutral"
-						onDismiss={onPromoBannerDismiss}
-						icon="none"
-					>
-						<p>&#127881;</p><p>You can now create a site from a Cloud Backup! Select this option to get started.</p>
-					</Banner>}
+					{showBanner && (
+						<Banner
+							className={styles.promoBanner}
+							variant="neutral"
+							onDismiss={onPromoBannerDismiss}
+							icon="none"
+						>
+							<p>&#127881;</p>
+							<p>
+								You can now create a site from a Cloud Backup!
+								Select this option to get started.
+							</p>
+						</Banner>
+					)}
 				</div>
-				<PrimaryButton
-					className="Continue"
-					onClick={onContinue}
-				>
+				<PrimaryButton className="Continue" onClick={onContinue}>
 					Continue
 				</PrimaryButton>
 			</div>
