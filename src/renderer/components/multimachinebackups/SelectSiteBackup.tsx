@@ -56,8 +56,8 @@ export const SelectSiteBackup = (props: Props) => {
 		activeError ===
 		MULTI_MACHINE_BACKUP_ERRORS.GENERIC_HUB_CONNECTION_ERROR;
 
-	const configBackupConnection = () => {};
 	useEffect(() => {
+		console.log("state: ", state);
 		store.dispatch(actions.setProviderIsErrored(null));
 		store.dispatch(actions.setActiveError(null));
 		store.dispatch(actions.getProvidersList());
