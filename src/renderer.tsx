@@ -11,9 +11,13 @@ import { SelectSiteBackup } from "./renderer/components/multimachinebackups/Sele
 import { SelectSnapshot } from "./renderer/components/multimachinebackups/SelectSnapshot";
 import { CloseButtonWithStore } from "./renderer/components/multimachinebackups/CloseButtonWithStore";
 import * as LocalRenderer from "@getflywheel/local/renderer";
-import { Stepper, Step, TextButton } from "@getflywheel/local-components";
+import {
+	Stepper,
+	Step,
+	Text,
+	TextButtonExternal,
+} from "@getflywheel/local-components";
 import { LOCAL_ROUTES } from "./constants";
-import CloudBackupsRadioOption from "./renderer/components/CloudBackupsRadioOption";
 
 setupListeners();
 
@@ -85,7 +89,24 @@ export default function (context): void {
 			...options,
 			"add-site/select-site-backup": {
 				label: "Create from a Backup",
-				description: CloudBackupsRadioOption,
+				content: (
+					<>
+						<Text>
+							Pull a saved site down to Local from Google Drive or
+							Dropbox.
+						</Text>
+						<TextButtonExternal
+							onClick={(evt) => {
+								evt.stopPropagation();
+							}}
+							inline={false}
+							style={{ paddingTop: 7 }}
+							href="https://localwp.com/help-docs/local-add-ons-help/cloud-backups/"
+						>
+							What&apos;s this?
+						</TextButtonExternal>
+					</>
+				),
 				disabled: LocalRenderer.$hub.user === null,
 			},
 		};
