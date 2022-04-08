@@ -2,8 +2,7 @@ import React from "react";
 import { Provider } from "react-redux";
 import { ApolloProvider } from "@apollo/client";
 import { RestoreStates, BackupStates } from "./types";
-import { selectors } from "./renderer/store/selectors";
-import { store, actions, useStoreSelector } from "./renderer/store/store";
+import { store, actions } from "./renderer/store/store";
 import SiteInfoToolsSection from "./renderer/components/siteinfotools/SiteInfoToolsSection";
 import { setupListeners } from "./renderer/helpers/setupListeners";
 import { client } from "./renderer/localClient/localGraphQLClient";
@@ -34,35 +33,6 @@ const withStoreProvider = (Component) => (props) =>
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function (context): void {
-	/*
-	 * Sets up the initial state of the Cloud Backups stores
-	 // TODO: I wonder if this needs to live within the =useEffect= method
-	 //       The challenge though, is that our radio options doesn't return JSX,
-	 //       instead, we are needing to return objects.
-	 */
-	// const setupBackupsStores = () => {
-	// 	store.dispatch(actions.setProviderIsErrored(null));
-	// 	store.dispatch(actions.setActiveError(null));
-	// 	store.dispatch(actions.getProvidersList());
-	// 	const { multiMachineRestore } = store.getState();
-	// 	// console.log("state: ", state);
-	// 	console.log(
-	// 		"multiMachineRestore from within setupBackupsStores: ",
-	// 		multiMachineRestore
-	// 	);
-	// };
-	// setupBackupsStores();
-
-	// console.log("selectors: ", selectors);
-	// const state = useStoreSelector(selectors.selectMultiMachineSliceState);
-	// const { isLoading, providerIsErrored, activeError } = state;
-	const { multiMachineRestore } = store.getState();
-	// console.log("state: ", state);
-	console.log("multiMachineRestore: ", multiMachineRestore);
-
-	// const providerIsErrored = true;
-	// console.log("context: ", context);
-
 	const { hooks } = context;
 	const SiteInfoToolsSectionHOC = withApolloProvider(
 		withStoreProvider(SiteInfoToolsSection)
@@ -111,26 +81,12 @@ export default function (context): void {
 	 * Add CloudBackups as an option when creating a new site
 	 */
 	hooks.addFilter("CreateSite:RadioOptions", (options) => {
-		store.dispatch(actions.setProviderIsErrored(null));
-		store.dispatch(actions.setActiveError(null));
-		store.dispatch(actions.getProvidersList());
-
-		const { multiMachineRestore } = store.getState();
-		// console.log("state: ", state);
-		console.log(
-			"multiMachineRestore within CreateSite:RadioOptions: ",
-			multiMachineRestore
-		);
-
-		console.log("options: ", options);
 		return {
 			...options,
 			"add-site/select-site-backup": {
 				label: "Create from a Backup",
 				description: CloudBackupsRadioOption,
-				disabled:
-					multiMachineRestore.providerIsErrored ||
-					multiMachineRestore.backupProviders.length < 1,
+				disabled: LocalRenderer.$hub.user === null,
 			},
 		};
 	});
