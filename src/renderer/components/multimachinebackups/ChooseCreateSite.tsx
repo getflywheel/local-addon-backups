@@ -25,7 +25,6 @@ import styles from "./ChooseCreateSite.scss";
 export const ChooseCreateSite = (props) => {
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
 	const { isLoading, providerIsErrored, activeError } = state;
-	// console.log("providerIsErrored: ", providerIsErrored);
 	const [radioState, setRadioState] = useState("createnew");
 	const [showBanner, setShowBanner] = useState(false);
 	const noProvidersFound =

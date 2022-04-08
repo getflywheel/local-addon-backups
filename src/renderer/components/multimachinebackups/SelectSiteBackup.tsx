@@ -57,11 +57,9 @@ export const SelectSiteBackup = (props: Props) => {
 		MULTI_MACHINE_BACKUP_ERRORS.GENERIC_HUB_CONNECTION_ERROR;
 
 	useEffect(() => {
-		console.log("state: ", state);
 		store.dispatch(actions.setProviderIsErrored(null));
 		store.dispatch(actions.setActiveError(null));
 		store.dispatch(actions.getProvidersList());
-		// TODO: Do we need to refactor getSitesList out so that it is fired after getProvidersList?
 		store.dispatch(actions.getSitesList());
 		const getUserDataShowPromoBanner = async () => {
 			const showBanner = await LocalRenderer.ipcAsync(

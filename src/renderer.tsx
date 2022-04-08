@@ -140,7 +140,6 @@ export default function (context): void {
 			}
 			cloudBackupRoutes.push(route);
 		});
-		console.log(cloudBackupRoutes);
 
 		return cloudBackupRoutes;
 	});
