@@ -16,6 +16,7 @@ import {
 	Step,
 	Text,
 	TextButtonExternal,
+	Tooltip,
 } from "@getflywheel/local-components";
 import { LOCAL_ROUTES } from "./constants";
 import PromoBanner from "./renderer/components/PromoBanner";
@@ -90,24 +91,43 @@ export default function (context): void {
 			...options,
 			"add-site/select-site-backup": {
 				label: "Create from a Backup",
-				content: (
-					<>
-						<Text>
-							Pull a saved site down to Local from Google Drive or
-							Dropbox.
-						</Text>
-						<TextButtonExternal
-							onClick={(evt) => {
-								evt.stopPropagation();
+				container: {
+					element: (
+						<Tooltip
+							// className={styles.tooltip}
+							showDelay={2}
+							content={
+								<div>
+									<h2>Tooltip details</h2>
+								</div>
+							}
+							popperOffsetModifier={{
+								offset: [0, 12],
 							}}
-							inline={false}
-							style={{ paddingTop: 7 }}
-							href="https://localwp.com/help-docs/local-add-ons-help/cloud-backups/"
+							position="top"
 						>
-							What&apos;s this?
-						</TextButtonExternal>
-					</>
-				),
+							Tooltip content
+						</Tooltip>
+					),
+				},
+				// content: (
+				// 	<>
+				// 		<Text>
+				// 			Pull a saved site down to Local from Google Drive or
+				// 			Dropbox.
+				// 		</Text>
+				// 		<TextButtonExternal
+				// 			onClick={(evt) => {
+				// 				evt.stopPropagation();
+				// 			}}
+				// 			inline={false}
+				// 			style={{ paddingTop: 7 }}
+				// 			href="https://localwp.com/help-docs/local-add-ons-help/cloud-backups/"
+				// 		>
+				// 			What&apos;s this?
+				// 		</TextButtonExternal>
+				// 	</>
+				// ),
 				disabled: LocalRenderer.$hub.user === null,
 			},
 		};
