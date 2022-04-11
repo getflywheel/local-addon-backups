@@ -18,6 +18,7 @@ import {
 	TextButtonExternal,
 } from "@getflywheel/local-components";
 import { LOCAL_ROUTES } from "./constants";
+import PromoBanner from "./renderer/components/PromoBanner";
 
 setupListeners();
 
@@ -164,6 +165,8 @@ export default function (context): void {
 
 		return cloudBackupRoutes;
 	});
+
+	hooks.addContent("CreateSite_Messages", () => <PromoBanner />);
 
 	// optionally modify NewSiteEnvironment component functionality in Local core
 	hooks.addFilter(
