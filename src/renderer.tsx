@@ -89,47 +89,89 @@ export default function (context): void {
 	hooks.addFilter("CreateSite:RadioOptions", (options) => {
 		return {
 			...options,
-			"add-site/select-site-backup": {
-				label: "Create from a Backup",
-				container: {
-					element: (
-						<Tooltip
-							// className={styles.tooltip}
-							showDelay={2}
-							content={
-								<div>
-									<h2>Tooltip details</h2>
-								</div>
-							}
-							popperOffsetModifier={{
-								offset: [0, 12],
-							}}
-							position="top"
-						>
-							Tooltip content
-						</Tooltip>
-					),
-				},
-				// content: (
-				// 	<>
-				// 		<Text>
-				// 			Pull a saved site down to Local from Google Drive or
-				// 			Dropbox.
-				// 		</Text>
-				// 		<TextButtonExternal
-				// 			onClick={(evt) => {
-				// 				evt.stopPropagation();
-				// 			}}
-				// 			inline={false}
-				// 			style={{ paddingTop: 7 }}
-				// 			href="https://localwp.com/help-docs/local-add-ons-help/cloud-backups/"
-				// 		>
-				// 			What&apos;s this?
-				// 		</TextButtonExternal>
-				// 	</>
-				// ),
-				disabled: LocalRenderer.$hub.user === null,
-			},
+			"add-site/select-site-backup":
+				LocalRenderer.$hub.user === null
+					? {
+							label: "Not logged in",
+							content: (
+								<>
+									<Text>
+										In order to use Cloud Backups, Local
+										must be logged into your Local Account
+									</Text>
+									<TextButtonExternal
+										onClick={(evt) => {
+											evt.stopPropagation();
+										}}
+										inline={false}
+										style={{ paddingTop: 7 }}
+										href="https://hub.localwp.com"
+									>
+										What&apos;s this?
+									</TextButtonExternal>
+								</>
+							),
+					  }
+					: {
+							label: "Create from a Backup",
+
+							// container: {
+							// 	element: (
+							// 		<Tooltip
+							// 			// className={styles.tooltip}
+							// 			showDelay={2}
+							// 			content={
+							// 				<div>
+							// 					<h2>Tooltip details</h2>
+							// 				</div>
+							// 			}
+							// 			popperOffsetModifier={{
+							// 				offset: [0, 12],
+							// 			}}
+							// 			position="top"
+							// 		>
+							// 			Tooltip content
+							// 		</Tooltip>
+							// 	),
+							// },
+
+							content: (
+								<>
+									<Tooltip
+										onHover={() => {
+											console.log("hovering");
+										}}
+										showDelay={2}
+										content={
+											<div>
+												<h2>Tooltip details</h2>
+											</div>
+										}
+										popperOffsetModifier={{
+											offset: [0, 12],
+										}}
+										position="top"
+									>
+										Benn
+										<Text>
+											Pull a saved site down to Local from
+											Google Drive or Dropbox.
+										</Text>
+										<TextButtonExternal
+											onClick={(evt) => {
+												evt.stopPropagation();
+											}}
+											inline={false}
+											style={{ paddingTop: 7 }}
+											href="https://localwp.com/help-docs/local-add-ons-help/cloud-backups/"
+										>
+											What&apos;s this?
+										</TextButtonExternal>
+									</Tooltip>
+								</>
+							),
+							disabled: LocalRenderer.$hub.user === null,
+					  },
 		};
 	});
 
