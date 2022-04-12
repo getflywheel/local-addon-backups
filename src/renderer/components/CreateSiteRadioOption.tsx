@@ -9,13 +9,12 @@ import { $hub } from "@getflywheel/local/renderer";
 const CreateSiteRadioOption = () => {
 	const isLoggedIn = () => $hub.user === null;
 	return {
-		label: "Create from a Backup",
+		label: "Create from a Cloud Backup",
 		disabled: isLoggedIn(),
 
-		container: {
+		container: isLoggedIn() && {
 			element: (
 				<Tooltip
-					forceShow
 					showDelay={2}
 					content={
 						<div>
@@ -26,24 +25,28 @@ const CreateSiteRadioOption = () => {
 						offset: [0, 12],
 					}}
 					position="top"
-				>
-					<Text>
-						Pull a saved site down to Local from Google Drive or
-						Dropbox.
-					</Text>
-					<TextButtonExternal
-						onClick={(evt) => {
-							evt.stopPropagation();
-						}}
-						inline={false}
-						style={{ paddingTop: 7 }}
-						href="https://localwp.com/help-docs/local-add-ons-help/cloud-backups/"
-					>
-						What&apos;s this?
-					</TextButtonExternal>
-				</Tooltip>
+				/>
 			),
 		},
+
+		content: (
+			<>
+				<Text>
+					Pull a saved site down to Local from Google Drive or
+					Dropbox.
+				</Text>
+				<TextButtonExternal
+					onClick={(evt) => {
+						evt.stopPropagation();
+					}}
+					inline={false}
+					style={{ paddingTop: 7 }}
+					href="https://localwp.com/help-docs/local-add-ons-help/cloud-backups/"
+				>
+					What&apos;s this?
+				</TextButtonExternal>
+			</>
+		),
 	};
 };
 
