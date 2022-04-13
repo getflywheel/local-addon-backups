@@ -1,29 +1,34 @@
-import React, { useEffect, useState } from 'react';
-import { Text, TextButtonExternal, Tooltip } from '@getflywheel/local-components';
+import React from 'react';
+import { Container, Text, TextButtonExternal, Tooltip } from '@getflywheel/local-components';
 import { $hub } from '@getflywheel/local/renderer';
 
-// import { selectors } from "../../store/selectors";
-// import { actions, store, useStoreSelector } from "../../store/store";
-
 const CreateSiteRadioOption = () => {
-	const isLoggedIn = () => $hub.user === null;
-
-	// TODO: Update state to be able to handle various errors
-	// const state = useStoreSelector(selectors.selectMultiMachineSliceState);
-	// const { isLoading, providerIsErrored, activeError } = state;
+	const isLoggedOut = $hub.user === null;
 
 	return {
 		label: 'Create from a Cloud Backup',
-		disabled: isLoggedIn(),
+		key: 'create-site-option-from-backup',
+		disabled: isLoggedOut,
 
-		container: isLoggedIn() && {
+		container: isLoggedOut && {
 			element: (
 				<Tooltip
 					showDelay={2}
 					content={
-						<div>
-							<h2>Tooltip details</h2>
-						</div>
+						<Container margin="s">
+							<Text tag="p">
+								Uh oh!
+								<br />
+								You need to log into your Local Account to use Cloud Backups.
+							</Text>
+							<TextButtonExternal
+								onClick={() => {
+									$hub.login();
+								}}
+							>
+								Log into Local Account
+							</TextButtonExternal>
+						</Container>
 					}
 					popperOffsetModifier={{
 						offset: [0, 12],
@@ -37,7 +42,7 @@ const CreateSiteRadioOption = () => {
 			<>
 				<Text>Pull a saved site down to Local from Google Drive or Dropbox.</Text>
 				<TextButtonExternal
-					onClick={(evt) => {
+					onClick={(evt: Event) => {
 						evt.stopPropagation();
 					}}
 					inline={false}
