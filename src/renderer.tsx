@@ -15,6 +15,8 @@ import {
 	TextButton,
 } from '@getflywheel/local-components';
 import { LOCAL_ROUTES } from './constants';
+import PromoBanner from './renderer/components/PromoBanner';
+import createSiteRadioOption from './renderer/components/createSiteRadioOption';
 
 setupListeners();
 
@@ -68,24 +70,55 @@ export default function (context): void {
 		return cloudBackupStatuses;
 	});
 
-	// add new routes and components to Local core
+	/**
+	 * Add CloudBackups as an option when creating a new site
+	 *
+	 * The option object's key is used as the RadioBlock value and
+	 * needs to be the route that will be navigated to by the "Continue"
+	 * button.
+	 */
+	hooks.addFilter('CreateSite:RadioOptions', (options) => {
+		return {
+			...options,
+			'add-site/select-site-backup': createSiteRadioOption(),
+		};
+	});
+
+	/*
+	 *  Add new routes and components to Local core
+	 *
+	 * Note: This doesn't match exactly with the new CreateSite
+	 * paradigm, but will be addressed with upcoming work when refactoring
+	 * the AddSite flow.
+	 */
 	hooks.addFilter('AddSiteIndexJS:RoutesArray', (routes, path) => {
 		const cloudBackupRoutes = [
-			{ key: 'add-site-select-site-backup', path: LOCAL_ROUTES.ADD_SITE_BACKUP_SITE, component: SelectSiteBackupHOC },
-			{ key: 'add-site-select-snapshot', path: LOCAL_ROUTES.ADD_SITE_BACKUP_SNAPSHOT, component: SelectSnapshotHOC },
+			{
+				key: 'add-site-select-site-backup',
+				path: LOCAL_ROUTES.ADD_SITE_BACKUP_SITE,
+				component: SelectSiteBackupHOC,
+			},
+			{
+				key: 'add-site-select-snapshot',
+				path: LOCAL_ROUTES.ADD_SITE_BACKUP_SNAPSHOT,
+				component: SelectSnapshotHOC,
+			},
 		];
-
 		routes.forEach((route) => {
 			if (route.path === `${path}/`) {
-				cloudBackupRoutes.push(
-					{ key: 'add-site-add', path: LOCAL_ROUTES.ADD_SITE_CREATE_NEW, component: route.component },
-				);
+				cloudBackupRoutes.push({
+					key: 'add-site-add',
+					path: LOCAL_ROUTES.ADD_SITE_CREATE_NEW,
+					component: route.component,
+				});
 			}
 			cloudBackupRoutes.push(route);
 		});
 
 		return cloudBackupRoutes;
 	});
+
+	hooks.addContent('CreateSite_Messages', () => <PromoBanner />);
 
 	// optionally modify NewSiteEnvironment component functionality in Local core
 	hooks.addFilter('AddSiteIndexJS:NewSiteEnvironment', (newSiteEnvironmentProps) => {

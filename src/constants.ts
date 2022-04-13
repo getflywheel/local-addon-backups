@@ -31,7 +31,7 @@ export const MULTI_MACHINE_BACKUP_ERRORS = {
 };
 
 export const LOCAL_ROUTES = {
-	ADD_SITE_START: '/main/add-site',
+	ADD_SITE_START: '/main/create-site',
 	ADD_SITE_BACKUP_SITE: '/main/add-site/select-site-backup',
 	ADD_SITE_BACKUP_SNAPSHOT: '/main/add-site/select-snapshot',
 	ADD_SITE_ENVIRONMENT: '/main/add-site/environment',
