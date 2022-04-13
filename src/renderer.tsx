@@ -8,7 +8,6 @@ import { setupListeners } from './renderer/helpers/setupListeners';
 import { client } from './renderer/localClient/localGraphQLClient';
 import { SelectSiteBackup } from './renderer/components/multimachinebackups/SelectSiteBackup';
 import { SelectSnapshot } from './renderer/components/multimachinebackups/SelectSnapshot';
-import { CloseButtonWithStore } from './renderer/components/multimachinebackups/CloseButtonWithStore';
 import * as LocalRenderer from '@getflywheel/local/renderer';
 import { Stepper, Step, Text, TextButtonExternal, Tooltip } from '@getflywheel/local-components';
 import { LOCAL_ROUTES } from './constants';
@@ -37,7 +36,6 @@ export default function (context): void {
 	const SiteInfoToolsSectionHOC = withApolloProvider(withStoreProvider(SiteInfoToolsSection));
 	const SelectSiteBackupHOC = withApolloProvider(withStoreProvider(SelectSiteBackup));
 	const SelectSnapshotHOC = withApolloProvider(withStoreProvider(SelectSnapshot));
-	const CloseButtonHOC = withStoreProvider(CloseButtonWithStore);
 
 	hooks.addFilter('siteInfoToolsItem', (items) => {
 		const cloudBackupItems = [
