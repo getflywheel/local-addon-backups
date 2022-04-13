@@ -12,7 +12,7 @@ import * as LocalRenderer from '@getflywheel/local/renderer';
 import { Stepper, Step, Text, TextButtonExternal, Tooltip } from '@getflywheel/local-components';
 import { LOCAL_ROUTES } from './constants';
 import PromoBanner from './renderer/components/PromoBanner';
-import CreateSiteRadioOption from './renderer/components/CreateSiteRadioOption';
+import createSiteRadioOption from './renderer/components/createSiteRadioOption';
 
 setupListeners();
 
@@ -69,7 +69,7 @@ export default function (context): void {
 	hooks.addFilter('CreateSite:RadioOptions', (options) => {
 		return {
 			...options,
-			'add-site/select-site-backup': CreateSiteRadioOption(),
+			'add-site/select-site-backup': createSiteRadioOption(),
 		};
 	});
 
