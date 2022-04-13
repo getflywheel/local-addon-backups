@@ -1,43 +1,48 @@
-import React, { useEffect, useCallback, useState } from 'react';
-import {
-	Text,
-	PrimaryButton,
-	Title,
-	FlySelect,
-	TextButton,
-	Tooltip,
-	ProgressBar,
-} from '@getflywheel/local-components';
-import classNames from 'classnames';
-import { store, actions, useStoreSelector } from '../../store/store';
-import { selectors } from '../../store/selectors';
+import { FlySelect, PrimaryButton, ProgressBar, Text, TextButton, Title, Tooltip } from '@getflywheel/local-components';
 import * as LocalRenderer from '@getflywheel/local/renderer';
+import classNames from 'classnames';
 import path from 'path';
+import React, { useCallback, useEffect, useState } from 'react';
+import { IPCASYNC_EVENTS, LOCAL_ROUTES, MULTI_MACHINE_BACKUP_ERRORS } from '../../../constants';
 import { BackupSite, NewSiteInfoWithCloudMeta } from '../../../types';
+import { selectors } from '../../store/selectors';
+import { actions, store, useStoreSelector } from '../../store/store';
 import { ErrorBannerContainer } from './ErrorBannerContainer';
 import styles from './SelectSiteBackup.scss';
-import { LOCAL_ROUTES, IPCASYNC_EVENTS } from '../../../constants';
-
 
 interface Props {
-	siteSettings: NewSiteInfoWithCloudMeta
-	updateSiteSettings: (...any) => any
-	formatSiteNicename: (siteName: string) => string
-	defaultLocalSettings: any
-	osPath: any
+	siteSettings: NewSiteInfoWithCloudMeta;
+	updateSiteSettings: (...any) => any;
+	formatSiteNicename: (siteName: string) => string;
+	defaultLocalSettings: any;
+	osPath: any;
 }
 
 export const SelectSiteBackup = (props: Props) => {
 	const { updateSiteSettings, siteSettings, osPath, formatSiteNicename, defaultLocalSettings } = props;
 	const [isDuplicateName, setIsDuplicateName] = useState(false);
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
-	const { backupSites, selectedSite, newSiteName, isLoading } = state;
+	const { backupSites, selectedSite, newSiteName, isLoading, providerIsErrored, activeError } = state;
+	const [showBanner, setShowBanner] = useState(false);
+	const noProvidersFound = activeError === MULTI_MACHINE_BACKUP_ERRORS.NO_CONNECTED_PROVIDERS_FOR_SITE;
+	const noConnectionToHub = activeError === MULTI_MACHINE_BACKUP_ERRORS.GENERIC_HUB_CONNECTION_ERROR;
 
 	useEffect(() => {
+		store.dispatch(actions.setProviderIsErrored(null));
+		store.dispatch(actions.setActiveError(null));
+		store.dispatch(actions.getProvidersList());
 		store.dispatch(actions.getSitesList());
+		const getUserDataShowPromoBanner = async () => {
+			const showBanner = await LocalRenderer.ipcAsync(IPCASYNC_EVENTS.SHOULD_LOAD_PROMO_BANNER);
+
+			if (showBanner && showBanner?.show === true) {
+				setShowBanner(true);
+			}
+		};
+		getUserDataShowPromoBanner();
 	}, []);
 
-	let flySelectSites: { [value: string]: string; } = {};
+	let flySelectSites: { [value: string]: string } = {};
 
 	// create object required for select dropdown component
 	backupSites.forEach((site) => {
@@ -55,9 +60,7 @@ export const SelectSiteBackup = (props: Props) => {
 
 		const sitePath = path.join(defaultLocalSettings['new-site-defaults'].sitesPath, formattedSiteName);
 
-		const formattedSitePath = osPath.addOSTrailingSlash(
-			osPath.toNative(sitePath),
-		);
+		const formattedSitePath = osPath.addOSTrailingSlash(osPath.toNative(sitePath));
 
 		return {
 			formattedSiteName,
@@ -74,10 +77,7 @@ export const SelectSiteBackup = (props: Props) => {
 		});
 
 		const checkSiteName = async () => {
-			const isDuplicate = await LocalRenderer.ipcAsync(
-				IPCASYNC_EVENTS.CHECK_FOR_DUPLICATE_NAME,
-				newSiteName,
-			);
+			const isDuplicate = await LocalRenderer.ipcAsync(IPCASYNC_EVENTS.CHECK_FOR_DUPLICATE_NAME, newSiteName);
 
 			setIsDuplicateName(isDuplicate);
 		};
@@ -91,7 +91,6 @@ export const SelectSiteBackup = (props: Props) => {
 			clearTimeout(debouncer);
 		};
 	}, [newSiteName]);
-
 
 	const onSiteSelect = async (siteUUID: string) => {
 		const site: BackupSite = backupSites.find((site) => siteUUID === site.uuid);
@@ -144,7 +143,9 @@ export const SelectSiteBackup = (props: Props) => {
 		<>
 			<ErrorBannerContainer />
 			<div className="AddSiteContent">
-				<Title size="l" container={{ margin: 'l 0' }}>Select site with backup and name your new site</Title>
+				<Title size="l" container={{ margin: 'l 0' }}>
+					Select site with backup and name your new site
+				</Title>
 				<div className={styles.innerContainer}>
 					<h2 className={styles.headerPadding}>Select a site with a Cloud Backup</h2>
 					<div className="FormRow">
@@ -162,7 +163,9 @@ export const SelectSiteBackup = (props: Props) => {
 						<div className="FormField">
 							<label>Give the site a new unique name</label>
 							<input
-								className={classNames('TID_NewSiteSite_Input_SiteName_Small', { [styles.errorState]: isDuplicateName })}
+								className={classNames('TID_NewSiteSite_Input_SiteName_Small', {
+									[styles.errorState]: isDuplicateName,
+								})}
 								type="text"
 								disabled={selectedSite === null}
 								value={newSiteName}
@@ -170,9 +173,7 @@ export const SelectSiteBackup = (props: Props) => {
 							/>
 							{isDuplicateName && (
 								<div className={styles.errorTextContainer}>
-									<Text className={styles.errorText}>
-										Please give the site a unique name
-									</Text>
+									<Text className={styles.errorText}>Please give the site a unique name</Text>
 								</div>
 							)}
 						</div>
@@ -180,39 +181,23 @@ export const SelectSiteBackup = (props: Props) => {
 				</div>
 
 				{/* wrap button in tooltip if continue is disabled */}
-				{continueDisabled
-					?
+				{continueDisabled ? (
 					<Tooltip
 						className={styles.tooltip}
-						content={(
-							<>
-								Please select a site and name it before continuing.
-							</>
-						)}
+						content={<>Please select a site and name it before continuing.</>}
 						popperOffsetModifier={{ offset: [0, 0] }}
 						position="top-start"
 					>
-						<PrimaryButton
-							className="Continue"
-							onClick={onContinue}
-							disabled={continueDisabled}
-						>
-						Continue
+						<PrimaryButton className="Continue" onClick={onContinue} disabled={continueDisabled}>
+							Continue
 						</PrimaryButton>
 					</Tooltip>
-					:
-					<PrimaryButton
-						className="Continue"
-						onClick={onContinue}
-						disabled={continueDisabled}
-					>
+				) : (
+					<PrimaryButton className="Continue" onClick={onContinue} disabled={continueDisabled}>
 						Continue
 					</PrimaryButton>
-				}
-				<TextButton
-					className="GoBack"
-					onClick={onGoBack}
-				>
+				)}
+				<TextButton className="GoBack" onClick={onGoBack}>
 					Go Back
 				</TextButton>
 			</div>

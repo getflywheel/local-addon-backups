@@ -9,28 +9,26 @@ import { client } from './renderer/localClient/localGraphQLClient';
 import { SelectSiteBackup } from './renderer/components/multimachinebackups/SelectSiteBackup';
 import { SelectSnapshot } from './renderer/components/multimachinebackups/SelectSnapshot';
 import * as LocalRenderer from '@getflywheel/local/renderer';
-import {
-	Stepper,
-	Step,
-	TextButton,
-} from '@getflywheel/local-components';
+import { Stepper, Step } from '@getflywheel/local-components';
 import { LOCAL_ROUTES } from './constants';
 import PromoBanner from './renderer/components/PromoBanner';
 import createSiteRadioOption from './renderer/components/createSiteRadioOption';
 
 setupListeners();
 
-const withApolloProvider = (Component) => (props) => (
-	<ApolloProvider client={client}>
-		<Component {...props} />
-	</ApolloProvider>
-);
+const withApolloProvider = (Component) => (props) =>
+	(
+		<ApolloProvider client={client}>
+			<Component {...props} />
+		</ApolloProvider>
+	);
 
-const withStoreProvider = (Component) => (props) => (
-	<Provider store={store}>
-		<Component {...props} />
-	</Provider>
-);
+const withStoreProvider = (Component) => (props) =>
+	(
+		<Provider store={store}>
+			<Component {...props} />
+		</Provider>
+	);
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function (context): void {
@@ -44,9 +42,7 @@ export default function (context): void {
 			{
 				path: '/localBackups',
 				menuItem: 'Cloud Backups',
-				render: ({ site }) => (
-					<SiteInfoToolsSectionHOC site={site} />
-				),
+				render: ({ site }) => <SiteInfoToolsSectionHOC site={site} />,
 			},
 		];
 
@@ -58,10 +54,7 @@ export default function (context): void {
 	});
 
 	hooks.addFilter('allowedSiteOverlayStatuses', (statuses: string[]) => {
-		const cloudBackupStatuses: string[] = [
-			...Object.values(RestoreStates),
-			BackupStates.creatingDatabaseSnapshot,
-		];
+		const cloudBackupStatuses: string[] = [...Object.values(RestoreStates), BackupStates.creatingDatabaseSnapshot];
 
 		statuses.forEach((status) => {
 			cloudBackupStatuses.push(status);
@@ -199,8 +192,8 @@ export default function (context): void {
 		}
 
 		if (
-			siteSettings.cloudBackupMeta?.createdFromCloudBackup
-			&& localHistory.location.pathname === LOCAL_ROUTES.ADD_SITE_ENVIRONMENT
+			siteSettings.cloudBackupMeta?.createdFromCloudBackup &&
+			localHistory.location.pathname === LOCAL_ROUTES.ADD_SITE_ENVIRONMENT
 		) {
 			return {
 				...breadcrumbsData,
