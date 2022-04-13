@@ -9,7 +9,6 @@ import { client } from './renderer/localClient/localGraphQLClient';
 import { ChooseCreateSite } from './renderer/components/multimachinebackups/ChooseCreateSite';
 import { SelectSiteBackup } from './renderer/components/multimachinebackups/SelectSiteBackup';
 import { SelectSnapshot } from './renderer/components/multimachinebackups/SelectSnapshot';
-import { CloseButtonWithStore } from './renderer/components/multimachinebackups/CloseButtonWithStore';
 import * as LocalRenderer from '@getflywheel/local/renderer';
 import {
 	Stepper,
@@ -39,7 +38,6 @@ export default function (context): void {
 	const ChooseCreateSiteHOC = withApolloProvider(withStoreProvider(ChooseCreateSite));
 	const SelectSiteBackupHOC = withApolloProvider(withStoreProvider(SelectSiteBackup));
 	const SelectSnapshotHOC = withApolloProvider(withStoreProvider(SelectSnapshot));
-	const CloseButtonHOC = withStoreProvider(CloseButtonWithStore);
 
 	hooks.addFilter('siteInfoToolsItem', (items) => {
 		const cloudBackupItems = [
@@ -182,19 +180,6 @@ export default function (context): void {
 
 		return breadcrumbsData;
 	});
-
-	// modify the "close button" functionality for the Add Site user flow
-	hooks.addFilter('AddSiteIndexJS:RenderCloseButton', (closeButtonData) => (
-		{
-			...closeButtonData,
-			closeButton: () => (
-				<CloseButtonHOC
-					onClose={closeButtonData.onCloseButton()}
-				/>
-			),
-		}),
-	);
-
 	// add a "go back" button to the first step in the default Add Site user flow
 	hooks.addContent(
 		'NewSiteSite_AfterContent',
