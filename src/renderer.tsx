@@ -9,7 +9,7 @@ import { client } from './renderer/localClient/localGraphQLClient';
 import { SelectSiteBackup } from './renderer/components/multimachinebackups/SelectSiteBackup';
 import { SelectSnapshot } from './renderer/components/multimachinebackups/SelectSnapshot';
 import * as LocalRenderer from '@getflywheel/local/renderer';
-import { Stepper, Step, Text, TextButtonExternal, Tooltip } from '@getflywheel/local-components';
+import { Stepper, Step } from '@getflywheel/local-components';
 import { LOCAL_ROUTES } from './constants';
 import PromoBanner from './renderer/components/PromoBanner';
 import createSiteRadioOption from './renderer/components/createSiteRadioOption';
