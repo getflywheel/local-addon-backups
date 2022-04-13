@@ -6,7 +6,6 @@ import { store, actions } from './renderer/store/store';
 import SiteInfoToolsSection from './renderer/components/siteinfotools/SiteInfoToolsSection';
 import { setupListeners } from './renderer/helpers/setupListeners';
 import { client } from './renderer/localClient/localGraphQLClient';
-import { ChooseCreateSite } from './renderer/components/multimachinebackups/ChooseCreateSite';
 import { SelectSiteBackup } from './renderer/components/multimachinebackups/SelectSiteBackup';
 import { SelectSnapshot } from './renderer/components/multimachinebackups/SelectSnapshot';
 import * as LocalRenderer from '@getflywheel/local/renderer';
@@ -35,7 +34,6 @@ const withStoreProvider = (Component) => (props) => (
 export default function (context): void {
 	const { hooks } = context;
 	const SiteInfoToolsSectionHOC = withApolloProvider(withStoreProvider(SiteInfoToolsSection));
-	const ChooseCreateSiteHOC = withApolloProvider(withStoreProvider(ChooseCreateSite));
 	const SelectSiteBackupHOC = withApolloProvider(withStoreProvider(SelectSiteBackup));
 	const SelectSnapshotHOC = withApolloProvider(withStoreProvider(SelectSnapshot));
 
@@ -73,7 +71,6 @@ export default function (context): void {
 	// add new routes and components to Local core
 	hooks.addFilter('AddSiteIndexJS:RoutesArray', (routes, path) => {
 		const cloudBackupRoutes = [
-			{ key: 'add-site-choose', path: `${path}/`, component: ChooseCreateSiteHOC },
 			{ key: 'add-site-select-site-backup', path: LOCAL_ROUTES.ADD_SITE_BACKUP_SITE, component: SelectSiteBackupHOC },
 			{ key: 'add-site-select-snapshot', path: LOCAL_ROUTES.ADD_SITE_BACKUP_SNAPSHOT, component: SelectSnapshotHOC },
 		];
@@ -180,26 +177,4 @@ export default function (context): void {
 
 		return breadcrumbsData;
 	});
-	// add a "go back" button to the first step in the default Add Site user flow
-	hooks.addContent(
-		'NewSiteSite_AfterContent',
-		() => {
-			const goBack = () => {
-				LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_START);
-			};
-
-			const location = (document.querySelector('#root > div') as HTMLElement)?.dataset?.location;
-
-			if (location !== '/main/add-site/add') return null;
-
-			return (
-				<TextButton
-					className="GoBack"
-					onClick={goBack}
-				>
-					Go Back
-				</TextButton>
-			);
-		},
-	);
 }
