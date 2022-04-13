@@ -267,33 +267,4 @@ export default function (context): void {
 
 		return breadcrumbsData;
 	});
-
-	// // modify the "close button" functionality for the Add Site user flow
-	// hooks.addFilter("AddSiteIndexJS:RenderCloseButton", (closeButtonData) => ({
-	// 	...closeButtonData,
-	// 	closeButton: () => (
-	// 		<CloseButtonHOC onClose={closeButtonData.onCloseButton()} />
-	// 	),
-	// }));
-
-	// // add a "go back" button to the first step in the default Add Site user flow
-	// hooks.addContent("NewSiteSite_AfterContent", () => {
-	// 	const goBack = () => {
-	// 		LocalRenderer.sendIPCEvent(
-	// 			"goToRoute",
-	// 			LOCAL_ROUTES.ADD_SITE_START
-	// 		);
-	// 	};
-
-	// 	const location = (document.querySelector("#root > div") as HTMLElement)
-	// 		?.dataset?.location;
-
-	// 	if (location !== "/main/add-site/add") return null;
-
-	// 	return (
-	// 		<TextButton className="GoBack" onClick={goBack}>
-	// 			Go Back
-	// 		</TextButton>
-	// 	);
-	// });
 }
