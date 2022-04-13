@@ -6,7 +6,6 @@ import { store, actions } from './renderer/store/store';
 import SiteInfoToolsSection from './renderer/components/siteinfotools/SiteInfoToolsSection';
 import { setupListeners } from './renderer/helpers/setupListeners';
 import { client } from './renderer/localClient/localGraphQLClient';
-import { ChooseCreateSite } from './renderer/components/multimachinebackups/ChooseCreateSite';
 import { SelectSiteBackup } from './renderer/components/multimachinebackups/SelectSiteBackup';
 import { SelectSnapshot } from './renderer/components/multimachinebackups/SelectSnapshot';
 import { CloseButtonWithStore } from './renderer/components/multimachinebackups/CloseButtonWithStore';
@@ -36,7 +35,6 @@ const withStoreProvider = (Component) => (props) =>
 export default function (context): void {
 	const { hooks } = context;
 	const SiteInfoToolsSectionHOC = withApolloProvider(withStoreProvider(SiteInfoToolsSection));
-	const ChooseCreateSiteHOC = withApolloProvider(withStoreProvider(ChooseCreateSite));
 	const SelectSiteBackupHOC = withApolloProvider(withStoreProvider(SelectSiteBackup));
 	const SelectSnapshotHOC = withApolloProvider(withStoreProvider(SelectSnapshot));
 	const CloseButtonHOC = withStoreProvider(CloseButtonWithStore);
@@ -100,11 +98,6 @@ export default function (context): void {
 
 	hooks.addFilter('AddSiteIndexJS:RoutesArray', (routes, path) => {
 		const cloudBackupRoutes = [
-			{
-				key: 'add-site-choose',
-				path: `${path}/`,
-				component: ChooseCreateSiteHOC,
-			},
 			{
 				key: 'add-site-select-site-backup',
 				path: LOCAL_ROUTES.ADD_SITE_BACKUP_SITE,
