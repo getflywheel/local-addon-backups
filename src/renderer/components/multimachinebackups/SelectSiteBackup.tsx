@@ -3,7 +3,7 @@ import * as LocalRenderer from '@getflywheel/local/renderer';
 import classNames from 'classnames';
 import path from 'path';
 import React, { useCallback, useEffect, useState } from 'react';
-import { IPCASYNC_EVENTS, LOCAL_ROUTES, MULTI_MACHINE_BACKUP_ERRORS } from '../../../constants';
+import { IPCASYNC_EVENTS, LOCAL_ROUTES } from '../../../constants';
 import { BackupSite, NewSiteInfoWithCloudMeta } from '../../../types';
 import { selectors } from '../../store/selectors';
 import { actions, store, useStoreSelector } from '../../store/store';
@@ -22,24 +22,13 @@ export const SelectSiteBackup = (props: Props) => {
 	const { updateSiteSettings, siteSettings, osPath, formatSiteNicename, defaultLocalSettings } = props;
 	const [isDuplicateName, setIsDuplicateName] = useState(false);
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
-	const { backupSites, selectedSite, newSiteName, isLoading, providerIsErrored, activeError } = state;
-	const [showBanner, setShowBanner] = useState(false);
-	const noProvidersFound = activeError === MULTI_MACHINE_BACKUP_ERRORS.NO_CONNECTED_PROVIDERS_FOR_SITE;
-	const noConnectionToHub = activeError === MULTI_MACHINE_BACKUP_ERRORS.GENERIC_HUB_CONNECTION_ERROR;
+	const { backupSites, selectedSite, newSiteName, isLoading } = state;
 
 	useEffect(() => {
 		store.dispatch(actions.setProviderIsErrored(null));
 		store.dispatch(actions.setActiveError(null));
 		store.dispatch(actions.getProvidersList());
 		store.dispatch(actions.getSitesList());
-		const getUserDataShowPromoBanner = async () => {
-			const showBanner = await LocalRenderer.ipcAsync(IPCASYNC_EVENTS.SHOULD_LOAD_PROMO_BANNER);
-
-			if (showBanner && showBanner?.show === true) {
-				setShowBanner(true);
-			}
-		};
-		getUserDataShowPromoBanner();
 	}, []);
 
 	let flySelectSites: { [value: string]: string } = {};

@@ -3,7 +3,7 @@ import * as LocalRenderer from '@getflywheel/local/renderer';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import type { AppState } from './store';
 import { BackupRepo, HubProviderRecord } from '../../types';
-import { IPCASYNC_EVENTS, LOCAL_ROUTES, MULTI_MACHINE_BACKUP_ERRORS } from '../../constants';
+import { IPCASYNC_EVENTS, MULTI_MACHINE_BACKUP_ERRORS } from '../../constants';
 
 
 const getProvidersList = createAsyncThunk('multiMachineBackupsGetProviders', async (_, { rejectWithValue }) => {
