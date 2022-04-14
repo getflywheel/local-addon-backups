@@ -88,7 +88,7 @@ export const BackupCloneContents = (props: ModalContentsProps) => {
 					onClick={() => onModalSubmit()}
 					disabled={!inputSiteNameData || isDuplicateName}
 				>
-					Create Clone
+					Create clone
 				</PrimaryButton>
 			</div>
 		</div>

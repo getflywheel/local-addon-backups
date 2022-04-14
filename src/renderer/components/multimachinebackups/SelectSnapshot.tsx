@@ -259,7 +259,6 @@ export const SelectSnapshot = (props: Props) => {
 								Please select a backup before continuing.
 							</>
 						)}
-						popperOffsetModifier={{ offset: [0, 0] }}
 						position="top-start"
 					>
 						<PrimaryButton

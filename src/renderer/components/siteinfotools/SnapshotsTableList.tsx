@@ -1,10 +1,9 @@
 import React, { useRef } from 'react';
 import styles from './SnapshotsTableList.scss';
-import classnames from 'classnames';
 import {
 	CircleWarnIcon,
-	DotsIcon,
-	FlyDropdown,
+	ContextMenu,
+	IMenuItem,
 	IVirtualTableCellRendererDataArgs,
 	LoadingIndicator,
 	Spinner,
@@ -91,7 +90,7 @@ const renderTextButton = (label: React.ReactNode, isDisabled: () => boolean) => 
 );
 
 const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubProviderRecord, offline: boolean) => {
-	const items: React.ComponentProps<typeof FlyDropdown>['items'] = [];
+	const items: IMenuItem[] = [];
 
 	if (snapshot.hash === TABLEROW_HASH_IS_SPECIAL_PAGING_HAS_MORE) {
 		return null;
@@ -106,7 +105,7 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 		case 'errored':
 			items.push({
 				color: 'none',
-				content: renderTextButton('Retry', () => false),
+				label: 'Retry',
 				onClick: () => store.dispatch(actions.backupSite({
 					description: snapshot.configObject.description,
 					providerId: provider.id,
@@ -116,24 +115,26 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 			});
 			items.push({
 				color: 'none',
-				content: renderTextButton('Dismiss', () => false),
+				label: 'Dismiss',
 				onClick: () => store.dispatch(actions.dismissBackupAttempt()),
 			});
 			break;
 		case 'offline':
 			items.push({
 				color: 'none',
-				content: <>Check internet connection</>,
+				label: 'Check internet connection',
 				onClick: null,
+				enabled: false,
 			});
 			break;
 		case 'complete':
 		default:
 			items.push({
 				color: 'none',
-				content: renderTextButton('Restore site to this backup', () => store.getState().director.backupIsRunning),
+				label: 'Restore site to this backup',
+				enabled: !store.getState().director.backupIsRunning,
 				onClick: store.getState().director.backupIsRunning
-					? () => undefined
+					? () => null
 					: () => createModal(
 						() => (
 							<BackupRestoreContents
@@ -145,9 +146,10 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 			});
 			items.push({
 				color: 'none',
-				content: renderTextButton('Clone site from this backup', () => store.getState().director.backupIsRunning),
+				label: 'Clone site from this backup',
+				enabled: !store.getState().director.backupIsRunning,
 				onClick: store.getState().director.backupIsRunning
-					? () => undefined
+					? () => null
 					: () => createModal(
 						() => (
 							<BackupCloneContents
@@ -160,9 +162,10 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 			});
 			items.push({
 				color: 'none',
-				content: renderTextButton('Edit backup description', () => store.getState().director.backupIsRunning),
+				label: 'Edit backup description',
+				enabled: !store.getState().director.backupIsRunning,
 				onClick: store.getState().director.backupIsRunning
-					? () => undefined
+					? () => null
 					: () => createModal(
 						() => (
 							<BackupEditDescriptionContents
@@ -179,16 +182,12 @@ const renderCellMoreMenu = (snapshot: BackupSnapshot, site: Site, provider: HubP
 	}
 
 	return (
-		<FlyDropdown
-			caret={false}
-			className={styles.SnapshotsTableList_MoreDropdown}
-			classNameListItem={classnames({ [styles.DropdownItemOffline]: offline })}
+		<ContextMenu
 			items={items}
-			popperOptions={{ popperOffsetModifier: { offset: [15, 0] } }}
+			noBG
+			hideArrow={false}
 			useClickInsteadOfHover={!offline}
-		>
-			<DotsIcon/>
-		</FlyDropdown>
+		/>
 	);
 };
 

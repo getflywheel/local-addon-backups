@@ -1,5 +1,7 @@
 export const URLS = {
 	LOCAL_HUB: 'https://hub.localwp.com',
+	LOCAL_HUB_BACKUPS:'https://hub.localwp.com/addons/cloud-backups',
+	LOCAL_HUB_LOGIN: 'https://hub.localwp.com/login',
 };
 
 export const IPCASYNC_EVENTS = {

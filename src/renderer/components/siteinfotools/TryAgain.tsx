@@ -19,7 +19,7 @@ const TryAgain = ({
 			onClick={onClick}
 			privateOptions={{ padding: 'm' }}
 		>
-			Try Again
+			Try again
 		</PrimaryButton>
 	</div>
 );

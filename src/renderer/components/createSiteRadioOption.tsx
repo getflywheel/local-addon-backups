@@ -49,7 +49,7 @@ const CreateSiteRadioOption = () => {
 					onClick={(evt: Event) => {
 						evt.stopPropagation();
 					}}
-					inline={false}
+					inline
 					style={{ paddingTop: 7 }}
 					href="https://localwp.com/help-docs/local-add-ons-help/cloud-backups/"
 				>
