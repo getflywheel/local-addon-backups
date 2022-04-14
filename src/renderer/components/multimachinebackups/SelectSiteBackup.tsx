@@ -174,7 +174,6 @@ export const SelectSiteBackup = (props: Props) => {
 					<Tooltip
 						className={styles.tooltip}
 						content={<>Please select a site and name it before continuing.</>}
-						popperOffsetModifier={{ offset: [0, 0] }}
 						position="top-start"
 					>
 						<PrimaryButton className="Continue" onClick={onContinue} disabled={continueDisabled}>

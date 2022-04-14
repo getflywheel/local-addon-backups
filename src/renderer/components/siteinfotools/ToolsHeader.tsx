@@ -2,14 +2,15 @@ import React from 'react';
 import styles from './ToolsHeader.scss';
 import type { Site } from '@getflywheel/local';
 import { ProviderDropdown } from './ProviderDropdown';
-import { PrimaryButton, Tooltip } from '@getflywheel/local-components';
-import { launchBrowserToHubBackups } from '../../helpers/launchBrowser';
+import { Tooltip, RefreshButton, Button } from '@getflywheel/local-components';
 import { StartBackupButton } from './StartBackupButton';
-import { RefreshButton } from './RefreshButton';
 import { selectors } from '../../store/selectors';
 import {
+	store,
 	useStoreSelector,
 } from '../../store/store';
+import { updateActiveSiteAndDataSources } from '../../store/thunks';
+import { URLS } from '../../../constants';
 
 interface Props {
 	offline: boolean,
@@ -20,7 +21,9 @@ export const ToolsHeader = (props: Props) => {
 	const { offline, site } = props;
 	const { enabledProviders } = useStoreSelector((state) => state.providers);
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
-
+	const onRefresh = () => {
+		store.dispatch(updateActiveSiteAndDataSources({ siteId: site.id }));
+	};
 	return (
 		<div className={styles.ToolsHeaders}>
 			<ProviderDropdown
@@ -31,7 +34,12 @@ export const ToolsHeader = (props: Props) => {
 				offline={offline}
 			/>
 			<div className={styles.ToolsHeaders_Right}>
-				{!offline && <RefreshButton />}
+				{!offline && (
+					<RefreshButton
+						onClick={onRefresh}
+						privateOptions={{ padding: 's' }}
+					/>
+				)}
 				{enabledProviders?.length
 					? (
 						<StartBackupButton site={site} offline={offline}/>
@@ -43,15 +51,16 @@ export const ToolsHeader = (props: Props) => {
 							showDelay={300}
 							position="top-end"
 						>
-							<PrimaryButton
+							<Button
+								tag='a'
+								tagProps={{ href: URLS.LOCAL_HUB_BACKUPS }}
 								disabled={offline}
-								onClick={() => launchBrowserToHubBackups()}
 								privateOptions={{
 									padding: 'm',
 								}}
 							>
-								Connect Provider
-							</PrimaryButton>
+								Connect provider
+							</Button>
 						</Tooltip>
 					)
 				}

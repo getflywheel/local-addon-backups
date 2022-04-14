@@ -38,16 +38,17 @@ export const BackupEditDescriptionContents = (props: ModalContentsProps) => {
 			</Title>
 			<Divider className={styles.Divider} />
 			<BasicInput
-				autoFocus
+				autofocus
 				value={description}
 				placeholder={configObject.description}
 				onChange={(e) => updateDescription(e.target.value)}
-				maxLength={INPUT_MAX}
+				maxlength={INPUT_MAX}
 			/>
 			<PrimaryButton
+				inline
 				onClick={updateDescriptionGQL}
 			>
-				Update Description
+				Update description
 			</PrimaryButton>
 		</div>
 	);

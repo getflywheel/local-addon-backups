@@ -3,22 +3,22 @@ import {
 	CheckmarkIcon,
 	FlyDropdown,
 	TextButton,
+	TextButtonExternal,
+	ExternalLinkIcon,
 } from '@getflywheel/local-components';
 import styles from './ProviderDropdown.scss';
-import LoginIconExternalLinkSvg from '../../assets/external-link.svg';
 import GoogleDriveIcon from '../../assets/google-drive.svg';
 import DropboxIcon from '../../assets/dropbox.svg';
 import type { HubProviderRecord } from '../../../types';
 import { HubOAuthProviders } from '../../../types';
 import classnames from 'classnames';
-import { launchBrowserToHubBackups } from '../../helpers/launchBrowser';
 import {
 	actions,
 	store,
 } from '../../store/store';
-
+import { URLS } from '../../../constants';
 interface Props {
-	offline: boolean,
+	offline?: boolean,
 	enabledProviders: HubProviderRecord[];
 	activeSiteProvider: HubProviderRecord;
 	multiMachineSelect: boolean;
@@ -26,41 +26,59 @@ interface Props {
 }
 
 const renderProviderIcon = (provider: HubProviderRecord): React.ReactNode => {
-	switch (provider.id) {
+	switch (provider?.id) {
 		case HubOAuthProviders.Dropbox:
-			return <DropboxIcon className={styles.ProviderDropdown_Content_ProviderSvg} />;
+			return () => <DropboxIcon className={styles.ProviderDropdown_Content_ProviderSvg} />;
 		case HubOAuthProviders.Google:
-			return <GoogleDriveIcon className={styles.ProviderDropdown_Content_ProviderSvg} />;
+			return () => <GoogleDriveIcon className={styles.ProviderDropdown_Content_ProviderSvg} />;
 		default:
 			return null;
 	}
 };
 
-const renderTextButton = (label: React.ReactNode, value: React.ReactNode, deactivateLabel?: boolean) => (
-	<TextButton
-		className={classnames(
-			styles.ProviderDropdown_Item_TextButton,
-			{
-				[styles.ProviderDropdown_Item_TextButton__Deactivated]: deactivateLabel,
-			},
-		)}
-		privateOptions={{
-			fontWeight: 'medium',
-			textTransform: 'none',
-		}}
-	>
-		<span className={styles.ProviderDropdown_Item_TextButton_Label}>
-			{ label }
-		</span>
-		<span className={styles.ProviderDropdown_Item_TextButton_Value}>
-			{ value }
-		</span>
-	</TextButton>
-);
+const renderTextButton = (label: React.ReactNode, value: React.ReactNode, deactivateLabel?: boolean, href?: string) => (
+	href ? (
+		<TextButtonExternal
+			href={href}
+			className={classnames(
+				styles.ProviderDropdown_Item_TextButton,
+				{
+					[styles.ProviderDropdown_Item_TextButton__Deactivated]: deactivateLabel,
+				},
+			)}
+			rightIcon={value}
+		>
+			<span className={styles.ProviderDropdown_Item_TextButton_Label}>
+				{ label }
+			</span>
+		</TextButtonExternal>
+	) : (
+		<TextButton
+			className={classnames(
+				styles.ProviderDropdown_Item_TextButton,
+				{
+					[styles.ProviderDropdown_Item_TextButton__Deactivated]: deactivateLabel,
+				},
+			)}
+			privateOptions={{
+				fontWeight: 'medium',
+				textTransform: 'none',
+			}}
+		>
+			<span className={styles.ProviderDropdown_Item_TextButton_Label}>
+				{ label }
+			</span>
+			<span className={styles.ProviderDropdown_Item_TextButton_Value}>
+				{ value }
+			</span>
+		</TextButton>
+	));
 
-const renderDropdownConnectItem = (label?: string) => renderTextButton(
+const renderDropdownConnectItem = (label?: string, href?: string) => renderTextButton(
 	label,
-	<LoginIconExternalLinkSvg className={styles.TextButtonExternal_Svg} />,
+	() => <ExternalLinkIcon className={classnames(styles.TextButtonExternal_Svg, styles.ProviderDropdown_Item_TextButton_Value)} />,
+	false,
+	href,
 );
 
 const renderDropdownProviderItem = (provider?: HubProviderRecord, isActiveProvider?: boolean) => renderTextButton(
@@ -99,15 +117,15 @@ export const ProviderDropdown = (props: Props) => {
 		if (!multiMachineSelect) {
 			dropdownItems.push({
 				color: 'none',
-				content: renderDropdownConnectItem('Add or Manage Provider'),
-				onClick: launchBrowserToHubBackups,
+				content: renderDropdownConnectItem('Add or Manage Provider', URLS.LOCAL_HUB_BACKUPS),
+				onClick: null,
 			});
 		}
 	} else {
 		dropdownItems.push({
 			color: 'none',
-			content: renderDropdownConnectItem('Connect Provider'),
-			onClick: launchBrowserToHubBackups,
+			content: renderDropdownConnectItem('Connect Provider', URLS.LOCAL_HUB_BACKUPS),
+			onClick: null,
 		});
 	}
 
@@ -122,15 +140,12 @@ export const ProviderDropdown = (props: Props) => {
 				classNameListItem={classnames({ [styles.DropdownItemOffline]: offline })}
 				items={dropdownItems}
 				position="bottom"
+				disabledStyle={offline}
+				selectedIcon={renderProviderIcon(activeSiteProvider)}
 				useClickInsteadOfHover={!offline}
 			>
 				{enabledProviders?.length && activeSiteProvider
-					? (
-						<>
-							{renderProviderIcon(activeSiteProvider)}
-							{activeSiteProvider.name}
-						</>
-					)
+					? activeSiteProvider.name
 					: 'select provider'
 				}
 			</FlyDropdown>

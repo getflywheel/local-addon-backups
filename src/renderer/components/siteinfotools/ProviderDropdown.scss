@@ -5,63 +5,16 @@
 }
 
 .ProviderDropdown {
-	display: inline-flex;
-	align-items: center;
-	color: $green;
 
-	&:hover {
-		color: $green-dark;
-
-		> svg:not(.ProviderDropdown_Content_ProviderSvg) path {
-			fill: $green-dark !important;
-		}
-
-		&:global(.FlyDropdown.Popper__Showing .FlyDropdown_Caret) {
-			background: $green-dark;
-		}
-	}
-
-	> svg:not(.ProviderDropdown_Content_ProviderSvg) {
-		margin: 0 0 0 10px;
-
-		path {
-			fill: $green;
-		}
-	}
-
-	&:global(.FlyDropdown.Popper__Showing .FlyDropdown_Caret) {
-		background: $green;
-	}
-
-	:global(.FlyDropdown_Items) {
-		width: max-content;
-
-		&::before {
-			z-index: 8;
-		}
+	> svg {
+		width: auto;
+		height: 18px;
+		margin-right: 5px;
 	}
 
 	&.ProviderDropdownOffline {
-		color: $gray75;
-	
 		> svg:not(.ProviderDropdown_Content_ProviderSvg) path {
 			fill: $gray75;
-		}
-	
-		&:global(.FlyDropdown.Popper__Showing .FlyDropdown_Caret) {
-			background: $gray75;
-		}
-	
-		&:hover {
-			color: $gray75;
-	
-			> svg:not(.ProviderDropdown_Content_ProviderSvg) path {
-				fill: $gray75 !important;
-			}
-	
-			&:global(.FlyDropdown.Popper__Showing .FlyDropdown_Caret) {
-				background: $gray75;
-			}
 		}
 	}
 }
@@ -74,7 +27,6 @@
 .ProviderDropdown_List {
 	> li {
 		$paddingVert: 10px;
-		padding: $paddingVert 20px;
 
 		&:last-child:not(:first-child) {
 			margin-top: $paddingVert;
@@ -88,34 +40,10 @@
 	margin-right: 5px;
 }
 
-.ProviderDropdown_Content_ProviderSvg {
-	width: auto;
-	height: 18px;
-	margin-right: 5px;
-}
-
-.ProviderDropdown_Content_Button {
-	padding-left: 0;
-	padding-right: 0;
-}
-
 .ProviderDropdown_Item_TextButton {
-	display: flex !important;
 	width: 100%;
 	padding: 0;
-	text-align: left !important;
-
-	&:hover {
-		color: $green-dark;
-
-		svg path {
-			fill: $green-dark !important;
-		}
-
-		&:global(.FlyDropdown.Popper__Showing .FlyDropdown_Caret) {
-			background: $green-dark;
-		}
-	}
+	text-align: left;
 }
 
 .ProviderDropdown_Item_TextButton_Label {
@@ -130,17 +58,10 @@
 	margin-left: 10px;
 }
 
-.ProviderDropdown_Item_TextButton__Deactivated .ProviderDropdown_Item_TextButton_Value {
-	> svg path {
-		fill: $green !important;
-	}
-}
-
 .ProviderDropdown_Item_TextButton_CheckmarkSvg {
 	margin: 0 !important;
 }
 
 .TextButtonExternal_Svg {
-	width: auto !important;
-	margin: 0 !important;
+	margin-left: 10px !important;
 }

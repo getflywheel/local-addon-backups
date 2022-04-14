@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Site } from '@getflywheel/local';
-import { PrimaryButton, Tooltip } from '@getflywheel/local-components';
+import { Button, Tooltip } from '@getflywheel/local-components';
 import { getSiteStatus } from '../../helpers/getSiteStatus';
 import { actions, store, useStoreSelector } from '../../store/store';
 import { selectors } from '../../store/selectors';
@@ -40,37 +40,19 @@ export const StartBackupButton = (props: Props) => {
 	}
 
 	const buttonDisabled = offline || !activeSiteProvider || backupIsRunning || siteStatus !== 'running';
-
-	if (buttonDisabled) {
-		return (
+	const containerProps = buttonDisabled ? {
+		element: (
 			<Tooltip
 				content={tooltipContent}
 				popperOffsetModifier={{ offset: [-55, 10] }}
 				showDelay={300}
-			>
-				<PrimaryButton
-					disabled={buttonDisabled}
-					onClick={() => createModal(
-						() => (
-							<BackupContents
-								submitAction={backupSite}
-								site={site}
-								hasSnapshots={hasSnapshots}
-							/>
-						),
-					)}
-					privateOptions={{
-						padding: 'm',
-					}}
-				>
-					Back Up Site
-				</PrimaryButton>
-			</Tooltip>
-		);
-	}
+			/>
+		),
+	} : {};
 
 	return (
-		<PrimaryButton
+		<Button
+			container={containerProps}
 			disabled={buttonDisabled}
 			onClick={() => createModal(
 				() => (
@@ -85,7 +67,7 @@ export const StartBackupButton = (props: Props) => {
 				padding: 'm',
 			}}
 		>
-			Back Up Site
-		</PrimaryButton>
+			Back up site
+		</Button>
 	);
 };
