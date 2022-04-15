@@ -53,7 +53,7 @@ const CreateSiteRadioOption = () => {
 					inline
 					href="https://localwp.com/help-docs/local-add-ons-help/cloud-backups/"
 				>
-						What&apos;s this?
+					What&apos;s this?
 				</TextButtonExternal>
 			</>
 		),
