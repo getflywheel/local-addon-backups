@@ -27,13 +27,13 @@ import styles from './SelectSnapshot.scss';
 import siteInfoToolsStyles from '../siteinfotools/SiteInfoToolsSection.scss';
 import virtualTableStyles from '../siteinfotools/SnapshotsTableList.scss';
 
-interface Props {
+interface Props extends LocalRenderer.RouteComponentProps {
 	updateSiteSettings: any
 	siteSettings: any
 }
 
 export const SelectSnapshot = (props: Props) => {
-	const { updateSiteSettings, siteSettings } = props;
+	const { updateSiteSettings, siteSettings, history } = props;
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
 	const allSnapshots = useStoreSelector(selectMultiMachineActiveSiteSnapshots);
 	const {
@@ -100,14 +100,14 @@ export const SelectSnapshot = (props: Props) => {
 	};
 
 	const onContinue = () => {
-		LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_ENVIRONMENT);
+		history.push(LOCAL_ROUTES.ADD_SITE_ENVIRONMENT);
 	};
 
 	const onGoBack = () => {
 		store.dispatch(actions.setSelectedSnapshot(null));
 		store.dispatch(actions.setSelectedProvider(null));
 
-		LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_BACKUP_SITE);
+		history.goBack();
 	};
 
 	const continueDisabled = (selectedSnapshot === null);

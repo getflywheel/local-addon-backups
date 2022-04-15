@@ -10,7 +10,7 @@ import { actions, store, useStoreSelector } from '../../store/store';
 import { ErrorBannerContainer } from './ErrorBannerContainer';
 import styles from './SelectSiteBackup.scss';
 
-interface Props {
+interface Props extends LocalRenderer.RouteComponentProps {
 	siteSettings: NewSiteInfoWithCloudMeta;
 	updateSiteSettings: (...any) => any;
 	formatSiteNicename: (siteName: string) => string;
@@ -19,7 +19,7 @@ interface Props {
 }
 
 export const SelectSiteBackup = (props: Props) => {
-	const { updateSiteSettings, siteSettings, osPath, formatSiteNicename, defaultLocalSettings } = props;
+	const { updateSiteSettings, siteSettings, osPath, formatSiteNicename, defaultLocalSettings, history } = props;
 	const [isDuplicateName, setIsDuplicateName] = useState(false);
 	const state = useStoreSelector(selectors.selectMultiMachineSliceState);
 	const { backupSites, selectedSite, newSiteName, isLoading } = state;
@@ -104,7 +104,7 @@ export const SelectSiteBackup = (props: Props) => {
 
 	const onContinue = () => {
 		store.dispatch(actions.getSnapshotList());
-		LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_BACKUP_SNAPSHOT);
+		history.push(LOCAL_ROUTES.ADD_SITE_BACKUP_SNAPSHOT);
 	};
 
 	const onGoBack = () => {
@@ -112,7 +112,7 @@ export const SelectSiteBackup = (props: Props) => {
 
 		store.dispatch(actions.setSelectedSite(null));
 
-		LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_START);
+		history.goBack();
 	};
 
 	const continueDisabled = selectedSite === null || newSiteName === '' || isDuplicateName;

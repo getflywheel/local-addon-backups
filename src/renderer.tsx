@@ -128,7 +128,7 @@ export default function (context): void {
 			};
 
 			const onGoBack = () => {
-				LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_BACKUP_SNAPSHOT);
+				newSiteEnvironmentProps.history.goBack();
 			};
 
 			return {
@@ -141,7 +141,6 @@ export default function (context): void {
 
 		return {
 			...newSiteEnvironmentProps,
-			onGoBack: () => LocalRenderer.sendIPCEvent('goToRoute', LOCAL_ROUTES.ADD_SITE_CREATE_NEW),
 		};
 	});
 
