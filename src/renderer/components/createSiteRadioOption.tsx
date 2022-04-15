@@ -46,14 +46,14 @@ const CreateSiteRadioOption = () => {
 			<>
 				<Text>Pull a saved site down to Local from Google Drive or Dropbox.</Text>
 				<TextButtonExternal
+					container={{ marginTop: '7' }}
 					onClick={(evt: Event) => {
 						evt.stopPropagation();
 					}}
 					inline
-					style={{ paddingTop: 7 }}
 					href="https://localwp.com/help-docs/local-add-ons-help/cloud-backups/"
 				>
-					What&apos;s this?
+						What&apos;s this?
 				</TextButtonExternal>
 			</>
 		),
