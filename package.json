@@ -119,6 +119,6 @@
 		"xstate"
 	],
 	"engines": {
-		"local-by-flywheel": ">=6.1.3"
+		"local-by-flywheel": ">=6.4.0"
 	}
 }
