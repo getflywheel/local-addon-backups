@@ -33,7 +33,7 @@
 	"devDependencies": {
 		"@babel/preset-react": "^7.12.13",
 		"@getflywheel/eslint-config-local": "^1.0.4",
-		"@getflywheel/local": ">=6.1.2",
+		"@getflywheel/local": ">=6.6.0",
 		"@types/classnames": "^2.2.11",
 		"@types/dateformat": "^3.0.1",
 		"@types/jest": "^26.0.15",
@@ -75,7 +75,7 @@
 	"dependencies": {
 		"@apollo/client": "^3.3.15",
 		"@electron/remote": "^1.1.0",
-		"@getflywheel/local-components": "^17.4.2",
+		"@getflywheel/local-components": "^17.6.3",
 		"@reduxjs/toolkit": "^1.5.0",
 		"classnames": "^2.2.6",
 		"cross-fetch": "^3.1.4",
@@ -119,6 +119,6 @@
 		"xstate"
 	],
 	"engines": {
-		"local-by-flywheel": ">=6.4.0"
+		"local-by-flywheel": ">=6.5.2"
 	}
 }
