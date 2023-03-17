@@ -305,7 +305,7 @@ export async function getBackupSnapshotsByRepo (repoId: number, limit: number, o
 					backup_repo_id: $backup_repo_id,
 					first: $first,
 					page: $page,
-					orderBy: [{ field: "updated_at", order: DESC }]
+					orderBy: [{ column: "updated_at", order: DESC }]
 				) {
 					data {
 						id
