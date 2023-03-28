@@ -33,7 +33,7 @@
 	"devDependencies": {
 		"@babel/preset-react": "^7.12.13",
 		"@getflywheel/eslint-config-local": "^1.0.4",
-		"@getflywheel/local": ">=6.6.0",
+		"@getflywheel/local": ">=6.7.0",
 		"@types/classnames": "^2.2.11",
 		"@types/dateformat": "^3.0.1",
 		"@types/jest": "^26.0.15",
@@ -119,6 +119,6 @@
 		"xstate"
 	],
 	"engines": {
-		"local-by-flywheel": ">=6.5.2"
+		"local-by-flywheel": ">=6.7.0"
 	}
 }
