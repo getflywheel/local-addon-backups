@@ -630,10 +630,10 @@
     react-truncate-markup "^3.0.0"
     untildify "^4.0.0"
 
-"@getflywheel/local@>=6.6.0":
-  version "6.6.0"
-  resolved "https://registry.yarnpkg.com/@getflywheel/local/-/local-6.6.0.tgz#bf8a3a17bb99b38fd85fdfa7e314af751672d320"
-  integrity sha512-+zpYz8irRpZrwEutho1ccnE083dw4E6UfXIZyBxNGVqd8xDJ7BuUB2M0/R5keUnHF1NGie5YVpVCnDk95FNMmA==
+"@getflywheel/local@>=6.7.0":
+  version "6.7.0"
+  resolved "https://registry.yarnpkg.com/@getflywheel/local/-/local-6.7.0.tgz#30812569657c243db0e2cde901bad83017cc5714"
+  integrity sha512-QGF9BHk24s+3fjxb6xibtmGEn+BdU3+cyvhgTziSjFDVJZCz1ypZqNVQkVXMjRlPqshPDcROxCTjxdpaIHeCWw==
   dependencies:
     "@types/node" "^14.14.35"
     apollo-boost "^0.1.21"

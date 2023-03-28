@@ -29,6 +29,7 @@ const {
 	siteData,
 	siteDatabase,
 	siteProvisioner,
+	sitesOrganization,
 } = serviceContainer;
 
 const logger = localLogger.child({
@@ -113,6 +114,8 @@ const setupDestinationSite = async (context: BackupMachineContext) => {
 	dupSite.path = path.join(localSitesDir, formattedSiteName);
 
 	siteData.addSite(dupSite.id, dupSite);
+
+	sitesOrganization.moveSitesToGroup([dupSite.id], 'default', true);
 
 	const destinationSite = getSiteDataFromDisk(dupSite.id);
 
@@ -279,7 +282,7 @@ const cloneMachine = Machine<BackupMachineContext, BackupMachineSchema>(
 					onError: onErrorFactory([deleteNewCloneSite]),
 				},
 			},
-			 [CloneFromBackupStates.setupDestinationSite]: {
+			[CloneFromBackupStates.setupDestinationSite]: {
 				invoke: {
 					src: (context) => setupDestinationSite(context),
 					onDone: {
