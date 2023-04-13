@@ -54,7 +54,7 @@
 		"eslint-plugin-react": "^7.21.5",
 		"jest": "^26.6.3",
 		"jest-extended": "^0.11.5",
-		"react-svg-loader": "^3.0.3",
+		"svg-url-loader": "^8.0.0",
 		"resolve-url-loader": "^5.0.0",
 		"sass": "^1.32.7",
 		"sass-loader": "^11.0.1",
@@ -94,6 +94,7 @@
 		"react-router-dom": "^5.1.2",
 		"shortid": "^2.2.16",
 		"subscriptions-transport-ws": "^0.9.18",
+		"svg-url-loader": "^8.0.0",
 		"tmp": "^0.2.1",
 		"xstate": "^4.16.2"
 	},
