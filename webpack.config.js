@@ -68,7 +68,7 @@ const configs = [
 					use: [
 						'babel-loader',
 						{
-							loader: 'react-svg-loader',
+							loader: 'svg-url-loader',
 							options: {
 								svgo: {
 									plugins: [
