@@ -190,8 +190,6 @@ const searchReplace = async (context: BackupMachineContext) => {
 	await siteDatabase.waitForDB(siteToSearchReplace);
 
 	await changeSiteDomain.changeSiteDomainToHost(siteToSearchReplace);
-
-	await siteProcessManager.restart(siteToSearchReplace);
 };
 
 const moveSiteFromTmpDir = async (context: BackupMachineContext) => {

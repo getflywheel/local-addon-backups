@@ -285,9 +285,6 @@ export default function (): void {
 				await siteDatabase.waitForDB(siteToSearchReplace);
 
 				await changeSiteDomain.changeSiteDomainToHost(siteToSearchReplace);
-
-				await siteProcessManager.restart(siteToSearchReplace);
-
 			}
 		},
 	);
