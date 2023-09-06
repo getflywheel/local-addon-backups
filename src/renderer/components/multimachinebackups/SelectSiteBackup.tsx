@@ -1,6 +1,5 @@
-import { FlySelect, PrimaryButton, ProgressBar, Text, TextButton, Title, Tooltip } from '@getflywheel/local-components';
+import { FlySelect, BasicInput, PrimaryButton, ProgressBar, Text, TextButton, Title, Tooltip } from '@getflywheel/local-components';
 import * as LocalRenderer from '@getflywheel/local/renderer';
-import classNames from 'classnames';
 import path from 'path';
 import React, { useCallback, useEffect, useState } from 'react';
 import { IPCASYNC_EVENTS, LOCAL_ROUTES } from '../../../constants';
@@ -150,20 +149,16 @@ export const SelectSiteBackup = (props: Props) => {
 					<div className="FormRow __MarginTop_20 __MarginBottom_0">
 						<div className="FormField">
 							<label>Give the site a new unique name</label>
-							<input
-								className={classNames('TID_NewSiteSite_Input_SiteName_Small', {
-									[styles.errorState]: isDuplicateName,
-								})}
-								type="text"
+							<BasicInput
+								style={{ height: 85 }}
+								className="TID_NewSiteSite_Input_SiteName_Small"
 								disabled={selectedSite === null}
 								value={newSiteName}
 								onChange={(e) => store.dispatch(actions.setNewSiteName(e.target.value))}
+								invalid={isDuplicateName}
+								invalidMessage='Please give the site a unique name'
+
 							/>
-							{isDuplicateName && (
-								<div className={styles.errorTextContainer}>
-									<Text className={styles.errorText}>Please give the site a unique name</Text>
-								</div>
-							)}
 						</div>
 					</div>
 				</div>
