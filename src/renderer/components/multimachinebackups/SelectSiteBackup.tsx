@@ -43,26 +43,27 @@ export const SelectSiteBackup = (props: Props) => {
 	});
 
 	const generateSiteSettingsData = useCallback(() => {
-		const { multiMachineRestore } = store.getState();
-		const formattedSiteName = formatSiteNicename(multiMachineRestore.newSiteName);
-		const formattedSiteDomain = `${formattedSiteName}${defaultLocalSettings['new-site-defaults'].tld}`;
+		const { newSiteName: siteName } = store.getState().multiMachineRestore;
+		const formattedSiteName = formatSiteNicename(siteName);
 
-		const sitePath = path.join(defaultLocalSettings['new-site-defaults'].sitesPath, formattedSiteName);
+		const siteDomain = `${formattedSiteName}${defaultLocalSettings['new-site-defaults'].tld}`;
 
-		const formattedSitePath = osPath.addOSTrailingSlash(osPath.toNative(sitePath));
+		const unformattedSitePath = path.join(defaultLocalSettings['new-site-defaults'].sitesPath, formattedSiteName);
+		const sitePath = osPath.addOSTrailingSlash(osPath.toNative(unformattedSitePath));
 
 		return {
-			formattedSiteName,
-			formattedSiteDomain,
-			formattedSitePath,
-			siteName: multiMachineRestore.newSiteName,
+			siteName,
+			siteDomain,
+			sitePath,
 		};
 	}, [defaultLocalSettings]);
 
 	useEffect(() => {
+		const newSiteSettings = generateSiteSettingsData();
+
 		updateSiteSettings({
 			...siteSettings,
-			siteName: newSiteName,
+			...newSiteSettings,
 		});
 
 		const checkSiteName = async () => {
@@ -92,9 +93,7 @@ export const SelectSiteBackup = (props: Props) => {
 		// used to build out the new site object
 		updateSiteSettings({
 			...siteSettings,
-			siteName: newSiteSettings.siteName,
-			siteDomain: newSiteSettings.formattedSiteDomain,
-			sitePath: newSiteSettings.formattedSitePath,
+			...newSiteSettings,
 			cloudBackupMeta: {
 				createdFromCloudBackup: true,
 				repoID: siteUUID,
