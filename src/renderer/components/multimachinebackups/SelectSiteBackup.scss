@@ -10,7 +10,7 @@
 	align-items: left;
 	width: 50%;
 	min-width: 590px;
-	padding: 0 0 50px;
+	padding: 0 0 35px;
 }
 
 .headerPadding {
@@ -19,19 +19,6 @@
 
 .tooltip {
 	position: absolute;
-	bottom: 30px;
-	right: 30px;
-}
-
-.errorText {
-	color: $red;
-	font-weight: 500;
-}
-
-.errorTextContainer {
-	margin-top: 10px;
-}
-
-.errorState {
-	box-shadow: inset 0 0 0 2px $red !important;
+	bottom: 20px;
+	right: 20px;
 }
