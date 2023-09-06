@@ -9,8 +9,8 @@ export const excludePatterns = ['conf', 'logs'];
 export const localBackupsIgnoreFileName = '.localbackupaddonignore.txt';
 
 // Returns an array of directories within the site folder that we want to include in the backup
-// Filters out the 'conf' directory and any `.` files
-export const getFilteredSiteFiles = (site: Site) => {
+// Filters out excluded files
+export const getFilteredSiteFiles = (site: Pick<Site, 'path'>) => {
 	const sitePath = formatHomePath(site.path);
 
 	const filteredSiteFiles: string[] = [

@@ -129,15 +129,15 @@ const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 
 	await Promise.all(promises);
 
-	fs.copySync(
-		tmpDirData.name,
-		sitePath,
-		/**
-		 * @todo ensure that we don't go willy nilly deleting files that are actually symlinks pointing outside of a site directory
-		 */
-	);
+	const filesToCopy = getFilteredSiteFiles({ path: tmpDirData.name });
 
-	logger.info(`Site contents moved from \'${tmpDirData.name}\' to \'${sitePath}\'`);
+	for (const file of filesToCopy) {
+		const relativePath = path.relative(tmpDirData.name, file);
+		const dest = path.join(sitePath, relativePath);
+		fs.copySync(file, dest);
+		logger.info(`Copied \'${file}\' to \'${dest}\'`);
+		/** @todo ensure that we don't go willy nilly deleting files that are actually symlinks pointing outside of a site directory */
+	}
 };
 
 const restoreBackup = async (context: BackupMachineContext) => {
