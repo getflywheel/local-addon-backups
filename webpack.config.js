@@ -2,7 +2,6 @@
 const path = require('path');
 const nodeExternals = require('webpack-node-externals');
 const { merge } = require('webpack-merge');
-const packageJson = require('./package.json');
 /* eslint-enable @typescript-eslint/no-var-requires */
 
 const commonConf = {
@@ -62,24 +61,24 @@ const configs = [
 			rules: [
 				{
 					test: /\.svg$/,
-					issuer: {
-						and: [/\.[tj]sx?$/],
-					},
-					use: [
-						'babel-loader',
-						{
-							loader: 'svg-url-loader',
-							options: {
-								svgo: {
-									plugins: [
-										{
-											inlineStyles: { onlyMatchedOnce: false },
+					issuer: /\.[tj]sx?$/,
+					use: [{
+						loader: '@svgr/webpack',
+						options: {
+							svgoConfig: {
+								plugins: [
+									{
+										name: 'preset-default',
+										params: {
+											overrides: {
+												inlineStyles: false,
+											},
 										},
-									],
-								},
+									},
+								],
 							},
 						},
-					],
+					}],
 				},
 				{
 					test: /\.(css|scss)$/,
@@ -92,7 +91,7 @@ const configs = [
 								modules: {
 									localIdentName: `[local]_[hash:base64:5]`,
 								},
-							}
+							},
 						},
 						'resolve-url-loader',
 						'sass-loader',
