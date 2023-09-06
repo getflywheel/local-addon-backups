@@ -125,8 +125,6 @@ const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 
 	logger.info(`removing the following directories/files to prepare for the site backup: ${itemsToDelete.map((file) => `"${file}"`).join(', ')}`);
 
-	await siteProcessManager.stop(site, { dumpDatabase: false, updateStatus: false });
-
 	const promises = itemsToDelete.map((dirOrFile: string) => fs.remove(dirOrFile));
 
 	await Promise.all(promises);
@@ -138,8 +136,6 @@ const moveSiteFromTmpDir = async (context: BackupMachineContext) => {
 		 * @todo ensure that we don't go willy nilly deleting files that are actually symlinks pointing outside of a site directory
 		 */
 	);
-
-	await siteProcessManager.start(site, false, false);
 
 	logger.info(`Site contents moved from \'${tmpDirData.name}\' to \'${sitePath}\'`);
 };

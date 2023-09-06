@@ -4,7 +4,7 @@ import fs from 'fs-extra';
 import { formatHomePath } from '../helpers/formatHomePath';
 import type { Site } from '../types';
 
-export const excludePatterns = ['conf'];
+export const excludePatterns = ['conf', 'logs'];
 
 export const localBackupsIgnoreFileName = '.localbackupaddonignore.txt';
 
