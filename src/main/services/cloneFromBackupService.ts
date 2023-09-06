@@ -24,7 +24,6 @@ const {
 	runSiteSQLCmd,
 	importSQLFile,
 	sendIPCEvent,
-	siteProcessManager,
 	changeSiteDomain,
 	siteData,
 	siteDatabase,
