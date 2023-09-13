@@ -315,6 +315,9 @@ export const restoreFromBackup = async (opts: {
 				// eslint-disable-next-line no-underscore-dangle
 				const error: ErrorState = JSON.parse(restoreService._state.context.error ?? null);
 
+				sendIPCEvent('updateSiteStatus', site.id, initialSiteStatus);
+				sendIPCEvent('refreshSiteVersions');
+
 				if (error) {
 					logger.error(JSON.stringify(error));
 					reject(error);
