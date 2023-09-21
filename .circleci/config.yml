@@ -42,7 +42,7 @@ anchors:
 jobs:
   build:
     docker:
-      - image: cimg/node:12.14-browsers
+      - image: cimg/node:18.18.0-browsers
     steps:
       - checkout
       - *restore_yarn_cache
