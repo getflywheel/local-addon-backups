@@ -48,7 +48,8 @@ jobs:
       name: node/default
     steps:
       - checkout
-      - node/install
+      - node/install:
+          install-yarn: true
       - *restore_yarn_cache
       - *install_yarn_deps
       - *save_yarn_cache
