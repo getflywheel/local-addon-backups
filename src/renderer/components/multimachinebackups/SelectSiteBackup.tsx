@@ -1,4 +1,4 @@
-import { FlySelect, BasicInput, PrimaryButton, ProgressBar, Text, TextButton, Title, Tooltip } from '@getflywheel/local-components';
+import { BasicInput, PrimaryButton, ProgressBar,TextButton, Title, Tooltip, Combobox } from '@getflywheel/local-components';
 import * as LocalRenderer from '@getflywheel/local/renderer';
 import path from 'path';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -137,11 +137,13 @@ export const SelectSiteBackup = (props: Props) => {
 					<h2 className={styles.headerPadding}>Select a site with a Cloud Backup</h2>
 					<div className="FormRow">
 						<div className="FormField">
-							<FlySelect
+							<Combobox
+								id="SelectSiteBackup_Combobox"
 								onChange={(value) => onSiteSelect(value)}
 								options={flySelectSites}
 								emptyPlaceholder="No backups available"
 								placeholder="Select a site"
+								maxHeightOffset={100}
 								value={selectedSite ? selectedSite.uuid : undefined}
 							/>
 						</div>
