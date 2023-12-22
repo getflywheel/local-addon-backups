@@ -207,12 +207,12 @@ const restoreSite = createAsyncThunk<
 			],
 			siteId,
 			rejectWithValue,
-			(details) => {
+			(details, response) => {
 				if (details.isErrorAndUncaptured) {
 					showSiteBanner({
 						icon: 'warning',
 						id: details.bannerId,
-						message: `There was an error while restoring your backup.`,
+						message: response?.error?.message || 'There was an error while restoring your backup.',
 						siteID: details.siteId,
 						title: 'Cloud Backup restore failed!',
 						variant: 'error',

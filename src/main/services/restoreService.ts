@@ -294,12 +294,18 @@ export const restoreFromBackup = async (opts: {
 	snapshotID: string;
 	repoID?: string;
 }): Promise<null | ErrorState> => {
+	const { site, provider, snapshotID, repoID } = opts;
+
 	if (serviceState.inProgressStateMachine) {
 		logger.warn('Restore process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.');
 		return Promise.reject('Restore process aborted: only one backup or restore process is allowed at one time and a backup or restore is already in progress.');
 	}
 
-	const { site, provider, snapshotID, repoID } = opts;
+	if (siteProcessManager.getSiteStatus(site) !== 'running') {
+		logger.info('Restore process aborted: site is not running.');
+		return Promise.reject('Please start the site before restoring a backup.');
+	}
+
 	return new Promise((resolve, reject) => {
 		const initialSiteStatus = siteProcessManager.getSiteStatus(site);
 
