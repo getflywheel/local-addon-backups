@@ -211,14 +211,8 @@ export async function initRepo ({ provider, encryptionPassword, localBackupRepoI
 	}
 }
 
-/**
- * Creates a new restic snapshot on a given provider
- *
- * @param site
- * @param provider
- * @param encryptionPassword
- */
-export async function createSnapshot (site: Site, provider: Providers, encryptionPassword: string) {
+/** Creates a new restic snapshot on a given provider */
+export function createSnapshot (site: Site, provider: Providers, encryptionPassword: string) {
 	const { localBackupRepoID } = getSiteDataFromDisk(site.id);
 
 	if (!localBackupRepoID) {
