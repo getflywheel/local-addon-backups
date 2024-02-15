@@ -74,7 +74,7 @@
 	},
 	"dependencies": {
 		"@apollo/client": "^3.8.5",
-		"@electron/remote": "^1.1.0",
+		"@electron/remote": "2.1.2",
 		"@getflywheel/local-components": "^17.6.6",
 		"@reduxjs/toolkit": "^1.9.3",
 		"classnames": "^2.2.6",
