@@ -47,11 +47,6 @@ export const BackupContents = (props: ModalContentsProps) => {
 		FlyModal.onRequestClose();
 	};
 
-	const onClickEditIgnore = async (site: Site) => {
-		const ignoreFilePath = await getIgnoreFilePath(site);
-		shell.openPath(ignoreFilePath);
-	};
-
 	return (
 		<div>
 			<Title size="l" container={{ margin: 'm 0' }}>Back up site</Title>
@@ -81,15 +76,8 @@ export const BackupContents = (props: ModalContentsProps) => {
 				/>
 
 				<Title size="m" style={{ paddingTop: 15 }}>Ignore files</Title>
-				<p style={{ marginTop: 7 }}>Add any files(s) you would like to exclude from this backup.</p>
-
-				<TextButton
-					style={{ marginTop: 5 }}
-					className={styles.NoPaddingLeft}
-					onClick={() => onClickEditIgnore(site)}
-				>
-					Edit files to ignore
-				</TextButton>
+				<p style={{ marginTop: 7 }}>Add any files(s) you would like to exclude from this backup:</p>
+				<p>{getIgnoreFilePath(site)}</p>
 			</div>
 			<hr />
 
