@@ -217,21 +217,18 @@ export async function initRepo ({ provider, encryptionPassword, localBackupRepoI
  * @param site
  * @param provider
  * @param encryptionPassword
- * @returns
  */
-export async function createSnapshot (site: Site, provider: Providers, encryptionPassword: string): Promise<string> {
+export async function createSnapshot (site: Site, provider: Providers, encryptionPassword: string) {
 	const { localBackupRepoID } = getSiteDataFromDisk(site.id);
 
 	if (!localBackupRepoID) {
 		throw new Error(`No backup repo id found for ${site.name}`);
 	}
 
-	const ignoreFilePath = await getIgnoreFilePath(site);
-
 	const flags = [
 		'--json',
 		`--exclude "${excludePatterns.join(' ')}"`,
-		`--exclude-file "${ignoreFilePath}"`,
+		`--exclude-file "${getIgnoreFilePath(site)}"`,
 	];
 
 	/**
