@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+	CopyButton,
 	FlyModal,
 	Title,
 	PrimaryButton,
@@ -13,10 +14,6 @@ import { fetchSiteSizeInMB } from './fetchSiteSizeInMB';
 import { getIgnoreFilePath } from '../../../helpers/ignoreFilesPattern';
 import { INPUT_MAX } from '../../../constants';
 
-const remote = require('@electron/remote');
-
-const { shell } = remote;
-
 export interface ModalContentsProps {
 	submitAction: (description) => void;
 	site: Site;
@@ -25,17 +22,15 @@ export interface ModalContentsProps {
 
 export const BackupContents = (props: ModalContentsProps) => {
 	const { submitAction, site, hasSnapshots } = props;
+	const ignoreFilePath = getIgnoreFilePath(site);
 
 	const [siteSizeInMB, setSiteSizeInMB] = useState(0);
 	const [inputDescriptionData, setInputData] = useState('');
 
 	useEffect(() => {
-		const setDiskSize = async () => {
-			const siteSize = await fetchSiteSizeInMB(site);
-			setSiteSizeInMB(siteSize);
-		};
-
-		setDiskSize();
+		fetchSiteSizeInMB(site).then(
+			(siteSize) => setSiteSizeInMB(siteSize),
+		);
 	}, []);
 
 	const onInputChange = (event) => {
@@ -76,8 +71,9 @@ export const BackupContents = (props: ModalContentsProps) => {
 				/>
 
 				<Title size="m" style={{ paddingTop: 15 }}>Ignore files</Title>
-				<p style={{ marginTop: 7 }}>Add any files(s) you would like to exclude from this backup:</p>
-				<p>{getIgnoreFilePath(site)}</p>
+				<p style={{ marginTop: 7 }}>Add any files(s) here that you'd like to exclude from this backup:</p>
+				<code>{ignoreFilePath}</code>
+				<CopyButton style={{ marginTop: 10 }} textToCopy={ignoreFilePath} />
 			</div>
 			<hr />
 
