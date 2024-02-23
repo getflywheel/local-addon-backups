@@ -18,6 +18,7 @@ export const IPCASYNC_EVENTS = {
 	MULTI_MACHINE_GET_AVAILABLE_PROVIDERS: 'backups:get-enabled-providers-multi-machine',
 	SHOULD_LOAD_PROMO_BANNER: 'backups:should-load-promo-banner',
 	REMOVE_PROMO_BANNER: 'backups:remove-promo-banner',
+	OPEN_FILE_AT_PATH: 'backups:open-file-at-path',
 };
 
 export const MULTI_MACHINE_BACKUP_ERRORS = {
