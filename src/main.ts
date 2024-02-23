@@ -17,6 +17,7 @@ import { IPCASYNC_EVENTS, SHOW_CLOUD_BACKUPS_PROMO_BANNER } from './constants';
 import { createIpcAsyncError, createIpcAsyncResult } from './helpers/createIpcAsyncResponse';
 import { getServiceContainer } from '@getflywheel/local/main';
 import { checkForDuplicateSiteName } from './helpers/checkForDuplicateSiteName';
+import { shell } from 'electron';
 
 const serviceContainer = getServiceContainer().cradle;
 const {
@@ -241,6 +242,10 @@ export default function (): void {
 		{
 			channel: IPCASYNC_EVENTS.REMOVE_PROMO_BANNER,
 			callback: async () => await LocalMain.UserData.remove(SHOW_CLOUD_BACKUPS_PROMO_BANNER),
+		},
+		{
+			channel: IPCASYNC_EVENTS.OPEN_FILE_AT_PATH,
+			callback: async (path: string) => await shell.openPath(path),
 		},
 	];
 

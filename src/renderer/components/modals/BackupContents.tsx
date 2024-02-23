@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-	CopyButton,
 	FlyModal,
 	Title,
 	PrimaryButton,
@@ -12,7 +11,8 @@ import type { Site } from '@getflywheel/local';
 import styles from './BackupContents.scss';
 import { fetchSiteSizeInMB } from './fetchSiteSizeInMB';
 import { getIgnoreFilePath } from '../../../helpers/ignoreFilesPattern';
-import { INPUT_MAX } from '../../../constants';
+import { IPCASYNC_EVENTS, INPUT_MAX } from '../../../constants';
+import { ipcAsync } from '@getflywheel/local/renderer';
 
 export interface ModalContentsProps {
 	submitAction: (description) => void;
@@ -22,7 +22,6 @@ export interface ModalContentsProps {
 
 export const BackupContents = (props: ModalContentsProps) => {
 	const { submitAction, site, hasSnapshots } = props;
-	const ignoreFilePath = getIgnoreFilePath(site);
 
 	const [siteSizeInMB, setSiteSizeInMB] = useState(0);
 	const [inputDescriptionData, setInputData] = useState('');
@@ -40,6 +39,10 @@ export const BackupContents = (props: ModalContentsProps) => {
 	const onModalSubmit = () => {
 		submitAction(inputDescriptionData);
 		FlyModal.onRequestClose();
+	};
+
+	const onClickEditIgnore = (site: Site) => {
+		ipcAsync(IPCASYNC_EVENTS.OPEN_FILE_AT_PATH, getIgnoreFilePath(site));
 	};
 
 	return (
@@ -72,8 +75,13 @@ export const BackupContents = (props: ModalContentsProps) => {
 
 				<Title size="m" style={{ paddingTop: 15 }}>Ignore files</Title>
 				<p style={{ marginTop: 7 }}>Add any files(s) here that you'd like to exclude from this backup:</p>
-				<code>{ignoreFilePath}</code>
-				<CopyButton style={{ marginTop: 10 }} textToCopy={ignoreFilePath} />
+				<TextButton
+					style={{ marginTop: 5 }}
+					className={styles.NoPaddingLeft}
+					onClick={() => onClickEditIgnore(site)}
+				>
+					Edit files to ignore
+				</TextButton>
 			</div>
 			<hr />
 
