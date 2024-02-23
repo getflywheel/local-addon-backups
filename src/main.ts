@@ -24,7 +24,6 @@ const {
 	localLogger,
 	changeSiteDomain,
 	siteDatabase,
-	siteProcessManager,
 } = serviceContainer;
 
 const logger = localLogger.child({
