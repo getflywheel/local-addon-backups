@@ -33,7 +33,7 @@
 	"devDependencies": {
 		"@babel/preset-react": "^7.12.13",
 		"@getflywheel/eslint-config-local": "^1.0.4",
-		"@getflywheel/local": "9",
+		"@getflywheel/local": "^9",
 		"@svgr/webpack": "^6.5.1",
 		"@types/classnames": "^2.2.11",
 		"@types/dateformat": "^3.0.1",

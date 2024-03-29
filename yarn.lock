@@ -1410,7 +1410,7 @@
     react-truncate-markup "^3.0.0"
     untildify "^4.0.0"
 
-"@getflywheel/local@9":
+"@getflywheel/local@^9":
   version "9.0.0"
   resolved "https://registry.yarnpkg.com/@getflywheel/local/-/local-9.0.0.tgz#ef4f08931e2da4e5c7ba40c257a1d98cf0451ddb"
   integrity sha512-ALWG2Ft6/N9ggZzqJkmixDqOHu6VbWDFkmd67LZlg/ok4Ss2k/1jV8ZARxU+4FZaJ8hgpfz5MbtwAO6vIutYbg==
