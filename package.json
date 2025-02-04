@@ -118,6 +118,13 @@
 		"tmp",
 		"xstate"
 	],
+	"files": [
+		"lib/",
+		"vendor/",
+		"resources/",
+		"icon.svg",
+		"LICENSE"
+	],
 	"engines": {
 		"local-by-flywheel": ">=6.7.0"
 	}
