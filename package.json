@@ -92,7 +92,7 @@
 		"react-dom": "^16.14.0",
 		"react-redux": "^7.2.2",
 		"react-router-dom": "^5.1.2",
-		"shortid": "^2.2.16",
+		"shortid": "^2.2.17",
 		"svg-url-loader": "^8.0.0",
 		"tmp": "^0.2.3",
 		"xstate": "^4.16.2"
