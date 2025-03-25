@@ -34,7 +34,7 @@
 		"@babel/preset-react": "^7.26.3",
 		"@getflywheel/eslint-config-local": "^1.0.4",
 		"@getflywheel/local": "^9.2.2",
-		"@svgr/webpack": "^6.5.1",
+		"@svgr/webpack": "^8.1.0",
 		"@types/classnames": "^2.3.4",
 		"@types/dateformat": "^5.0.3",
 		"@types/jest": "^29.5.14",
