@@ -9,58 +9,57 @@ import { ToolsContent } from './ToolsContent';
 import { getEnabledProvidersHub, updateActiveSiteAndDataSources } from '../../store/thunks';
 import TryAgain from './TryAgain';
 import { $offline } from '@getflywheel/local/renderer';
-import { useObserver } from 'mobx-react';
+import { observer } from 'mobx-react';
+
 interface Props {
-	site: Site;
+    site: Site;
 }
 
-const SiteInfoToolsSection = ({ site }: Props) => (
-	useObserver(() => {
-		const { offline } = $offline;
+const SiteInfoToolsSection = observer(({ site }: Props) => {
+    const { offline } = $offline;
 
-		// refresh when going from offline to online
-		React.useEffect(() => {
-			if (!offline) {
-				store.dispatch(updateActiveSiteAndDataSources({ siteId: site.id }));
-			}
-		}, [offline]);
+    // refresh when going from offline to online
+    React.useEffect(() => {
+        if (!offline) {
+            store.dispatch(updateActiveSiteAndDataSources({ siteId: site.id }));
+        }
+    }, [offline, site.id]);
 
-		// update active site anytime the site prop changes
-		useUpdateActiveSiteAndDataSources(site.id);
+    // update active site anytime the site prop changes
+    useUpdateActiveSiteAndDataSources(site.id);
 
-		const {
-			hasErrorLoadingEnabledProviders,
-		} = useStoreSelector((state) => state.providers);
-		const { id } = useStoreSelector((state) => state.activeSite);
+    const {
+        hasErrorLoadingEnabledProviders,
+    } = useStoreSelector((state) => state.providers);
+    const { id } = useStoreSelector((state) => state.activeSite);
 
-		/**
-		 * @todo sometimes the query to hub fails (like if the auth token has expired)
-		 * we should handle that more gracefully
-		 */
+    /**
+     * @todo sometimes the query to hub fails (like if the auth token has expired)
+     * we should handle that more gracefully
+     */
 
-		if (hasErrorLoadingEnabledProviders && !offline) {
-			return (
-				<div className={styles.SiteInfoToolsSection}>
-					<TryAgain
-						message={'There was an issue retrieving your Cloud Backups providers.'}
-						onClick={() => store.dispatch(getEnabledProvidersHub({ siteId: id }))}
-					/>
-				</div>
-			);
-		}
+    if (hasErrorLoadingEnabledProviders && !offline) {
+        return (
+            <div className={styles.SiteInfoToolsSection}>
+                <TryAgain
+                    message={'There was an issue retrieving your Cloud Backups providers.'}
+                    onClick={() => store.dispatch(getEnabledProvidersHub({ siteId: id }))}
+                />
+            </div>
+        );
+    }
 
-		return (
-			<div className={styles.SiteInfoToolsSection}>
-				<OfflineBanner offline={offline} />
-				<ToolsHeader site={site} offline={offline} />
-				<ToolsContent
-					className={styles.SiteInfoToolsSection_Content}
-					offline={offline}
-					site={site}
-				/>
-			</div>
-		);
-	})
-);
+    return (
+        <div className={styles.SiteInfoToolsSection}>
+            <OfflineBanner offline={offline} />
+            <ToolsHeader site={site} offline={offline} />
+            <ToolsContent
+                className={styles.SiteInfoToolsSection_Content}
+                offline={offline}
+                site={site}
+            />
+        </div>
+    );
+});
 
 export default SiteInfoToolsSection;
