@@ -1,4 +1,4 @@
-import glob from 'glob';
+import { glob } from 'glob';
 import path from 'path';
 import fs from 'fs-extra';
 import { formatHomePath } from '../helpers/formatHomePath';
