@@ -31,7 +31,7 @@
 		"watch": "yarn run build --watch"
 	},
 	"devDependencies": {
-		"@babel/preset-react": "^7.12.13",
+		"@babel/preset-react": "^7.26.3",
 		"@getflywheel/eslint-config-local": "^1.0.4",
 		"@getflywheel/local": "^9",
 		"@svgr/webpack": "^6.5.1",
@@ -45,7 +45,7 @@
 		"@types/tmp": "^0.2.6",
 		"@typescript-eslint/eslint-plugin": "^6.7.2",
 		"@typescript-eslint/parser": "^6.7.2",
-		"babel-loader": "^9.1.2",
+		"babel-loader": "^10.0.0",
 		"bable-loader": "^0.0.1-security",
 		"callsites": "^4.2.0",
 		"css-loader": "^5.0.2",
