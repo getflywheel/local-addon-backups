@@ -80,7 +80,7 @@
 		"cross-fetch": "^3.1.5",
 		"dateformat": "^3.0.3",
 		"fs-extra": "^11.3.0",
-		"get-folder-size": "^3.0.1",
+		"get-folder-size": "^5.0.0",
 		"glob": "^7.1.6",
 		"graphql": "^16.8.1",
 		"graphql-tag": "^2.11.0",
