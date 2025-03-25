@@ -13,6 +13,12 @@ import { Stepper, Step } from '@getflywheel/local-components';
 import { LOCAL_ROUTES } from './constants';
 import PromoBanner from './renderer/components/PromoBanner';
 import createSiteRadioOption from './renderer/components/createSiteRadioOption';
+import { configure } from 'mobx';
+
+configure({
+	enforceActions: 'observed',
+	isolateGlobalState: true,
+});
 
 setupListeners();
 
