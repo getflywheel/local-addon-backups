@@ -81,7 +81,7 @@
 		"dateformat": "^3.0.3",
 		"fs-extra": "^11.3.0",
 		"get-folder-size": "^5.0.0",
-		"glob": "^7.1.6",
+		"glob": "^11.0.1",
 		"graphql": "^16.8.1",
 		"graphql-tag": "^2.11.0",
 		"graphql-ws": "^5.14.1",
