@@ -38,7 +38,7 @@
 		"@types/classnames": "^2.3.4",
 		"@types/dateformat": "^5.0.3",
 		"@types/jest": "^29.5.14",
-		"@types/node": "^22.13.13",
+		"@types/node": "^22.13.14",
 		"@types/react": "^19.0.12",
 		"@types/react-dom": "^19.0.4",
 		"@types/react-redux": "^7.1.34",
