@@ -127,5 +127,8 @@
 	],
 	"engines": {
 		"local-by-flywheel": ">=6.7.0"
+	},
+	"resolutions": {
+		"trim": "0.0.3"
 	}
 }
