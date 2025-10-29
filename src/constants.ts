@@ -19,6 +19,10 @@ export const IPCASYNC_EVENTS = {
 	SHOULD_LOAD_PROMO_BANNER: 'backups:should-load-promo-banner',
 	REMOVE_PROMO_BANNER: 'backups:remove-promo-banner',
 	OPEN_FILE_AT_PATH: 'backups:open-file-at-path',
+	// Migration (renderer-initiated) events - main handlers to be implemented later
+	MIGRATE_BACKUPS_START: 'backups:migrate-start',
+	MIGRATE_BACKUPS_STATUS: 'backups:migrate-status',
+	MIGRATE_BACKUPS_CANCEL: 'backups:migrate-cancel',
 };
 
 export const MULTI_MACHINE_BACKUP_ERRORS = {

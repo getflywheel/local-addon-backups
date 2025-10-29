@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Site } from '@getflywheel/local';
 import { OfflineBanner } from '@getflywheel/local-components';
+import { MigrationBanner } from './MigrationBanner';
 import useUpdateActiveSiteAndDataSources from '../useUpdateActiveSiteAndDataSources';
 import { store, useStoreSelector } from '../../store/store';
 import styles from './SiteInfoToolsSection.scss';
@@ -52,6 +53,7 @@ const SiteInfoToolsSection = observer(({ site }: Props) => {
     return (
         <div className={styles.SiteInfoToolsSection}>
             <OfflineBanner offline={offline} />
+            <MigrationBanner />
             <ToolsHeader site={site} offline={offline} />
             <ToolsContent
                 className={styles.SiteInfoToolsSection_Content}
