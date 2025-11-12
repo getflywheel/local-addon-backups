@@ -53,3 +53,7 @@ export const backupSQLDumpFile = 'local-backup-addon-database-dump.sql';
 
 // max char length for form inputs
 export const INPUT_MAX = 50;
+
+// Migration constants
+export const DEFAULT_BACKUP_PASSWORD = 'localwp';
+export const MIGRATION_STATE_FILE = 'backup-migration-completed.json';

@@ -1,5 +1,6 @@
 import { exec } from 'child_process';
 import path from 'path';
+import fs from 'fs-extra';
 import { isString } from 'lodash';
 import { formatHomePath, getServiceContainer } from '@getflywheel/local/main';
 import getOSBins from './getOSBins';
@@ -273,4 +274,177 @@ export async function restoreBackup (options: RestoreFromBackupOptions) {
 		provider,
 		encryptionPassword,
 	});
+}
+
+/**
+ * Check if a restic repository exists on the remote provider
+ *
+ * @param options Repository check options
+ * @returns true if repo exists, false if it doesn't
+ */
+export async function checkRepoExists (options: {
+	provider: Providers;
+	encryptionPassword: string;
+	localBackupRepoID: string;
+	site: Site;
+}): Promise<boolean> {
+	const { provider, encryptionPassword, localBackupRepoID, site } = options;
+
+	try {
+		// Try to list snapshots - if this succeeds, repo exists
+		await execPromiseWithRcloneContext({
+			cmd: `"${bins.restic}" ${makeRepoFlag(provider, localBackupRepoID, site)} snapshots --json --quiet`,
+			site,
+			provider,
+			encryptionPassword,
+		});
+		return true;
+	} catch (err) {
+		// Repo doesn't exist or is inaccessible
+		logger.warn(`Repo ${localBackupRepoID} on ${provider} does not exist or is inaccessible: ${err}`);
+		return false;
+	}
+}
+
+/**
+ * Add a new password key to an existing restic repository
+ * This allows the repo to be accessed with either the old password or the new one
+ * This function is idempotent - it checks if the new password already works before adding a key
+ *
+ * @param options Rekey options
+ */
+export async function rekeyRepo (options: {
+	provider: Providers;
+	oldPassword: string;
+	newPassword: string;
+	localBackupRepoID: string;
+	site: Site;
+}): Promise<void> {
+	const { provider, oldPassword, newPassword, localBackupRepoID, site } = options;
+	const hubProvider = providerToHubProvider(provider);
+
+	// Create a temporary file for the new password
+	const tmpPasswordFile = path.join(formatHomePath(site.path), `.tmp-new-password-${Date.now()}.txt`);
+
+	try {
+		const { type, clientID, token, appKey } = await getBackupCredentials(hubProvider);
+
+		// Validate credentials before attempting to use them
+		if (!token || token.trim() === '') {
+			throw new Error(`Invalid or expired ${provider} OAuth token. Please reconnect ${provider} in Local settings.`);
+		}
+
+		const upperCaseProvider = provider.toUpperCase();
+
+		// First check if the new password already works (idempotent check)
+		try {
+			await execPromise(
+				`"${bins.restic}" ${makeRepoFlag(provider, localBackupRepoID, site)} snapshots --json --quiet`,
+				site,
+				{
+					[`RCLONE_${upperCaseProvider}_TYPE`]: type,
+					[`RCLONE_${upperCaseProvider}_CLIENT_ID`]: clientID,
+					[`RCLONE_${upperCaseProvider}_TOKEN`]: token,
+					[`RCLONE_${upperCaseProvider}_APP_KEY`]: appKey,
+					['RESTIC_PASSWORD']: newPassword,
+				},
+			);
+
+			// If we got here, the new password already works - no need to add another key
+			logger.info(`Repo ${localBackupRepoID} already has the new password, skipping rekey`);
+			return;
+		} catch (err) {
+			// Check if this is a token/auth error
+			const errorStr = String(err);
+			if (errorStr.includes('empty token') || errorStr.includes('oauth client') || errorStr.includes('401')) {
+				throw new Error(`${provider} authentication expired. Please reconnect ${provider} in Local settings and try migration again.`);
+			}
+			// New password doesn't work yet, continue with adding the key
+			logger.info(`New password doesn't work yet for repo ${localBackupRepoID}, adding key`);
+		}
+
+		// Write the new password to a temporary file
+		fs.writeFileSync(tmpPasswordFile, newPassword);
+
+		// Use the old password via RESTIC_PASSWORD, and provide the new password via file
+		await execPromise(
+			`"${bins.restic}" ${makeRepoFlag(provider, localBackupRepoID, site)} key add --new-password-file "${tmpPasswordFile}"`,
+			site,
+			{
+				[`RCLONE_${upperCaseProvider}_TYPE`]: type,
+				[`RCLONE_${upperCaseProvider}_CLIENT_ID`]: clientID,
+				[`RCLONE_${upperCaseProvider}_TOKEN`]: token,
+				[`RCLONE_${upperCaseProvider}_APP_KEY`]: appKey,
+				['RESTIC_PASSWORD']: oldPassword,
+			},
+		);
+
+		logger.info(`Successfully added new key to repo ${localBackupRepoID}`);
+	} catch (err) {
+		throw new Error(`Failed to rekey repo ${localBackupRepoID} on ${provider}: ${err}`);
+	} finally {
+		// Always clean up the temporary password file
+		if (fs.existsSync(tmpPasswordFile)) {
+			fs.removeSync(tmpPasswordFile);
+		}
+	}
+}
+
+/**
+ * Write a metadata JSON file to the cloud provider using rclone
+ *
+ * @param options Metadata write options
+ */
+export async function writeMetadataFile (options: {
+	provider: Providers;
+	localBackupRepoID: string;
+	snapshotHash: string;
+	metadata: string;
+	site: Site;
+}): Promise<void> {
+	const { provider, localBackupRepoID, snapshotHash, metadata, site } = options;
+	const hubProvider = providerToHubProvider(provider);
+
+	// Determine the metadata path based on provider
+	// For Dropbox: metadata/{repo-id}/snapshot-{hash}.json
+	// For Drive: LocalBackups/metadata/{repo-id}/snapshot-{hash}.json
+	let metadataPath: string;
+	if (provider === Providers.Drive) {
+		metadataPath = `LocalBackups/metadata/${localBackupRepoID}/snapshot-${snapshotHash}.json`;
+	} else {
+		// Dropbox stores at root level
+		metadataPath = `metadata/${localBackupRepoID}/snapshot-${snapshotHash}.json`;
+	}
+
+	const { type, clientID, token, appKey } = await getBackupCredentials(hubProvider);
+
+	// Validate credentials
+	if (!token || token.trim() === '') {
+		throw new Error(`Invalid or expired ${provider} OAuth token. Please reconnect ${provider} in Local settings.`);
+	}
+
+	const upperCaseProvider = provider.toUpperCase();
+
+	// Create a temporary file with the metadata
+	const tmpFile = path.join(formatHomePath(site.path), `.tmp-metadata-${snapshotHash}.json`);
+	try {
+		fs.writeFileSync(tmpFile, metadata);
+
+		// Use rclone to copy the file to the provider
+		await execPromise(
+			`"${bins.rclone}" copyto "${tmpFile}" ":${provider}:${metadataPath}"`,
+			site,
+			{
+				[`RCLONE_${upperCaseProvider}_TYPE`]: type,
+				[`RCLONE_${upperCaseProvider}_CLIENT_ID`]: clientID,
+				[`RCLONE_${upperCaseProvider}_TOKEN`]: token,
+				[`RCLONE_${upperCaseProvider}_APP_KEY`]: appKey,
+			},
+		);
+	} finally {
+		// Clean up temp file
+		if (fs.existsSync(tmpFile)) {
+			fs.removeSync(tmpFile);
+		}
+	}
 }

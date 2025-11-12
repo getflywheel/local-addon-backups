@@ -13,6 +13,7 @@ import { createBackup } from './main/services/backupService';
 import { restoreFromBackup } from './main/services/restoreService';
 import { getSiteDataFromDisk, hubProviderRecordToProvider } from './main/utils';
 import { cloneFromBackup } from './main/services/cloneFromBackupService';
+import { migrateBackups } from './main/services/migrationService';
 import { IPCASYNC_EVENTS, SHOW_CLOUD_BACKUPS_PROMO_BANNER } from './constants';
 import { createIpcAsyncError, createIpcAsyncResult } from './helpers/createIpcAsyncResponse';
 import { getServiceContainer } from '@getflywheel/local/main';
@@ -245,6 +246,34 @@ export default function (): void {
 		{
 			channel: IPCASYNC_EVENTS.OPEN_FILE_AT_PATH,
 			callback: async (path: string) => await shell.openPath(path),
+		},
+		{
+			channel: IPCASYNC_EVENTS.MIGRATE_BACKUPS_START,
+			callback: async () => {
+				try {
+					logger.info('Starting backup migration...');
+					const result = await migrateBackups();
+					return createIpcAsyncResult(result, null);
+				} catch (error) {
+					logger.error(`Error - IPCASYNC_EVENTS.MIGRATE_BACKUPS_START: ${error.toString()}`);
+					return createIpcAsyncError(error, null);
+				}
+			},
+		},
+		{
+			channel: IPCASYNC_EVENTS.MIGRATE_BACKUPS_STATUS,
+			callback: async () => {
+				// For now, status is sent via IPC events during migration
+				// This could be extended to query a persistent state if needed
+				return createIpcAsyncResult({ message: 'Status updates sent via IPC events' }, null);
+			},
+		},
+		{
+			channel: IPCASYNC_EVENTS.MIGRATE_BACKUPS_CANCEL,
+			callback: async () => {
+				// Migration cancellation not implemented yet
+				return createIpcAsyncResult({ message: 'Migration cannot be cancelled' }, null);
+			},
 		},
 	];
 

@@ -143,3 +143,56 @@ export enum CloneFromBackupStates {
 	finished = 'finished',
 	failed = 'failed',
 }
+
+export enum MigrationStates {
+	fetchingProviders = 'fetchingProviders',
+	fetchingRepos = 'fetchingRepos',
+	processingRepo = 'processingRepo',
+	writingMetadata = 'writingMetadata',
+	rekeyingRepo = 'rekeyingRepo',
+	savingState = 'savingState',
+	finished = 'finished',
+	failed = 'failed',
+}
+
+export interface MigrationProgress {
+	state: MigrationStates;
+	message: string;
+	progress: number;
+	totalRepos?: number;
+	processedRepos?: number;
+	totalSnapshots?: number;
+	processedSnapshots?: number;
+	errors?: string[];
+}
+
+export interface MigrationResult {
+	success: boolean;
+	migratedRepos: number;
+	migratedSnapshots: number;
+	skippedRepos: number;
+	errors: Array<{
+		repo?: string;
+		snapshot?: string;
+		error: string;
+	}>;
+}
+
+export interface BackupMetadataWithCreatedBy {
+	snapshotId: string;
+	siteId: string;
+	siteName: string;
+	siteDomain?: string;
+	provider: 'dropbox' | 'googleDrive';
+	services?: GenericObject;
+	accountId?: string;
+	resticRepoId: string;
+	timestamp?: string;
+	hostname?: string;
+	note?: string;
+	paths?: {
+		site?: string;
+		database?: string;
+	};
+	createdBy: string;
+}

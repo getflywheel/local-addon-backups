@@ -1,121 +1,195 @@
-import React, { useEffect, useRef, useState } from 'react';
-import {
-	FlyModal,
-	Title,
-	PrimaryButton,
-	TextButton,
-	ProgressBar,
-} from '@getflywheel/local-components';
+import React, { useState, useEffect } from 'react';
+import { FlyModal, Title, PrimaryButton, TextButton, ProgressBar } from '@getflywheel/local-components';
 import styles from '../modals/BackupContents.scss';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import { IPCASYNC_EVENTS } from '../../../constants';
+import type { MigrationProgress, MigrationResult } from '../../../types';
+
+const { ipcRenderer } = window.require('electron');
 
 export const MigrationModal: React.FC = () => {
+	const [isMigrating, setIsMigrating] = useState(false);
 	const [progress, setProgress] = useState(0);
 	const [statusMessage, setStatusMessage] = useState('Preparing migration...');
 	const [isComplete, setIsComplete] = useState(false);
 	const [hasError, setHasError] = useState<string | null>(null);
-	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const [result, setResult] = useState<MigrationResult | null>(null);
 
 	useEffect(() => {
-		let isCancelled = false;
+		// Listen for progress updates
+		const progressHandler = (event: any, progressData: MigrationProgress) => {
+			setProgress(progressData.progress);
+			setStatusMessage(progressData.message);
+		};
 
-		const clearTimer = () => {
-			if (timerRef.current) {
-				clearTimeout(timerRef.current);
-				timerRef.current = null;
+		// Listen for completion
+		const completeHandler = (event: any, migrationResult: MigrationResult) => {
+			setIsComplete(true);
+			setIsMigrating(false);
+			setResult(migrationResult);
+			setProgress(1);
+
+			if (migrationResult.errors && migrationResult.errors.length > 0) {
+				setStatusMessage(`Migration completed with ${migrationResult.errors.length} error(s)`);
+			} else {
+				setStatusMessage('Migration completed successfully!');
 			}
 		};
 
-		const simulateProgress = () => {
-			const next = Math.min(1, progress + Math.random() * 0.12 + 0.06);
-			setProgress(next);
-
-			if (next < 0.25) {
-				setStatusMessage('Scanning existing backups...');
-			} else if (next < 0.8) {
-				setStatusMessage('Migrating backups to the new system...');
-			} else if (next < 1) {
-				setStatusMessage('Finalizing migration...');
-			}
-
-			if (next >= 1) {
-				setIsComplete(true);
-				setStatusMessage('Migration complete.');
-				return;
-			}
-
-			timerRef.current = setTimeout(() => {
-				if (!isCancelled) {
-					simulateProgress();
-				}
-			}, 400);
+		// Listen for errors
+		const errorHandler = (event: any, migrationResult: MigrationResult) => {
+			setIsComplete(true);
+			setIsMigrating(false);
+			setResult(migrationResult);
+			setHasError('Migration failed. Please check the details below and try again.');
+			setStatusMessage('Migration failed');
 		};
 
-		const startMigration = async () => {
-			try {
-				// Kick off migration in main (handler to be implemented later)
-				await ipcAsync(IPCASYNC_EVENTS.MIGRATE_BACKUPS_START);
-			} catch (e) {
-				// Fallback to simulated progress if main handler isn't available yet
-			}
+		ipcRenderer.on('migration:progress', progressHandler);
+		ipcRenderer.on('migration:complete', completeHandler);
+		ipcRenderer.on('migration:error', errorHandler);
 
-			// Begin simulated progress immediately so UI reflects work starting
-			simulateProgress();
-		};
-
-		startMigration();
-
+		// Cleanup listeners on unmount
 		return () => {
-			isCancelled = true;
-			clearTimer();
-			// Best-effort notify main of cancellation (no-op until implemented)
-			void ipcAsync(IPCASYNC_EVENTS.MIGRATE_BACKUPS_CANCEL).catch(() => undefined);
+			ipcRenderer.removeListener('migration:progress', progressHandler);
+			ipcRenderer.removeListener('migration:complete', completeHandler);
+			ipcRenderer.removeListener('migration:error', errorHandler);
 		};
-	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	const onClose = () => FlyModal.onRequestClose();
+	const startMigration = async () => {
+		setIsMigrating(true);
+		setProgress(0);
+		setStatusMessage('Starting migration...');
+		setHasError(null);
+		setResult(null);
+
+		try {
+			// Kick off migration in main
+			const response = await ipcAsync(IPCASYNC_EVENTS.MIGRATE_BACKUPS_START);
+
+			// Check if the response contains an error
+			if (response && response.error) {
+				const errorMessage = response.error.message || 'Failed to start migration';
+				setHasError(`Failed to start migration: ${errorMessage}`);
+				setIsMigrating(false);
+				setIsComplete(true);
+			}
+		} catch (e) {
+			setHasError('Failed to start migration. Please try again.');
+			setIsMigrating(false);
+			setIsComplete(true);
+		}
+	};
+
+	const onClose = () => {
+		// Only allow closing if not migrating or if complete
+		if (!isMigrating || isComplete) {
+			FlyModal.onRequestClose();
+		}
+	};
 
 	return (
 		<div>
-			<Title size="l" container={{ margin: 'm 0' }}>Migrate Cloud Backups</Title>
-			<p style={{ marginTop: 7 }}>
-				We’re migrating your existing Cloud Backups to the new Backups tab in Local&nbsp;10. You can close this window at any time. Migration will continue as long as Local is open.
-			</p>
+			<Title size="l" container={{ margin: 'm 0' }}>
+				Migrate Cloud Backups
+			</Title>
+			<p style={{ marginTop: 7 }}>Move your existing Cloud Backups to the new Backups tab in Local&nbsp;10.</p>
+			<p>This may take a few minutes to complete.</p>
 
 			<hr />
 
-			<div className={styles.AlignLeft}>
-				<Title size="s" style={{ marginBottom: 8 }}>Progress</Title>
-				<ProgressBar progress={progress} />
-				<p style={{ marginTop: 8 }}>{Math.round(progress * 100)}% - {statusMessage}</p>
-				{hasError && <p style={{ color: '#d0021b' }}>{hasError}</p>}
-			</div>
+			{isMigrating && (
+				<>
+					<div className={styles.AlignLeft}>
+						<Title size="s" style={{ marginBottom: 8 }}>
+							Progress
+						</Title>
+						<ProgressBar progress={progress} />
+						<p style={{ marginTop: 8 }}>
+							{Math.round(progress * 100)}% - {statusMessage}
+						</p>
+					</div>
 
-			<hr />
+					<hr />
+				</>
+			)}
+
+			{isComplete && result && (
+				<>
+					<div className={styles.AlignLeft}>
+						<Title size="s" style={{ marginBottom: 8 }}>
+							Results
+						</Title>
+						{result.success ? (
+							<div>
+								<p style={{ color: '#00a32a', marginBottom: 8 }}>✓ Migration completed successfully!</p>
+								<ul style={{ marginLeft: 20, marginTop: 8 }}>
+									<li>Migrated {result.migratedRepos} repositor{result.migratedRepos === 1 ? 'y' : 'ies'}</li>
+									<li>Migrated {result.migratedSnapshots} snapshot{result.migratedSnapshots === 1 ? '' : 's'}</li>
+									{result.skippedRepos > 0 && (
+										<li>Skipped {result.skippedRepos} repositor{result.skippedRepos === 1 ? 'y' : 'ies'} (not found on provider)</li>
+									)}
+								</ul>
+							</div>
+						) : (
+							<div>
+								<p style={{ color: '#d0021b', marginBottom: 8 }}>✗ Migration failed</p>
+							</div>
+						)}
+
+						{result.errors && result.errors.length > 0 && (
+							<div style={{ marginTop: 16 }}>
+								<p style={{ fontWeight: 'bold', marginBottom: 8 }}>Errors:</p>
+								<ul style={{ marginLeft: 20, maxHeight: 150, overflow: 'auto' }}>
+									{result.errors.map((err, idx) => (
+										<li key={idx} style={{ color: '#ffffff', fontSize: '0.9em', marginBottom: 4, wordBreak: 'break-word' }}>
+											{err.repo && <strong>Repo {err.repo}: </strong>}
+											{err.snapshot && <strong>Snapshot {err.snapshot}: </strong>}
+											{err.error}
+										</li>
+									))}
+								</ul>
+							</div>
+						)}
+					</div>
+
+					<hr />
+				</>
+			)}
+
+			{hasError && !result && <p style={{ color: '#d0021b', marginBottom: 16 }}>{hasError}</p>}
 
 			<div className={styles.ModalButtons}>
 				<TextButton
 					style={{ marginTop: 0 }}
 					className={styles.NoPaddingLeft}
 					onClick={onClose}
+					disabled={isMigrating && !isComplete}
 				>
 					{isComplete ? 'Dismiss' : 'Close'}
 				</TextButton>
 
-				<PrimaryButton
-					style={{ marginTop: 0 }}
-					onClick={onClose}
-					disabled={!isComplete}
-				>
-					{isComplete ? 'Done' : 'Migrating...'}
-				</PrimaryButton>
+				{!isMigrating && !isComplete && (
+					<PrimaryButton style={{ marginTop: 0 }} onClick={startMigration}>
+						Start Migration
+					</PrimaryButton>
+				)}
+
+				{isMigrating && !isComplete && (
+					<PrimaryButton style={{ marginTop: 0 }} disabled={true}>
+						Migrating...
+					</PrimaryButton>
+				)}
+
+				{isComplete && hasError && (
+					<PrimaryButton style={{ marginTop: 0 }} onClick={startMigration}>
+						Retry Migration
+					</PrimaryButton>
+				)}
 			</div>
 		</div>
 	);
 };
 
 export default MigrationModal;
-
-
