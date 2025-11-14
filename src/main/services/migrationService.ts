@@ -21,7 +21,7 @@ import type {
 	BackupSite,
 	MigrationProgress,
 	MigrationResult,
-	BackupMetadataWithCreatedBy,
+	BackupMetadata,
 	GenericObject,
 } from '../../types';
 import { DEFAULT_BACKUP_PASSWORD, MIGRATION_STATE_FILE } from '../../constants';
@@ -97,7 +97,7 @@ function buildMetadata(
 	repo: BackupRepo,
 	provider: HubProviderRecord,
 	accountId?: string,
-): BackupMetadataWithCreatedBy {
+): BackupMetadata {
 	const config = parseConfig(snapshot.config || '{}');
 
 	// Handle timestamp conversion safely

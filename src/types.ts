@@ -178,7 +178,7 @@ export interface MigrationResult {
 	}>;
 }
 
-export interface BackupMetadataWithCreatedBy {
+export interface BackupMetadata {
 	snapshotId: string;
 	siteId: string;
 	siteName: string;
@@ -194,5 +194,5 @@ export interface BackupMetadataWithCreatedBy {
 		site?: string;
 		database?: string;
 	};
-	createdBy: string;
+	createdBy?: string;
 }
