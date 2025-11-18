@@ -284,19 +284,35 @@ export async function migrateBackups(): Promise<MigrationResult> {
 		logger.info('Fetching repositories...');
 
 		const allRepos: RepoWithMetadata[] = [];
+		// First pass: determine total number of repos across all providers to stabilize fetch-phase progress
+		const providerReposList: Array<{ provider: HubProviderRecord, repos: BackupRepo[] }> = [];
+		let totalReposToFetch = 0;
 
+		// First determine stable total
 		for (const provider of providers) {
 			try {
-			const repos = await getBackupReposByProviderID(provider.id);
-			logger.info(`Found ${repos.length} repos for provider ${provider.id}`);
+				const repos = await getBackupReposByProviderID(provider.id);
+				logger.info(`Found ${repos.length} repos for provider ${provider.id}`);
+				totalReposToFetch += repos.length;
+				providerReposList.push({ provider, repos });
+			} catch (err) {
+				logger.error(`Failed to fetch repos for provider ${provider.id}: ${err}`);
+				state.errors.push({
+					error: `Failed to fetch repos for ${provider.id}: ${err.message}`,
+				});
+				// Push empty list for provider to continue processing others
+				providerReposList.push({ provider, repos: [] });
+			}
+		}
+		// Set the stabilized denominator before any per-repo fetch updates
+		state.totalReposToFetch = totalReposToFetch;
+		sendProgressUpdate(state);
 
-			// Track total repos to fetch for progress calculation
-			state.totalReposToFetch += repos.length;
-
-			// Step 3: Fetch sites and snapshots for each repo
+		// Now perform detailed fetch for each repo and update progress monotonically
+		for (const { provider, repos } of providerReposList) {
+			const providerName = getProviderDisplayName(provider.id);
 			for (let i = 0; i < repos.length; i++) {
 				const repo = repos[i];
-				const providerName = getProviderDisplayName(provider.id);
 				// Use a single "Processing repository" state for fetching site, snapshots, and checking existence
 				state.currentState = MigrationStates.processingRepo;
 				// Show which repo we're fetching data for
@@ -307,6 +323,9 @@ export async function migrateBackups(): Promise<MigrationResult> {
 					const sites = await getBackupSitesByRepoID(repo.hash);
 					if (!sites) {
 						logger.warn(`No sites found for repo ${repo.hash}`);
+						// Increment fetched repos counter for progress tracking even if missing
+						state.fetchedRepos++;
+						sendProgressUpdate(state, `Fetching backup data from ${providerName}...`);
 						continue;
 					}
 
@@ -314,6 +333,8 @@ export async function migrateBackups(): Promise<MigrationResult> {
 					const site = Array.isArray(sites) ? sites[0] : sites;
 					if (!site) {
 						logger.warn(`No valid site found for repo ${repo.hash}`);
+						state.fetchedRepos++;
+						sendProgressUpdate(state, `Fetching backup data from ${providerName}...`);
 						continue;
 					}
 
@@ -322,32 +343,32 @@ export async function migrateBackups(): Promise<MigrationResult> {
 					let currentPage = 1;
 					let hasMore = true;
 
-						while (hasMore) {
-							const result = await getBackupSnapshotsByRepo(repo.id, 50, currentPage);
-							if (result.snapshots && result.snapshots.length > 0) {
-								allSnapshots.push(...result.snapshots);
-								// Show snapshot count as we fetch
-								sendProgressUpdate(state, `Fetching backup data from ${providerName} (${allSnapshots.length} snapshots found)...`);
-							}
-							hasMore = result.pagination.currentPage < result.pagination.lastPage;
-							currentPage++;
+					while (hasMore) {
+						const result = await getBackupSnapshotsByRepo(repo.id, 50, currentPage);
+						if (result.snapshots && result.snapshots.length > 0) {
+							allSnapshots.push(...result.snapshots);
+							// Show snapshot count as we fetch
+							sendProgressUpdate(state, `Fetching backup data from ${providerName} (${allSnapshots.length} snapshots found)...`);
 						}
+						hasMore = result.pagination.currentPage < result.pagination.lastPage;
+						currentPage++;
+					}
 
-						logger.info(`Found ${allSnapshots.length} snapshots for repo ${repo.hash}`);
+					logger.info(`Found ${allSnapshots.length} snapshots for repo ${repo.hash}`);
 
-						if (allSnapshots.length > 0) {
-							allRepos.push({
-								repo,
-								site,
-								provider,
-								snapshots: allSnapshots,
-							});
-							state.totalSnapshots += allSnapshots.length;
-						}
+					if (allSnapshots.length > 0) {
+						allRepos.push({
+							repo,
+							site,
+							provider,
+							snapshots: allSnapshots,
+						});
+						state.totalSnapshots += allSnapshots.length;
+					}
 
-						// Increment fetched repos counter for progress tracking
-						state.fetchedRepos++;
-						sendProgressUpdate(state, `Fetching backup data from ${providerName}...`);
+					// Increment fetched repos counter for progress tracking
+					state.fetchedRepos++;
+					sendProgressUpdate(state, `Fetching backup data from ${providerName}...`);
 				} catch (err) {
 					logger.error(`Failed to fetch data for repo ${repo.hash}: ${err}`);
 					state.errors.push({
@@ -358,12 +379,6 @@ export async function migrateBackups(): Promise<MigrationResult> {
 					state.fetchedRepos++;
 					sendProgressUpdate(state, `Fetching backup data from ${providerName}...`);
 				}
-			}
-			} catch (err) {
-				logger.error(`Failed to fetch repos for provider ${provider.id}: ${err}`);
-				state.errors.push({
-					error: `Failed to fetch repos for ${provider.id}: ${err.message}`,
-				});
 			}
 		}
 
