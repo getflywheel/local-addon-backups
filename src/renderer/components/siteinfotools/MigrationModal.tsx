@@ -105,7 +105,7 @@ export const MigrationModal: React.FC = () => {
 						<Title size="s" style={{ marginBottom: 8 }}>
 							Progress
 						</Title>
-						<ProgressBar progress={progress} />
+						<ProgressBar progress={progress * 100} />
 						<p style={{ marginTop: 8 }}>
 							{Math.round(progress * 100)}% - {statusMessage}
 						</p>
