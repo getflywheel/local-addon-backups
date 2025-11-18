@@ -316,7 +316,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 				// Use a single "Processing repository" state for fetching site, snapshots, and checking existence
 				state.currentState = MigrationStates.processingRepo;
 				// Show which repo we're fetching data for
-				sendProgressUpdate(state, `Fetching backup data from ${providerName}...`);
+				sendProgressUpdate(state, `Fetching backup data for ${providerName}...`);
 
 				try {
 					// Fetch site info
@@ -325,7 +325,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 						logger.warn(`No sites found for repo ${repo.hash}`);
 						// Increment fetched repos counter for progress tracking even if missing
 						state.fetchedRepos++;
-						sendProgressUpdate(state, `Fetching backup data from ${providerName}...`);
+						sendProgressUpdate(state, `Fetching backup data for ${providerName}...`);
 						continue;
 					}
 
@@ -334,7 +334,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 					if (!site) {
 						logger.warn(`No valid site found for repo ${repo.hash}`);
 						state.fetchedRepos++;
-						sendProgressUpdate(state, `Fetching backup data from ${providerName}...`);
+						sendProgressUpdate(state, `Fetching backup data for ${providerName}...`);
 						continue;
 					}
 
@@ -348,7 +348,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 						if (result.snapshots && result.snapshots.length > 0) {
 							allSnapshots.push(...result.snapshots);
 							// Show snapshot count as we fetch
-							sendProgressUpdate(state, `Fetching backup data from ${providerName} (${allSnapshots.length} snapshots found)...`);
+							sendProgressUpdate(state, `Fetching backup data for ${providerName} (${allSnapshots.length} snapshots found)...`);
 						}
 						hasMore = result.pagination.currentPage < result.pagination.lastPage;
 						currentPage++;
@@ -368,7 +368,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 
 					// Increment fetched repos counter for progress tracking
 					state.fetchedRepos++;
-					sendProgressUpdate(state, `Fetching backup data from ${providerName}...`);
+					sendProgressUpdate(state, `Fetching backup data for ${providerName}...`);
 				} catch (err) {
 					logger.error(`Failed to fetch data for repo ${repo.hash}: ${err}`);
 					state.errors.push({
@@ -377,7 +377,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 					});
 					// Still increment fetched repos counter even on error
 					state.fetchedRepos++;
-					sendProgressUpdate(state, `Fetching backup data from ${providerName}...`);
+					sendProgressUpdate(state, `Fetching backup data for ${providerName}...`);
 				}
 			}
 		}

@@ -95,7 +95,7 @@ export const MigrationModal: React.FC = () => {
 				Migrate Cloud Backups
 			</Title>
 			<p style={{ marginTop: 7 }}>Move your existing Cloud Backups to the new Backups tab in Local&nbsp;10.</p>
-			<p>This may take a few minutes to complete.</p>
+			<p>This will take a few minutes to complete.</p>
 
 			<hr />
 
