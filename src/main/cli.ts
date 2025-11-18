@@ -313,13 +313,18 @@ export async function checkRepoExists (options: {
  *
  * @param options Rekey options
  */
+export enum RekeyStatus {
+	Success = 'success',
+	RepoNotFound = 'repoNotFound',
+}
+
 export async function rekeyRepo (options: {
 	provider: Providers;
 	oldPassword: string;
 	newPassword: string;
 	localBackupRepoID: string;
 	site: Site;
-}): Promise<void> {
+}): Promise<RekeyStatus> {
 	const { provider, oldPassword, newPassword, localBackupRepoID, site } = options;
 	const hubProvider = providerToHubProvider(provider);
 
@@ -332,6 +337,18 @@ export async function rekeyRepo (options: {
 		// Validate credentials before attempting to use them
 		if (!token || token.trim() === '') {
 			throw new Error(`Invalid or expired ${provider} OAuth token. Please reconnect ${provider} in Local settings.`);
+		}
+
+		// Before attempting any operations, confirm the repo actually exists
+		const exists = await checkRepoExists({
+			provider,
+			encryptionPassword: oldPassword,
+			localBackupRepoID,
+			site,
+		});
+		if (!exists) {
+			logger.warn(`Repo ${localBackupRepoID} not found on ${provider} during rekey`);
+			return RekeyStatus.RepoNotFound;
 		}
 
 		const upperCaseProvider = provider.toUpperCase();
@@ -352,7 +369,7 @@ export async function rekeyRepo (options: {
 
 			// If we got here, the new password already works - no need to add another key
 			logger.info(`Repo ${localBackupRepoID} already has the new password, skipping rekey`);
-			return;
+			return RekeyStatus.Success;
 		} catch (err) {
 			// Check if this is a token/auth error
 			const errorStr = String(err);
@@ -380,7 +397,14 @@ export async function rekeyRepo (options: {
 		);
 
 		logger.info(`Successfully added new key to repo ${localBackupRepoID}`);
+		return RekeyStatus.Success;
 	} catch (err) {
+		// Detect a "repo not found" scenario and return a non-fatal status
+		const errStr = String(err);
+		if (errStr.includes('does not exist') || errStr.includes('repository not found') || errStr.includes('Is there a repository at')) {
+			logger.warn(`Repo ${localBackupRepoID} appears missing during rekey on ${provider}`);
+			return RekeyStatus.RepoNotFound;
+		}
 		throw new Error(`Failed to rekey repo ${localBackupRepoID} on ${provider}: ${err}`);
 	} finally {
 		// Always clean up the temporary password file
