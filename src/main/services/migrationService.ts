@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs-extra';
 import * as LocalMain from '@getflywheel/local/main';
 import { getServiceContainer } from '@getflywheel/local/main';
+import { app } from 'electron';
 import {
 	getEnabledBackupProviders,
 	getBackupReposByProviderID,
@@ -569,10 +570,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
  */
 async function saveMigrationState(): Promise<void> {
 	try {
-		const userDataPath = (process as any).electronPaths?.userDataPath;
-		if (!userDataPath) {
-			throw new Error('User data path not available');
-		}
+		const userDataPath = app?.getPath('userData');
 
 		const stateFilePath = path.join(userDataPath, MIGRATION_STATE_FILE);
 		await fs.writeJson(stateFilePath, { migrated: true });
@@ -588,10 +586,7 @@ async function saveMigrationState(): Promise<void> {
  */
 export async function hasMigrationCompleted(): Promise<boolean> {
 	try {
-		const userDataPath = (process as any).electronPaths?.userDataPath;
-		if (!userDataPath) {
-			return false;
-		}
+		const userDataPath = app?.getPath('userData');
 
 		const stateFilePath = path.join(userDataPath, MIGRATION_STATE_FILE);
 		if (await fs.pathExists(stateFilePath)) {
