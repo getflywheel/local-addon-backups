@@ -100,14 +100,18 @@ export const MigrationModal: React.FC = () => {
 				Migrate Cloud Backups
 			</Title>
 			<p style={{ marginTop: 7 }}>Move your existing Cloud Backups to the new Backups tab in Local&nbsp;10.</p>
-			<p>This will take a few minutes to complete. Local will copy backup data to your cloud storage and update backup keys.</p>
+			<p>
+				This will take a few minutes to complete. Local will copy backup data to your cloud storage and update
+				backup keys.
+			</p>
 
 			{!canMigrate && (
 				<>
 					<hr />
 					<div className={styles.AlignLeft}>
 						<p style={{ marginBottom: 8 }}>
-							This migration requires Local&nbsp;10 or higher. Please install the latest Local release to continue.
+							This migration requires Local&nbsp;10 or higher. Please install the latest Local release to
+							continue.
 						</p>
 					</div>
 					<div className={styles.ModalButtons} style={{ justifyContent: 'flex-end' }}>
@@ -123,128 +127,144 @@ export const MigrationModal: React.FC = () => {
 
 			{canMigrate && (
 				<>
-			<hr />
-
-			{isMigrating && (
-				<>
-					<div className={styles.AlignLeft}>
-						<Title size="s" style={{ marginBottom: 8 }}>
-							Progress
-						</Title>
-						<ProgressBar progress={progress * 100} />
-						<p style={{ marginTop: 8 }}>
-							{Math.round(progress * 100)}% - {statusMessage}
-						</p>
-					</div>
-
 					<hr />
-				</>
-			)}
 
-			{isComplete && result && (
-				<>
-					<div className={styles.AlignLeft}>
-						<Title size="s" style={{ marginBottom: 8 }}>
-							Results
-						</Title>
-						{result.success ? (
-							<div>
-								<p style={{ color: '#00a32a', marginBottom: 8 }}>✓ Migration completed successfully!</p>
-								<p style={{ margin: '0 0 12px 0' }}>
-									Visit the{' '}
-									<a
-										href="#"
-										onClick={(e) => {
-											e.preventDefault();
-											LocalRenderer.sendIPCEvent('goToRoute', '/main/connect');
-										}}
-									>
-										Connect sidebar
-									</a>{' '}
-									to log in and see all migrated backups from your connected providers.
+					{isMigrating && (
+						<>
+							<div className={styles.AlignLeft}>
+								<Title size="s" style={{ marginBottom: 8 }}>
+									Progress
+								</Title>
+								<ProgressBar progress={progress * 100} />
+								<p style={{ marginTop: 8 }}>
+									{Math.round(progress * 100)}% - {statusMessage}
 								</p>
-								<ul style={{ marginLeft: 20, marginTop: 8 }}>
-									<li>
-										Migrated {result.migratedRepos}
-										{result.migratedRepos === 1 ? 'repository' : 'repositories'}
-									</li>
-									<li>
-										Migrated {result.migratedSnapshots}
-										{result.migratedSnapshots === 1 ? 'snapshot' : 'snapshots'}
-									</li>
-									{result.skippedRepos > 0 && (
-										<li>
-											Skipped {result.skippedRepos}
-											{result.skippedRepos === 1 ? 'repository' : 'repositories'} (not found on
-											provider)
-										</li>
-									)}
-								</ul>
 							</div>
-						) : (
-							<div>
-								<p style={{ color: '#d0021b', marginBottom: 8 }}>✗ Migration failed</p>
+
+							<hr />
+						</>
+					)}
+
+					{isComplete && result && (
+						<>
+							<div className={styles.AlignLeft}>
+								<Title size="s" style={{ marginBottom: 8 }}>
+									Results
+								</Title>
+								{result.success ? (
+									<div>
+										<p style={{ color: '#00a32a', marginBottom: 8 }}>
+											✓ Migration completed successfully!
+										</p>
+										<p style={{ margin: '0 0 12px 0' }}>
+											Visit the{' '}
+											<a
+												href="#"
+												onClick={(e) => {
+													e.preventDefault();
+													LocalRenderer.sendIPCEvent('goToRoute', '/main/connect');
+												}}
+											>
+												Connect sidebar
+											</a>{' '}
+											to log in and see all migrated backups from your connected providers. You
+											can now remove the{' '}
+											<a
+												href="#"
+												onClick={(e) => {
+													e.preventDefault();
+													LocalRenderer.sendIPCEvent(
+														'goToRoute',
+														'/main/marketplace/listings/installed',
+													);
+												}}
+											>
+												Cloud Backups add-on
+											</a>
+											.
+										</p>
+										<ul style={{ marginLeft: 20, marginTop: 8 }}>
+											<li>
+												Migrated {result.migratedRepos}
+												{result.migratedRepos === 1 ? 'repository' : 'repositories'}
+											</li>
+											<li>
+												Migrated {result.migratedSnapshots}
+												{result.migratedSnapshots === 1 ? 'snapshot' : 'snapshots'}
+											</li>
+											{result.skippedRepos > 0 && (
+												<li>
+													Skipped {result.skippedRepos}
+													{result.skippedRepos === 1 ? 'repository' : 'repositories'} (not
+													found on provider)
+												</li>
+											)}
+										</ul>
+									</div>
+								) : (
+									<div>
+										<p style={{ color: '#d0021b', marginBottom: 8 }}>✗ Migration failed</p>
+									</div>
+								)}
+
+								{result.errors && result.errors.length > 0 && (
+									<div style={{ marginTop: 16 }}>
+										<p style={{ fontWeight: 'bold', marginBottom: 8 }}>Errors:</p>
+										<ul style={{ marginLeft: 20, maxHeight: 150, overflow: 'auto' }}>
+											{result.errors.map((err, idx) => (
+												<li
+													key={idx}
+													style={{
+														color: '#ffffff',
+														fontSize: '0.9em',
+														marginBottom: 4,
+														wordBreak: 'break-word',
+													}}
+												>
+													{err.repo && <strong>Repo {err.repo}: </strong>}
+													{err.snapshot && <strong>Snapshot {err.snapshot}: </strong>}
+													{err.error}
+												</li>
+											))}
+										</ul>
+									</div>
+								)}
 							</div>
+
+							<hr />
+						</>
+					)}
+
+					{hasError && !result && <p style={{ color: '#d0021b', marginBottom: 16 }}>{hasError}</p>}
+
+					<div className={styles.ModalButtons} style={{ justifyContent: 'center' }}>
+						{!isMigrating && !isComplete && (
+							<PrimaryButton style={{ marginTop: 0 }} onClick={startMigration}>
+								Start Migration
+							</PrimaryButton>
 						)}
 
-						{result.errors && result.errors.length > 0 && (
-							<div style={{ marginTop: 16 }}>
-								<p style={{ fontWeight: 'bold', marginBottom: 8 }}>Errors:</p>
-								<ul style={{ marginLeft: 20, maxHeight: 150, overflow: 'auto' }}>
-									{result.errors.map((err, idx) => (
-										<li
-											key={idx}
-											style={{
-												color: '#ffffff',
-												fontSize: '0.9em',
-												marginBottom: 4,
-												wordBreak: 'break-word',
-											}}
-										>
-											{err.repo && <strong>Repo {err.repo}: </strong>}
-											{err.snapshot && <strong>Snapshot {err.snapshot}: </strong>}
-											{err.error}
-										</li>
-									))}
-								</ul>
-							</div>
+						{isMigrating && !isComplete && (
+							<PrimaryButton style={{ marginTop: 0 }} disabled={true}>
+								Migrating...
+							</PrimaryButton>
+						)}
+
+						{isComplete && result?.success && (
+							<PrimaryButton
+								style={{ marginTop: 0 }}
+								onClick={() => LocalRenderer.sendIPCEvent('goToRoute', '/main/connect')}
+							>
+								See All Backups
+							</PrimaryButton>
+						)}
+
+						{isComplete && hasError && (
+							<PrimaryButton style={{ marginTop: 0 }} onClick={startMigration}>
+								Retry Migration
+							</PrimaryButton>
 						)}
 					</div>
-
-					<hr />
-				</>
-			)}
-
-			{hasError && !result && <p style={{ color: '#d0021b', marginBottom: 16 }}>{hasError}</p>}
-
-			<div className={styles.ModalButtons} style={{ justifyContent: 'center' }}>
-				{!isMigrating && !isComplete && (
-					<PrimaryButton style={{ marginTop: 0 }} onClick={startMigration}>
-						Start Migration
-					</PrimaryButton>
-				)}
-
-				{isMigrating && !isComplete && (
-					<PrimaryButton style={{ marginTop: 0 }} disabled={true}>
-						Migrating...
-					</PrimaryButton>
-				)}
-
-				{isComplete && result?.success && (
-					<PrimaryButton
-						style={{ marginTop: 0 }}
-						onClick={() => LocalRenderer.sendIPCEvent('goToRoute', '/main/connect')}
-					>
-						See All Backups
-					</PrimaryButton>
-				)}
-
-				{isComplete && hasError && (
-					<PrimaryButton style={{ marginTop: 0 }} onClick={startMigration}>
-						Retry Migration
-					</PrimaryButton>
-				)}
-			</div>
 				</>
 			)}
 		</div>
