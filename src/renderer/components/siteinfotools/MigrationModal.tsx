@@ -217,7 +217,7 @@ export const MigrationModal: React.FC = () => {
 
 			{hasError && !result && <p style={{ color: '#d0021b', marginBottom: 16 }}>{hasError}</p>}
 
-			<div className={styles.ModalButtons} style={{ justifyContent: 'flex-end' }}>
+			<div className={styles.ModalButtons} style={{ justifyContent: 'center' }}>
 				{!isMigrating && !isComplete && (
 					<PrimaryButton style={{ marginTop: 0 }} onClick={startMigration}>
 						Start Migration
