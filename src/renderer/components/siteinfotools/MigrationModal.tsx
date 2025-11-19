@@ -179,8 +179,7 @@ export const MigrationModal: React.FC = () => {
 											{result.skippedRepos > 0 && (
 												<li>
 													Skipped {result.skippedRepos}{' '}
-													{result.skippedRepos === 1 ? 'site' : 'sites'} (backup not found,
-													may have been deleted from cloud storage)
+													{result.skippedRepos === 1 ? 'site' : 'sites'}
 												</li>
 											)}
 										</ul>
