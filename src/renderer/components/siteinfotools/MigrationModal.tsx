@@ -94,13 +94,6 @@ export const MigrationModal: React.FC = () => {
 		}
 	};
 
-	const onClose = () => {
-		// Only allow closing if not migrating or if complete
-		if (!isMigrating || isComplete) {
-			FlyModal.onRequestClose();
-		}
-	};
-
 	return (
 		<div>
 			<Title size="l" container={{ margin: 'm 0' }}>
@@ -117,14 +110,7 @@ export const MigrationModal: React.FC = () => {
 							This migration requires Local&nbsp;10 or higher. Please install the latest Local release to continue.
 						</p>
 					</div>
-					<div className={styles.ModalButtons}>
-						<TextButton
-							style={{ marginTop: 0 }}
-							className={styles.NoPaddingLeft}
-							onClick={() => FlyModal.onRequestClose()}
-						>
-							Close
-						</TextButton>
+					<div className={styles.ModalButtons} style={{ justifyContent: 'flex-end' }}>
 						<PrimaryButton
 							style={{ marginTop: 0 }}
 							onClick={() => launchBrowser('https://localwp.com/releases/')}
@@ -231,16 +217,7 @@ export const MigrationModal: React.FC = () => {
 
 			{hasError && !result && <p style={{ color: '#d0021b', marginBottom: 16 }}>{hasError}</p>}
 
-			<div className={styles.ModalButtons}>
-				<TextButton
-					style={{ marginTop: 0 }}
-					className={styles.NoPaddingLeft}
-					onClick={onClose}
-					disabled={isMigrating && !isComplete}
-				>
-					{isComplete ? 'Dismiss' : 'Close'}
-				</TextButton>
-
+			<div className={styles.ModalButtons} style={{ justifyContent: 'flex-end' }}>
 				{!isMigrating && !isComplete && (
 					<PrimaryButton style={{ marginTop: 0 }} onClick={startMigration}>
 						Start Migration
