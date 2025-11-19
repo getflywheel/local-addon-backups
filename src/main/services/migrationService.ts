@@ -15,7 +15,6 @@ import { hubProviderToProvider } from '../utils';
 import { MigrationStates } from '../../types';
 import type {
 	Site,
-	Providers,
 	HubProviderRecord,
 	BackupRepo,
 	BackupSnapshot,

@@ -11,6 +11,8 @@ import { getEnabledProvidersHub, updateActiveSiteAndDataSources } from '../../st
 import TryAgain from './TryAgain';
 import { $offline } from '@getflywheel/local/renderer';
 import { observer } from 'mobx-react';
+import { ipcAsync } from '@getflywheel/local/renderer';
+import { IPCASYNC_EVENTS } from '../../../constants';
 
 interface Props {
     site: Site;
@@ -28,6 +30,24 @@ const SiteInfoToolsSection = observer(({ site }: Props) => {
 
     // update active site anytime the site prop changes
     useUpdateActiveSiteAndDataSources(site.id);
+
+    // migration status
+    const [migrationStatus, setMigrationStatus] = React.useState<'notStarted' | 'completed'>('notStarted');
+    React.useEffect(() => {
+        let mounted = true;
+        (async () => {
+            try {
+                const response = await ipcAsync(IPCASYNC_EVENTS.MIGRATE_BACKUPS_STATUS);
+                const migrated = response?.result?.migrated === true;
+                if (mounted) {
+                    setMigrationStatus(migrated ? 'completed' : 'notStarted');
+                }
+            } catch {
+                // noop: default to notStarted on error
+            }
+        })();
+        return () => { mounted = false; };
+    }, []);
 
     const {
         hasErrorLoadingEnabledProviders,
@@ -53,7 +73,7 @@ const SiteInfoToolsSection = observer(({ site }: Props) => {
     return (
         <div className={styles.SiteInfoToolsSection}>
             <OfflineBanner offline={offline} />
-            <MigrationBanner />
+			<MigrationBanner migrationStatus={migrationStatus} siteId={site.id} />
             <ToolsHeader site={site} offline={offline} />
             <ToolsContent
                 className={styles.SiteInfoToolsSection_Content}
