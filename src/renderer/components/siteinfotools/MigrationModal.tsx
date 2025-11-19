@@ -148,13 +148,10 @@ export const MigrationModal: React.FC = () => {
 					{isComplete && result && (
 						<>
 							<div className={styles.AlignLeft}>
-								<Title size="s" style={{ marginBottom: 8 }}>
-									Results
-								</Title>
 								{result.success ? (
 									<div>
 										<p style={{ color: '#00a32a', marginBottom: 8 }}>
-											✓ Migration completed successfully!
+											<strong>✓ Migration completed successfully!</strong>
 										</p>
 										<p style={{ margin: '0 0 12px 0' }}>
 											Visit the{' '}
@@ -167,36 +164,23 @@ export const MigrationModal: React.FC = () => {
 											>
 												Connect sidebar
 											</a>{' '}
-											to log in and see all migrated backups from your connected providers. You
-											can now remove the{' '}
-											<a
-												href="#"
-												onClick={(e) => {
-													e.preventDefault();
-													LocalRenderer.sendIPCEvent(
-														'goToRoute',
-														'/main/marketplace/listings/installed',
-													);
-												}}
-											>
-												Cloud Backups add-on
-											</a>
-											.
+											to log in and see all migrated backups from your connected providers.
+											<strong>You can now remove the Cloud Backups add-on.</strong>
 										</p>
 										<ul style={{ marginLeft: 20, marginTop: 8 }}>
 											<li>
-												Migrated {result.migratedRepos}
-												{result.migratedRepos === 1 ? 'repository' : 'repositories'}
+												Migrated {result.migratedRepos}{' '}
+												{result.migratedRepos === 1 ? 'site' : 'sites'}
 											</li>
 											<li>
-												Migrated {result.migratedSnapshots}
-												{result.migratedSnapshots === 1 ? 'snapshot' : 'snapshots'}
+												Migrated {result.migratedSnapshots}{' '}
+												{result.migratedSnapshots === 1 ? 'backup' : 'backups'}
 											</li>
 											{result.skippedRepos > 0 && (
 												<li>
-													Skipped {result.skippedRepos}
-													{result.skippedRepos === 1 ? 'repository' : 'repositories'} (not
-													found on provider)
+													Skipped {result.skippedRepos}{' '}
+													{result.skippedRepos === 1 ? 'site' : 'sites'} (backup not found,
+													may have been deleted from cloud storage)
 												</li>
 											)}
 										</ul>
@@ -204,29 +188,6 @@ export const MigrationModal: React.FC = () => {
 								) : (
 									<div>
 										<p style={{ color: '#d0021b', marginBottom: 8 }}>✗ Migration failed</p>
-									</div>
-								)}
-
-								{result.errors && result.errors.length > 0 && (
-									<div style={{ marginTop: 16 }}>
-										<p style={{ fontWeight: 'bold', marginBottom: 8 }}>Errors:</p>
-										<ul style={{ marginLeft: 20, maxHeight: 150, overflow: 'auto' }}>
-											{result.errors.map((err, idx) => (
-												<li
-													key={idx}
-													style={{
-														color: '#ffffff',
-														fontSize: '0.9em',
-														marginBottom: 4,
-														wordBreak: 'break-word',
-													}}
-												>
-													{err.repo && <strong>Repo {err.repo}: </strong>}
-													{err.snapshot && <strong>Snapshot {err.snapshot}: </strong>}
-													{err.error}
-												</li>
-											))}
-										</ul>
 									</div>
 								)}
 							</div>
