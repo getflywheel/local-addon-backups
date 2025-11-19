@@ -114,12 +114,12 @@ export const MigrationModal: React.FC = () => {
 							continue.
 						</p>
 					</div>
-					<div className={styles.ModalButtons} style={{ justifyContent: 'flex-end' }}>
+					<div className={styles.ModalButtons} style={{ justifyContent: 'center' }}>
 						<PrimaryButton
 							style={{ marginTop: 0 }}
 							onClick={() => launchBrowser('https://localwp.com/releases/')}
 						>
-							Download Local 10
+							Download Local 10+
 						</PrimaryButton>
 					</div>
 				</>
