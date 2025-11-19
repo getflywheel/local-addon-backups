@@ -4,6 +4,7 @@ import styles from '../modals/BackupContents.scss';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import { IPCASYNC_EVENTS } from '../../../constants';
 import type { MigrationProgress, MigrationResult } from '../../../types';
+import * as LocalRenderer from '@getflywheel/local/renderer';
 
 const { ipcRenderer } = window.require('electron');
 
@@ -124,11 +125,34 @@ export const MigrationModal: React.FC = () => {
 						{result.success ? (
 							<div>
 								<p style={{ color: '#00a32a', marginBottom: 8 }}>✓ Migration completed successfully!</p>
+								<p style={{ margin: '0 0 12px 0' }}>
+									Visit the{' '}
+									<a
+										href="#"
+										onClick={(e) => {
+											e.preventDefault();
+											LocalRenderer.sendIPCEvent('goToRoute', '/main/connect');
+										}}
+									>
+										Connect sidebar
+									</a>{' '}
+									to log in and see all migrated backups from your connected providers.
+								</p>
 								<ul style={{ marginLeft: 20, marginTop: 8 }}>
-									<li>Migrated {result.migratedRepos} repositor{result.migratedRepos === 1 ? 'y' : 'ies'}</li>
-									<li>Migrated {result.migratedSnapshots} snapshot{result.migratedSnapshots === 1 ? '' : 's'}</li>
+									<li>
+										Migrated {result.migratedRepos}
+										{result.migratedRepos === 1 ? 'repository' : 'repositories'}
+									</li>
+									<li>
+										Migrated {result.migratedSnapshots}
+										{result.migratedSnapshots === 1 ? 'snapshot' : 'snapshots'}
+									</li>
 									{result.skippedRepos > 0 && (
-										<li>Skipped {result.skippedRepos} repositor{result.skippedRepos === 1 ? 'y' : 'ies'} (not found on provider)</li>
+										<li>
+											Skipped {result.skippedRepos}
+											{result.skippedRepos === 1 ? 'repository' : 'repositories'} (not found on
+											provider)
+										</li>
 									)}
 								</ul>
 							</div>
@@ -143,7 +167,15 @@ export const MigrationModal: React.FC = () => {
 								<p style={{ fontWeight: 'bold', marginBottom: 8 }}>Errors:</p>
 								<ul style={{ marginLeft: 20, maxHeight: 150, overflow: 'auto' }}>
 									{result.errors.map((err, idx) => (
-										<li key={idx} style={{ color: '#ffffff', fontSize: '0.9em', marginBottom: 4, wordBreak: 'break-word' }}>
+										<li
+											key={idx}
+											style={{
+												color: '#ffffff',
+												fontSize: '0.9em',
+												marginBottom: 4,
+												wordBreak: 'break-word',
+											}}
+										>
 											{err.repo && <strong>Repo {err.repo}: </strong>}
 											{err.snapshot && <strong>Snapshot {err.snapshot}: </strong>}
 											{err.error}
@@ -179,6 +211,15 @@ export const MigrationModal: React.FC = () => {
 				{isMigrating && !isComplete && (
 					<PrimaryButton style={{ marginTop: 0 }} disabled={true}>
 						Migrating...
+					</PrimaryButton>
+				)}
+
+				{isComplete && result?.success && (
+					<PrimaryButton
+						style={{ marginTop: 0 }}
+						onClick={() => LocalRenderer.sendIPCEvent('goToRoute', '/main/connect')}
+					>
+						See All Backups
 					</PrimaryButton>
 				)}
 
