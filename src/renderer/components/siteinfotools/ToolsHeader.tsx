@@ -15,10 +15,11 @@ import { URLS } from '../../../constants';
 interface Props {
 	offline: boolean,
 	site: Site;
+	migrationStatus?: 'notStarted' | 'completed';
 }
 
 export const ToolsHeader = (props: Props) => {
-	const { offline, site } = props;
+	const { offline, site, migrationStatus } = props;
 	const { enabledProviders } = useStoreSelector((state) => state.providers);
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 	const onRefresh = () => {
@@ -42,7 +43,11 @@ export const ToolsHeader = (props: Props) => {
 				)}
 				{enabledProviders?.length
 					? (
-						<StartBackupButton site={site} offline={offline}/>
+						<StartBackupButton
+							site={site}
+							offline={offline}
+							migrationCompleted={migrationStatus === 'completed'}
+						/>
 					)
 					: (
 						<Tooltip

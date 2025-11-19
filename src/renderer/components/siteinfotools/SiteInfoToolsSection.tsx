@@ -88,7 +88,7 @@ const SiteInfoToolsSection = observer(({ site }: Props) => {
         <div className={styles.SiteInfoToolsSection}>
             <OfflineBanner offline={offline} />
 			<MigrationBanner migrationStatus={migrationStatus} siteId={site.id} />
-            <ToolsHeader site={site} offline={offline} />
+            <ToolsHeader site={site} offline={offline} migrationStatus={migrationStatus} />
             <ToolsContent
                 className={styles.SiteInfoToolsSection_Content}
                 offline={offline}

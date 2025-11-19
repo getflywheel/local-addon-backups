@@ -11,10 +11,11 @@ import { selectSnapshotsForActiveSitePlusExtra } from '../../store/snapshotsSlic
 interface Props {
 	offline: boolean,
 	site: Site;
+	migrationCompleted: boolean;
 }
 
 export const StartBackupButton = (props: Props) => {
-	const { offline, site } = props;
+	const { offline, site, migrationCompleted } = props;
 	const activeSiteProvider = useStoreSelector(selectors.selectActiveProvider);
 	const hasSnapshots = useStoreSelector(selectSnapshotsForActiveSitePlusExtra)?.length > 0;
 	const { backupIsRunning } = useStoreSelector((state) => state.director);
@@ -39,7 +40,12 @@ export const StartBackupButton = (props: Props) => {
 		tooltipContent = <>Another backup or restore is already in progress</>;
 	}
 
-	const buttonDisabled = offline || !activeSiteProvider || backupIsRunning || siteStatus !== 'running';
+	// Disable if migration completed, overriding other reasons and tooltip
+	if (migrationCompleted) {
+		tooltipContent = <>Create new backups from the Backups tab above</>;
+	}
+
+	const buttonDisabled = migrationCompleted || offline || !activeSiteProvider || backupIsRunning || siteStatus !== 'running';
 	const containerProps = buttonDisabled ? {
 		element: (
 			<Tooltip
