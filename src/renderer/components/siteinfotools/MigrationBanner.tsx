@@ -51,7 +51,7 @@ export const MigrationBanner = ({ migrationStatus, siteId }: Props) => {
 			</p>
 			{!isCompleted ? (
 				<Button onClick={() => createModal(() => <MigrationModal />)} privateOptions={{ padding: 'm' }}>
-					Migrate your backups
+					Migrate backups
 				</Button>
 			) : (
 				<Button
