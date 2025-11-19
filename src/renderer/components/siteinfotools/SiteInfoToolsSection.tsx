@@ -13,6 +13,7 @@ import { $offline } from '@getflywheel/local/renderer';
 import { observer } from 'mobx-react';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import { IPCASYNC_EVENTS } from '../../../constants';
+const { ipcRenderer } = window.require('electron');
 
 interface Props {
     site: Site;
@@ -47,6 +48,19 @@ const SiteInfoToolsSection = observer(({ site }: Props) => {
             }
         })();
         return () => { mounted = false; };
+    }, []);
+
+    // Update banner live when migration completes (also covers post-dismiss).
+    React.useEffect(() => {
+        const onMigrationComplete = (_event: any, migrationResult: { success?: boolean }) => {
+            if (migrationResult?.success) {
+                setMigrationStatus('completed');
+            }
+        };
+        ipcRenderer.on('migration:complete', onMigrationComplete);
+        return () => {
+            ipcRenderer.removeListener('migration:complete', onMigrationComplete);
+        };
     }, []);
 
     const {
