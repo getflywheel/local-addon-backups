@@ -5,6 +5,7 @@ import { ipcAsync } from '@getflywheel/local/renderer';
 import { IPCASYNC_EVENTS } from '../../../constants';
 import type { MigrationProgress, MigrationResult } from '../../../types';
 import * as LocalRenderer from '@getflywheel/local/renderer';
+import { launchBrowser } from '../../helpers/launchBrowser';
 
 const { ipcRenderer } = window.require('electron');
 
@@ -15,6 +16,16 @@ export const MigrationModal: React.FC = () => {
 	const [isComplete, setIsComplete] = useState(false);
 	const [hasError, setHasError] = useState<string | null>(null);
 	const [result, setResult] = useState<MigrationResult | null>(null);
+
+	// Determine if migration is allowed (Local 10+ or QA override)
+	const qaOverride = String(process?.env?.BACKUP_MIGRATION_QA || '').toLowerCase() === 'true';
+	const isLocal10Plus = (() => {
+		const version = String((process as any)?.localVersion || '');
+		const match = version.match(/^(\d+)/);
+		const major = match ? parseInt(match[1], 10) : 0;
+		return major >= 10;
+	})();
+	const canMigrate = qaOverride || isLocal10Plus;
 
 	useEffect(() => {
 		// Listen for progress updates
@@ -96,8 +107,36 @@ export const MigrationModal: React.FC = () => {
 				Migrate Cloud Backups
 			</Title>
 			<p style={{ marginTop: 7 }}>Move your existing Cloud Backups to the new Backups tab in Local&nbsp;10.</p>
-			<p>This will take a few minutes to complete.</p>
+			<p>This will take a few minutes to complete. Local will copy backup metadata to your connected providers and update backup keys.</p>
 
+			{!canMigrate && (
+				<>
+					<hr />
+					<div className={styles.AlignLeft}>
+						<p style={{ marginBottom: 8 }}>
+							This migration requires Local&nbsp;10 or higher. Please install the latest Local release to continue.
+						</p>
+					</div>
+					<div className={styles.ModalButtons}>
+						<TextButton
+							style={{ marginTop: 0 }}
+							className={styles.NoPaddingLeft}
+							onClick={() => FlyModal.onRequestClose()}
+						>
+							Close
+						</TextButton>
+						<PrimaryButton
+							style={{ marginTop: 0 }}
+							onClick={() => launchBrowser('https://localwp.com/releases/')}
+						>
+							Download Local 10
+						</PrimaryButton>
+					</div>
+				</>
+			)}
+
+			{canMigrate && (
+				<>
 			<hr />
 
 			{isMigrating && (
@@ -229,6 +268,8 @@ export const MigrationModal: React.FC = () => {
 					</PrimaryButton>
 				)}
 			</div>
+				</>
+			)}
 		</div>
 	);
 };
