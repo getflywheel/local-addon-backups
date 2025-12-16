@@ -1,4 +1,4 @@
-import { exec } from 'child_process';
+import { exec, execFile, spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs-extra';
 import { isString } from 'lodash';
@@ -42,6 +42,86 @@ const logger = localLogger.child({
 	thread: 'main',
 	class: 'BackupAddonCLIService',
 });
+
+type ExecPromiseOptions = {
+	signal?: AbortSignal;
+	abortable?: boolean;
+};
+
+let activeChild: ReturnType<typeof spawn> | null = null;
+
+function isAbortError(err: unknown): boolean {
+	const anyErr = err as any;
+	return (
+		anyErr?.name === 'AbortError' ||
+		anyErr?.code === 'ABORT_ERR' ||
+		String(anyErr?.message || '').toLowerCase().includes('aborted')
+	);
+}
+
+function execFilePromise(file: string, args: string[]): Promise<void> {
+	return new Promise((resolve, reject) => {
+		execFile(file, args, (error) => {
+			if (error) {
+				return reject(error);
+			}
+			resolve();
+		});
+	});
+}
+
+async function killPidTree(pid: number): Promise<void> {
+	if (!pid) {
+		return;
+	}
+
+	if (process.platform === 'win32') {
+		// /T = kill child process tree, /F = force
+		await execFilePromise('taskkill', ['/PID', String(pid), '/T', '/F']);
+		return;
+	}
+
+	// Prefer process-group kill (negative pid) when we spawned detached
+	try {
+		process.kill(-pid, 'SIGTERM');
+	} catch (e) {
+		// Fallback to direct kill
+		try {
+			process.kill(pid, 'SIGTERM');
+		} catch {
+			// noop
+		}
+	}
+
+	// Escalate if still running after a brief grace period
+	await new Promise((r) => setTimeout(r, 1500));
+
+	try {
+		process.kill(-pid, 'SIGKILL');
+	} catch (e) {
+		try {
+			process.kill(pid, 'SIGKILL');
+		} catch {
+			// noop
+		}
+	}
+}
+
+export async function killActiveCommand(): Promise<void> {
+	const child = activeChild;
+	if (!child?.pid) {
+		return;
+	}
+
+	const pid = child.pid;
+	activeChild = null;
+
+	try {
+		await killPidTree(pid);
+	} catch {
+		// noop
+	}
+}
 
 /**
  * Utility to generate the --repo flag and argument for restic
@@ -93,7 +173,94 @@ const makeRepoFlag = (provider: Providers, localBackupRepoID: string, site) => {
  * @param cmd
  * @param env
  */
-async function execPromise (cmd: string, site: Site, env: { [key: string]: string } = {}): Promise<string> {
+async function execPromise (
+	cmd: string,
+	site: Site,
+	env: { [key: string]: string } = {},
+	opts: ExecPromiseOptions = {},
+): Promise<string> {
+	const shouldUseSpawn = !!(opts.signal || opts.abortable);
+
+	if (shouldUseSpawn) {
+		return new Promise((resolve, reject) => {
+			const child = spawn(cmd, {
+				shell: true,
+				detached: process.platform !== 'win32',
+				windowsHide: true,
+				env: {
+					...process.env,
+					...env,
+					PATH: `${bins.binDir}${path.delimiter}${process.env.PATH}`,
+				},
+				cwd: formatHomePath(site.path),
+				signal: opts.signal,
+			} as any);
+
+			if (opts.abortable) {
+				activeChild = child;
+			}
+
+			let stdout = '';
+			let stderr = '';
+			let stdoutBytes = 0;
+			let stderrBytes = 0;
+			const maxBuffer = 1024 * 1024 * 4;
+
+			child.stdout?.on('data', (chunk) => {
+				const str = chunk.toString();
+				stdout += str;
+				stdoutBytes += Buffer.byteLength(str);
+				if (stdoutBytes + stderrBytes > maxBuffer) {
+					void killPidTree(child.pid);
+					reject(new Error('Command output exceeded maxBuffer'));
+				}
+			});
+
+			child.stderr?.on('data', (chunk) => {
+				const str = chunk.toString();
+				stderr += str;
+				stderrBytes += Buffer.byteLength(str);
+				if (stdoutBytes + stderrBytes > maxBuffer) {
+					void killPidTree(child.pid);
+					reject(new Error('Command output exceeded maxBuffer'));
+				}
+			});
+
+			child.on('error', (error) => {
+				if (activeChild === child) {
+					activeChild = null;
+				}
+				// Normalize abort errors
+				if (isAbortError(error)) {
+					(error as any).name = 'AbortError';
+				}
+				reject(error);
+			});
+
+			child.on('close', (code, signal) => {
+				if (activeChild === child) {
+					activeChild = null;
+				}
+
+				if (code === 0) {
+					return resolve(stdout);
+				}
+
+				// If aborted, surface as AbortError
+				if (opts.signal?.aborted || signal) {
+					const abortErr = new Error('Command aborted');
+					(abortErr as any).name = 'AbortError';
+					return reject(abortErr);
+				}
+
+				const err = new Error(`Command failed with exit code ${code}: ${stderr || stdout}`);
+				(err as any).stdout = stdout;
+				(err as any).stderr = stderr;
+				reject(err);
+			});
+		});
+	}
+
 	return new Promise((resolve, reject) => {
 		exec(
 			cmd,
@@ -150,8 +317,15 @@ async function execPromise (cmd: string, site: Site, env: { [key: string]: strin
  * @param cmd
  * @param provider
  */
-async function execPromiseWithRcloneContext (opts: { cmd: string; site: Site; provider: Providers; encryptionPassword: string; }): Promise<string> {
-	const { cmd, site, provider, encryptionPassword } = opts;
+async function execPromiseWithRcloneContext (opts: {
+	cmd: string;
+	site: Site;
+	provider: Providers;
+	encryptionPassword: string;
+	signal?: AbortSignal;
+	abortable?: boolean;
+}): Promise<string> {
+	const { cmd, site, provider, encryptionPassword, signal, abortable } = opts;
 	const { type, clientID, token, appKey } = await getBackupCredentials(providerToHubProvider(provider));
 
 	const upperCaseProvider = provider.toUpperCase();
@@ -173,7 +347,7 @@ async function execPromiseWithRcloneContext (opts: { cmd: string; site: Site; pr
 		 * since this only lives inside the scope of the spawned shell which should gaurd against the password getting dumped to a log file
 		 */
 		['RESTIC_PASSWORD']: encryptionPassword,
-	});
+	}, { signal, abortable });
 }
 
 /**
@@ -287,8 +461,9 @@ export async function checkRepoExists (options: {
 	encryptionPassword: string;
 	localBackupRepoID: string;
 	site: Site;
+	signal?: AbortSignal;
 }): Promise<boolean> {
-	const { provider, encryptionPassword, localBackupRepoID, site } = options;
+	const { provider, encryptionPassword, localBackupRepoID, site, signal } = options;
 
 	try {
 		// Try to list snapshots - if this succeeds, repo exists
@@ -297,9 +472,14 @@ export async function checkRepoExists (options: {
 			site,
 			provider,
 			encryptionPassword,
+			signal,
+			abortable: true,
 		});
 		return true;
 	} catch (err) {
+		if (isAbortError(err)) {
+			throw err;
+		}
 		// Repo doesn't exist or is inaccessible
 		logger.warn(`Repo ${localBackupRepoID} on ${provider} does not exist or is inaccessible: ${err}`);
 		return false;
@@ -324,8 +504,9 @@ export async function rekeyRepo (options: {
 	newPassword: string;
 	localBackupRepoID: string;
 	site: Site;
+	signal?: AbortSignal;
 }): Promise<RekeyStatus> {
-	const { provider, oldPassword, newPassword, localBackupRepoID, site } = options;
+	const { provider, oldPassword, newPassword, localBackupRepoID, site, signal } = options;
 	const hubProvider = providerToHubProvider(provider);
 
 	// Create a temporary file for the new password
@@ -345,6 +526,7 @@ export async function rekeyRepo (options: {
 			encryptionPassword: oldPassword,
 			localBackupRepoID,
 			site,
+			signal,
 		});
 		if (!exists) {
 			logger.warn(`Repo ${localBackupRepoID} not found on ${provider} during rekey`);
@@ -365,6 +547,7 @@ export async function rekeyRepo (options: {
 					[`RCLONE_${upperCaseProvider}_APP_KEY`]: appKey,
 					['RESTIC_PASSWORD']: newPassword,
 				},
+				{ signal, abortable: true },
 			);
 
 			// If we got here, the new password already works - no need to add another key
@@ -394,6 +577,7 @@ export async function rekeyRepo (options: {
 				[`RCLONE_${upperCaseProvider}_APP_KEY`]: appKey,
 				['RESTIC_PASSWORD']: oldPassword,
 			},
+			{ signal, abortable: true },
 		);
 
 		logger.info(`Successfully added new key to repo ${localBackupRepoID}`);
@@ -425,8 +609,9 @@ export async function writeMetadataFile (options: {
 	snapshotHash: string;
 	metadata: string;
 	site: Site;
+	signal?: AbortSignal;
 }): Promise<void> {
-	const { provider, localBackupRepoID, snapshotHash, metadata, site } = options;
+	const { provider, localBackupRepoID, snapshotHash, metadata, site, signal } = options;
 	const hubProvider = providerToHubProvider(provider);
 
 	// Determine the metadata path based on provider
@@ -464,6 +649,7 @@ export async function writeMetadataFile (options: {
 				[`RCLONE_${upperCaseProvider}_TOKEN`]: token,
 				[`RCLONE_${upperCaseProvider}_APP_KEY`]: appKey,
 			},
+			{ signal, abortable: true },
 		);
 	} finally {
 		// Clean up temp file

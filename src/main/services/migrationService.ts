@@ -10,7 +10,7 @@ import {
 	getBackupSnapshotsByRepo,
 	getBackupCredentials,
 } from '../hubQueries';
-import { checkRepoExists, rekeyRepo, writeMetadataFile, RekeyStatus } from '../cli';
+import { checkRepoExists, killActiveCommand, rekeyRepo, writeMetadataFile, RekeyStatus } from '../cli';
 import { hubProviderToProvider } from '../utils';
 import { MigrationStates } from '../../types';
 import type {
@@ -35,6 +35,51 @@ const logger = localLogger.child({
 	thread: 'main',
 	class: 'BackupAddonMigrationService',
 });
+
+let currentAbortController: AbortController | null = null;
+let migrationInProgress = false;
+
+export function isMigrationInProgress(): boolean {
+	return migrationInProgress;
+}
+
+function isAbortError(err: unknown): boolean {
+	const anyErr = err as any;
+	return (
+		anyErr?.name === 'AbortError' ||
+		anyErr?.code === 'ABORT_ERR' ||
+		String(anyErr?.message || '').toLowerCase().includes('aborted')
+	);
+}
+
+function throwIfCancelled(signal?: AbortSignal) {
+	if (signal?.aborted) {
+		const e = new Error('Migration cancelled');
+		(e as any).name = 'AbortError';
+		throw e;
+	}
+}
+
+export async function cancelMigration(): Promise<void> {
+	if (!currentAbortController) {
+		return;
+	}
+
+	logger.info('Cancelling migration (abort + kill active command)');
+
+	try {
+		currentAbortController.abort();
+	} catch {
+		// noop
+	}
+
+	// Best-effort kill of any in-flight restic/rclone command
+	try {
+		await killActiveCommand();
+	} catch {
+		// noop
+	}
+}
 
 // Get package version for createdBy field
 const packageJson = require('../../../package.json');
@@ -190,6 +235,8 @@ function getStateMessage(state: MigrationStates, migrationState?: MigrationState
 			return makeUnified('Rekeying repository');
 		case MigrationStates.savingState:
 			return 'Saving migration state...';
+		case MigrationStates.cancelled:
+			return 'Migration cancelled';
 		case MigrationStates.finished:
 			return 'Migration completed!';
 		case MigrationStates.failed:
@@ -252,6 +299,14 @@ function createDummySite(repoId: string): Site {
  * Main migration function
  */
 export async function migrateBackups(): Promise<MigrationResult> {
+	if (migrationInProgress) {
+		throw new Error('Migration is already running');
+	}
+
+	migrationInProgress = true;
+	currentAbortController = new AbortController();
+	const signal = currentAbortController.signal;
+
 	const state: MigrationState = {
 		currentState: MigrationStates.fetchingProviders,
 		totalRepos: 0,
@@ -268,6 +323,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 
 	try {
 		// Step 1: Fetch all providers
+		throwIfCancelled(signal);
 		state.currentState = MigrationStates.fetchingProviders;
 		sendProgressUpdate(state);
 		logger.info('Fetching enabled providers...');
@@ -279,6 +335,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 		logger.info(`Found ${providers.length} providers`);
 
 		// Step 2: Fetch all repos for all providers
+		throwIfCancelled(signal);
 		state.currentState = MigrationStates.fetchingRepos;
 		sendProgressUpdate(state);
 		logger.info('Fetching repositories...');
@@ -290,6 +347,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 
 		// First determine stable total
 		for (const provider of providers) {
+			throwIfCancelled(signal);
 			try {
 				const repos = await getBackupReposByProviderID(provider.id);
 				logger.info(`Found ${repos.length} repos for provider ${provider.id}`);
@@ -310,8 +368,10 @@ export async function migrateBackups(): Promise<MigrationResult> {
 
 		// Now perform detailed fetch for each repo and update progress monotonically
 		for (const { provider, repos } of providerReposList) {
+			throwIfCancelled(signal);
 			const providerName = getProviderDisplayName(provider.id);
 			for (let i = 0; i < repos.length; i++) {
+				throwIfCancelled(signal);
 				const repo = repos[i];
 				// Use a single "Processing repository" state for fetching site, snapshots, and checking existence
 				state.currentState = MigrationStates.processingRepo;
@@ -344,6 +404,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 					let hasMore = true;
 
 					while (hasMore) {
+						throwIfCancelled(signal);
 						const result = await getBackupSnapshotsByRepo(repo.id, 50, currentPage);
 						if (result.snapshots && result.snapshots.length > 0) {
 							allSnapshots.push(...result.snapshots);
@@ -387,6 +448,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 
 		// Step 5: Process each repo (write metadata and rekey)
 		for (const repoData of allRepos) {
+			throwIfCancelled(signal);
 			const { repo, site, provider, snapshots } = repoData;
 			logger.info(`Processing repo ${repo.hash} with ${snapshots.length} snapshots`);
 
@@ -405,6 +467,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 					encryptionPassword: site.password,
 					localBackupRepoID: repo.hash,
 					site: dummySite,
+					signal,
 				});
 
 				if (!exists) {
@@ -442,6 +505,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 				sendProgressUpdate(state, `Repo ${currentRepoNumber} of ${state.totalRepos} • ${providerName} • Writing metadata`);
 
 				for (const snapshot of snapshots) {
+					throwIfCancelled(signal);
 					try {
 						const metadata = buildMetadata(snapshot, site, repo, provider, accountId);
 						const metadataJson = JSON.stringify(metadata, null, 2);
@@ -452,6 +516,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 							snapshotHash: snapshot.hash,
 							metadata: metadataJson,
 							site: dummySite,
+							signal,
 						});
 
 						state.processedSnapshots++;
@@ -475,12 +540,14 @@ export async function migrateBackups(): Promise<MigrationResult> {
 				sendProgressUpdate(state, `Repo ${currentRepoNumber} of ${state.totalRepos} • ${providerName} • Rekeying repository`);
 
 				try {
+					throwIfCancelled(signal);
 					const rekeyStatus = await rekeyRepo({
 						provider: rcloneProvider,
 						oldPassword: site.password,
 						newPassword: DEFAULT_BACKUP_PASSWORD,
 						localBackupRepoID: repo.hash,
 						site: dummySite,
+						signal,
 					});
 					if (rekeyStatus === RekeyStatus.RepoNotFound) {
 						logger.warn(`Repo ${repo.hash} not found during rekey; skipping`);
@@ -519,6 +586,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 		}
 
 		// Step 10: Save migration state
+		throwIfCancelled(signal);
 		state.currentState = MigrationStates.savingState;
 		sendProgressUpdate(state);
 
@@ -542,6 +610,24 @@ export async function migrateBackups(): Promise<MigrationResult> {
 		return result;
 
 	} catch (err) {
+		if (isAbortError(err)) {
+			// Cancelled: do not save completion state
+			await killActiveCommand();
+
+			state.currentState = MigrationStates.cancelled;
+			sendProgressUpdate(state);
+			const result: MigrationResult = {
+				success: false,
+				migratedRepos: state.migratedRepos,
+				migratedSnapshots: state.migratedSnapshots,
+				skippedRepos: state.skippedRepos,
+				errors: state.errors,
+				cancelled: true,
+			};
+			LocalMain.sendIPCEvent('migration:cancelled', result);
+			return result;
+		}
+
 		logger.error('Migration failed', err);
 		state.currentState = MigrationStates.failed;
 		sendProgressUpdate(state);
@@ -561,6 +647,9 @@ export async function migrateBackups(): Promise<MigrationResult> {
 
 		LocalMain.sendIPCEvent('migration:error', result);
 		throw err;
+	} finally {
+		migrationInProgress = false;
+		currentAbortController = null;
 	}
 }
 

@@ -4,6 +4,8 @@ import { Button } from '@getflywheel/local-components';
 import { createModal } from '../createModal';
 import { MigrationModal } from './MigrationModal';
 import * as LocalRenderer from '@getflywheel/local/renderer';
+import { ipcAsync } from '@getflywheel/local/renderer';
+import { IPCASYNC_EVENTS } from '../../../constants';
 
 interface Props {
 	migrationStatus: 'notStarted' | 'completed';
@@ -50,7 +52,16 @@ export const MigrationBanner = ({ migrationStatus, siteId }: Props) => {
 				)}
 			</p>
 			{!isCompleted ? (
-				<Button onClick={() => createModal(() => <MigrationModal />)} privateOptions={{ padding: 'm' }}>
+				<Button
+					onClick={() =>
+						createModal(() => <MigrationModal />, {
+							onRequestClose: () => {
+								// Best-effort cancel when modal is dismissed (X/Esc).
+								void ipcAsync(IPCASYNC_EVENTS.MIGRATE_BACKUPS_CANCEL);
+							},
+						})}
+					privateOptions={{ padding: 'm' }}
+				>
 					Migrate backups
 				</Button>
 			) : (

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FlyModal, Title, PrimaryButton, TextButton, ProgressBar } from '@getflywheel/local-components';
+import React, { useEffect, useState } from 'react';
+import { Title, PrimaryButton, ProgressBar } from '@getflywheel/local-components';
 import styles from '../modals/BackupContents.scss';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import { IPCASYNC_EVENTS } from '../../../constants';
@@ -57,15 +57,30 @@ export const MigrationModal: React.FC = () => {
 			setStatusMessage('Migration failed');
 		};
 
+		// Listen for cancellation
+		const cancelledHandler = (event: any, migrationResult: MigrationResult) => {
+			setIsComplete(true);
+			setIsMigrating(false);
+			setResult(migrationResult);
+			setHasError(null);
+			setStatusMessage('Migration cancelled');
+			setProgress((prev) => (prev === 0 ? 0 : prev));
+		};
+
 		ipcRenderer.on('migration:progress', progressHandler);
 		ipcRenderer.on('migration:complete', completeHandler);
 		ipcRenderer.on('migration:error', errorHandler);
+		ipcRenderer.on('migration:cancelled', cancelledHandler);
 
 		// Cleanup listeners on unmount
 		return () => {
+			// If the modal is dismissed (X/Esc), cancel best-effort.
+			// This is idempotent in main, and avoids races where local state hasn't updated yet.
+			void ipcAsync(IPCASYNC_EVENTS.MIGRATE_BACKUPS_CANCEL);
 			ipcRenderer.removeListener('migration:progress', progressHandler);
 			ipcRenderer.removeListener('migration:complete', completeHandler);
 			ipcRenderer.removeListener('migration:error', errorHandler);
+			ipcRenderer.removeListener('migration:cancelled', cancelledHandler);
 		};
 	}, []);
 
@@ -219,7 +234,7 @@ export const MigrationModal: React.FC = () => {
 							</PrimaryButton>
 						)}
 
-						{isComplete && hasError && (
+						{isComplete && (hasError || result?.cancelled) && (
 							<PrimaryButton style={{ marginTop: 0 }} onClick={startMigration}>
 								Retry Migration
 							</PrimaryButton>

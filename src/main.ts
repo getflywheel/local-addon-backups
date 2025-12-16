@@ -13,7 +13,7 @@ import { createBackup } from './main/services/backupService';
 import { restoreFromBackup } from './main/services/restoreService';
 import { getSiteDataFromDisk, hubProviderRecordToProvider } from './main/utils';
 import { cloneFromBackup } from './main/services/cloneFromBackupService';
-import { migrateBackups, hasMigrationCompleted } from './main/services/migrationService';
+import { cancelMigration, isMigrationInProgress, migrateBackups, hasMigrationCompleted } from './main/services/migrationService';
 import { IPCASYNC_EVENTS, SHOW_CLOUD_BACKUPS_PROMO_BANNER } from './constants';
 import { createIpcAsyncError, createIpcAsyncResult } from './helpers/createIpcAsyncResponse';
 import { getServiceContainer } from '@getflywheel/local/main';
@@ -251,6 +251,9 @@ export default function (): void {
 			channel: IPCASYNC_EVENTS.MIGRATE_BACKUPS_START,
 			callback: async () => {
 				try {
+					if (isMigrationInProgress()) {
+						throw new Error('Migration is already running');
+					}
 					logger.info('Starting backup migration...');
 					const result = await migrateBackups();
 					return createIpcAsyncResult(result, null);
@@ -275,8 +278,14 @@ export default function (): void {
 		{
 			channel: IPCASYNC_EVENTS.MIGRATE_BACKUPS_CANCEL,
 			callback: async () => {
-				// Migration cancellation not implemented yet
-				return createIpcAsyncResult({ message: 'Migration cannot be cancelled' }, null);
+				try {
+					logger.info('Migration cancel requested');
+					await cancelMigration();
+					return createIpcAsyncResult({ cancelled: true }, null);
+				} catch (error) {
+					logger.error(`Error - IPCASYNC_EVENTS.MIGRATE_BACKUPS_CANCEL: ${error.toString()}`);
+					return createIpcAsyncError(error, null);
+				}
 			},
 		},
 	];

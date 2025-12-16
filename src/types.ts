@@ -1,4 +1,3 @@
-import { LocalState } from '@apollo/client/core/LocalState';
 import type { Site as SiteBase, NewSiteInfo } from '@getflywheel/local';
 
 export type GenericObject = { [key: string]: any };
@@ -151,6 +150,7 @@ export enum MigrationStates {
 	writingMetadata = 'writingMetadata',
 	rekeyingRepo = 'rekeyingRepo',
 	savingState = 'savingState',
+	cancelled = 'cancelled',
 	finished = 'finished',
 	failed = 'failed',
 }
@@ -171,6 +171,7 @@ export interface MigrationResult {
 	migratedRepos: number;
 	migratedSnapshots: number;
 	skippedRepos: number;
+	cancelled?: boolean;
 	errors: Array<{
 		repo?: string;
 		snapshot?: string;
