@@ -70,8 +70,10 @@ function execFilePromise(file: string, args: string[]): Promise<void> {
 	});
 }
 
-async function killPidTree(pid: number): Promise<void> {
-	if (!pid) {
+async function killPidTree(pid?: number): Promise<void> {
+	// `child.pid` can be `undefined` in some failure scenarios; also guard against non-positive values.
+	// Note: PIDs returned by spawn are positive integers.
+	if (typeof pid !== 'number' || !Number.isInteger(pid) || pid <= 0) {
 		return;
 	}
 
@@ -211,7 +213,7 @@ async function execPromise (
 				stdout += str;
 				stdoutBytes += Buffer.byteLength(str);
 				if (stdoutBytes + stderrBytes > maxBuffer) {
-					void killPidTree(child.pid);
+					void killPidTree(child.pid ?? undefined);
 					reject(new Error('Command output exceeded maxBuffer'));
 				}
 			});
@@ -221,7 +223,7 @@ async function execPromise (
 				stderr += str;
 				stderrBytes += Buffer.byteLength(str);
 				if (stdoutBytes + stderrBytes > maxBuffer) {
-					void killPidTree(child.pid);
+					void killPidTree(child.pid ?? undefined);
 					reject(new Error('Command output exceeded maxBuffer'));
 				}
 			});
