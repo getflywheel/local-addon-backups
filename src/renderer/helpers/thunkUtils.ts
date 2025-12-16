@@ -4,17 +4,6 @@ import { clearSiteBanner } from './clearSiteBanner';
 import { showSiteBanner } from './showSiteBanner';
 
 /**
- * Typing for the `rejectWithValue` thunk response for an error.
- * Copied from internal redux toolkit library.
- */
-declare class RejectWithValue<RejectValue> {
-	readonly payload: RejectValue;
-	name: string;
-	message: string;
-	constructor(payload: RejectValue);
-}
-
-/**
  * The `returnIPCResponseOrRejectWithError` helper response data type.
  */
 interface onReponseDetails {
@@ -78,12 +67,12 @@ export async function callIPCAsyncAndProcessResponse<R = any, E = any> (
 	/** id of the site the request is for **/
 	siteId: string,
 	/** function for the thunk rejectWithValue **/
-	rejectWithValue: (value: IpcAsyncResponse<any, E>['error']) => RejectWithValue<IpcAsyncResponse<any, E>['error']>,
+	rejectWithValue: any,
 	/** callback for the response regardless of error or result and indicating if globally captured or not **/
 	onResponseIfNotAuthOrNetwork: (details: onReponseDetails, response: IpcAsyncResponse<R, E>) => void,
 	/** optional id used to clear banners (only use if `onResponseIfNotAuthOrNetwork` might call `showSiteBanner` **/
 	bannerId?: string,
-): Promise<IpcAsyncResponse<R> | RejectWithValue<IpcAsyncResponse<any, E>['error']>> {
+): Promise<any> {
 	// clear out any previous common graphql banners for the site
 	clearSiteBanner(siteId, GRAPHQL_COMMON_BANNER_ID);
 

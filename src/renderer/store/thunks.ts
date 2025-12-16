@@ -9,6 +9,7 @@ import dispatchAsyncThunk from './helpers/dispatchAsyncUnwrapped.js';
 import { showSiteBanner } from '../helpers/showSiteBanner';
 import type { IpcAsyncResponse } from '../../helpers/createIpcAsyncResponse';
 import { callIPCAsyncAndProcessResponse } from '../helpers/thunkUtils';
+import { formatUserFacingErrorMessage } from '../helpers/formatUserFacingErrorMessage';
 
 const localStorageKey = 'local-addon-backups-activeProviders';
 
@@ -34,7 +35,7 @@ const editSnapshotMetaData = createAsyncThunk<
 			[{ metaData, snapshot, siteId }],
 			siteId,
 			rejectWithValue,
-			(details) => {
+			(details, response) => {
 				if (details.isResult) {
 					showSiteBanner({
 						siteID: details.siteId,
@@ -48,7 +49,10 @@ const editSnapshotMetaData = createAsyncThunk<
 					showSiteBanner({
 						icon: 'warning',
 						id: details.bannerId,
-						message: `There was an issue updating your backup.`,
+						message: formatUserFacingErrorMessage(
+							response?.error,
+							'There was an issue updating your backup.',
+						),
 						siteID: details.siteId,
 						title: 'Cloud Backups Error',
 						variant: 'error',
@@ -93,12 +97,15 @@ const getSnapshotsForActiveSiteProviderHub = createAsyncThunk<
 			],
 			siteId,
 			rejectWithValue,
-			(details) => {
+			(details, response) => {
 				if (details.isErrorAndUncaptured) {
 					showSiteBanner({
 						icon: 'warning',
 						id: details.bannerId,
-						message: `There was an issue retrieving your site's list of backups.`,
+						message: formatUserFacingErrorMessage(
+							response?.error,
+							`There was an issue retrieving your site's list of backups.`,
+						),
 						siteID: details.siteId,
 						title: 'Cloud Backups Error',
 						variant: 'error',
@@ -148,12 +155,15 @@ const backupSite = createAsyncThunk<
 			],
 			siteId,
 			rejectWithValue,
-			(details) => {
+			(details, response) => {
 				if (details.isErrorAndUncaptured) {
 					showSiteBanner({
 						icon: 'warning',
 						id: details.bannerId,
-						message: `There was an error while completing your backup.`,
+						message: formatUserFacingErrorMessage(
+							response?.error,
+							'There was an error while completing your backup.',
+						),
 						siteID: details.siteId,
 						title: 'Cloud Backup failed!',
 						variant: 'error',
@@ -212,7 +222,10 @@ const restoreSite = createAsyncThunk<
 					showSiteBanner({
 						icon: 'warning',
 						id: details.bannerId,
-						message: response?.error?.message || 'There was an error while restoring your backup.',
+						message: formatUserFacingErrorMessage(
+							response?.error,
+							'There was an error while restoring your backup.',
+						),
 						siteID: details.siteId,
 						title: 'Cloud Backup restore failed!',
 						variant: 'error',
@@ -265,12 +278,15 @@ const cloneSite = createAsyncThunk<
 			],
 			baseSite.id,
 			rejectWithValue,
-			(details) => {
+			(details, response) => {
 				if (details.isErrorAndUncaptured) {
 					showSiteBanner({
 						icon: 'warning',
 						id: details.bannerId,
-						message: `There was an error while cloning your backup.`,
+						message: formatUserFacingErrorMessage(
+							response?.error,
+							'There was an error while cloning your backup.',
+						),
 						siteID: details.siteId,
 						title: 'Cloud Backup clone failed!',
 						variant: 'error',
@@ -307,12 +323,15 @@ const getEnabledProvidersHub = createAsyncThunk<
 		[siteId],
 		siteId,
 		rejectWithValue,
-		(details) => {
+		(details, response) => {
 			if (details.isErrorAndUncaptured) {
 				showSiteBanner({
 					icon: 'warning',
 					id: details.bannerId,
-					message: 'There was an issue retrieving your backup providers.',
+					message: formatUserFacingErrorMessage(
+						response?.error,
+						'There was an issue retrieving your backup providers.',
+					),
 					siteID: siteId,
 					title: 'Cloud Backups Error',
 					variant: 'error',
