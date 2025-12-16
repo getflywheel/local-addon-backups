@@ -1,4 +1,5 @@
 import path from 'path';
+import os from 'os';
 import fs from 'fs-extra';
 import * as LocalMain from '@getflywheel/local/main';
 import { getServiceContainer } from '@getflywheel/local/main';
@@ -282,9 +283,14 @@ function calculateProgress(state: MigrationState): number {
  * We need this because CLI functions require a Site object
  */
 function createDummySite(repoId: string): Site {
-	// Use a temporary directory for the site path
-	const tmpDir = path.join(require('os').tmpdir(), 'migration-tmp');
-	fs.ensureDirSync(tmpDir);
+	// Use a per-repo unique temporary directory for the site path.
+	// This avoids cross-repo temp file collisions and makes cleanup safer.
+	const baseTmpDir = path.join(os.tmpdir(), 'local-addon-backups-migration');
+	fs.ensureDirSync(baseTmpDir);
+
+	// Keep the prefix filesystem-friendly (mkdtemp requires a prefix, it will append random chars)
+	const safeRepoId = String(repoId).replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 32);
+	const tmpDir = fs.mkdtempSync(path.join(baseTmpDir, `repo-${safeRepoId}-`));
 
 	return {
 		id: `migration-${repoId}`,
@@ -452,9 +458,11 @@ export async function migrateBackups(): Promise<MigrationResult> {
 			const { repo, site, provider, snapshots } = repoData;
 			logger.info(`Processing repo ${repo.hash} with ${snapshots.length} snapshots`);
 
+			let tmpDirToCleanup: string | null = null;
 			try {
 				// Create a dummy site for CLI operations
 				const dummySite = createDummySite(repo.hash);
+				tmpDirToCleanup = (dummySite as any)?.path || null;
 				const rcloneProvider = hubProviderToProvider(provider.id);
 				const providerName = getProviderDisplayName(provider.id);
 				const currentRepoNumber = state.processedRepos + 1;
@@ -581,6 +589,16 @@ export async function migrateBackups(): Promise<MigrationResult> {
 				// If rekeying failed, this is critical - stop migration
 				if (err.message.includes('Failed to rekey')) {
 					throw err;
+				}
+			} finally {
+				// Best-effort cleanup of per-repo temp directory.
+				// (This directory is only used for temp files during CLI operations.)
+				if (tmpDirToCleanup) {
+					try {
+						await fs.remove(tmpDirToCleanup);
+					} catch {
+						// noop
+					}
 				}
 			}
 		}
