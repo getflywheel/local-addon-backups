@@ -56,6 +56,15 @@ export const hubProviderRecordToProvider = (provider: HubProviderRecord) => {
 	}
 };
 
+export const hubProviderToProvider = (providerId: HubOAuthProviders): Providers => {
+	switch (providerId) {
+		case HubOAuthProviders.Google:
+			return ProviderNames.Drive;
+		default:
+			return ProviderNames.Dropbox;
+	}
+};
+
 /**
  * The Site type exported from @getflywheel/local does not have all of the fields on it that this needs
  * This provides an easy place to typecast and update that site object while still satisfying the TS compiler
