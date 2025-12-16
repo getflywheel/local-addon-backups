@@ -1,4 +1,3 @@
-import { LocalState } from '@apollo/client/core/LocalState';
 import type { Site as SiteBase, NewSiteInfo } from '@getflywheel/local';
 
 export type GenericObject = { [key: string]: any };
@@ -142,4 +141,59 @@ export enum CloneFromBackupStates {
 	searchReplaceDomain = 'searchReplaceDomain',
 	finished = 'finished',
 	failed = 'failed',
+}
+
+export enum MigrationStates {
+	fetchingProviders = 'fetchingProviders',
+	fetchingRepos = 'fetchingRepos',
+	processingRepo = 'processingRepo',
+	writingMetadata = 'writingMetadata',
+	rekeyingRepo = 'rekeyingRepo',
+	savingState = 'savingState',
+	cancelled = 'cancelled',
+	finished = 'finished',
+	failed = 'failed',
+}
+
+export interface MigrationProgress {
+	state: MigrationStates;
+	message: string;
+	progress: number;
+	totalRepos?: number;
+	processedRepos?: number;
+	totalSnapshots?: number;
+	processedSnapshots?: number;
+	errors?: string[];
+}
+
+export interface MigrationResult {
+	success: boolean;
+	migratedRepos: number;
+	migratedSnapshots: number;
+	skippedRepos: number;
+	cancelled?: boolean;
+	errors: Array<{
+		repo?: string;
+		snapshot?: string;
+		error: string;
+	}>;
+}
+
+export interface BackupMetadata {
+	snapshotId: string;
+	siteId: string;
+	siteName: string;
+	siteDomain?: string;
+	provider: 'dropbox' | 'googleDrive';
+	services?: GenericObject;
+	accountId?: string;
+	resticRepoId: string;
+	timestamp?: string;
+	hostname?: string;
+	note?: string;
+	paths?: {
+		site?: string;
+		database?: string;
+	};
+	createdBy?: string;
 }

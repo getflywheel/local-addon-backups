@@ -19,6 +19,9 @@ export const IPCASYNC_EVENTS = {
 	SHOULD_LOAD_PROMO_BANNER: 'backups:should-load-promo-banner',
 	REMOVE_PROMO_BANNER: 'backups:remove-promo-banner',
 	OPEN_FILE_AT_PATH: 'backups:open-file-at-path',
+	MIGRATE_BACKUPS_START: 'backups:migrate-start',
+	MIGRATE_BACKUPS_STATUS: 'backups:migrate-status',
+	MIGRATE_BACKUPS_CANCEL: 'backups:migrate-cancel',
 };
 
 export const MULTI_MACHINE_BACKUP_ERRORS = {
@@ -49,3 +52,7 @@ export const backupSQLDumpFile = 'local-backup-addon-database-dump.sql';
 
 // max char length for form inputs
 export const INPUT_MAX = 50;
+
+// Migration constants
+export const DEFAULT_BACKUP_PASSWORD = 'localwp';
+export const MIGRATION_STATE_FILE = 'backup-migration-completed.json';
