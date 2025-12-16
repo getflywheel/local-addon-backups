@@ -1,5 +1,6 @@
-import { exec } from 'child_process';
+import { exec, execFile, spawn } from 'child_process';
 import path from 'path';
+import fs from 'fs-extra';
 import { isString } from 'lodash';
 import { formatHomePath, getServiceContainer } from '@getflywheel/local/main';
 import getOSBins from './getOSBins';
@@ -41,6 +42,86 @@ const logger = localLogger.child({
 	thread: 'main',
 	class: 'BackupAddonCLIService',
 });
+
+type ExecPromiseOptions = {
+	signal?: AbortSignal;
+	abortable?: boolean;
+};
+
+let activeChild: ReturnType<typeof spawn> | null = null;
+
+function isAbortError(err: unknown): boolean {
+	const anyErr = err as any;
+	return (
+		anyErr?.name === 'AbortError' ||
+		anyErr?.code === 'ABORT_ERR' ||
+		String(anyErr?.message || '').toLowerCase().includes('aborted')
+	);
+}
+
+function execFilePromise(file: string, args: string[]): Promise<void> {
+	return new Promise((resolve, reject) => {
+		execFile(file, args, (error) => {
+			if (error) {
+				return reject(error);
+			}
+			resolve();
+		});
+	});
+}
+
+async function killPidTree(pid: number): Promise<void> {
+	if (!pid) {
+		return;
+	}
+
+	if (process.platform === 'win32') {
+		// /T = kill child process tree, /F = force
+		await execFilePromise('taskkill', ['/PID', String(pid), '/T', '/F']);
+		return;
+	}
+
+	// Prefer process-group kill (negative pid) when we spawned detached
+	try {
+		process.kill(-pid, 'SIGTERM');
+	} catch (e) {
+		// Fallback to direct kill
+		try {
+			process.kill(pid, 'SIGTERM');
+		} catch {
+			// noop
+		}
+	}
+
+	// Escalate if still running after a brief grace period
+	await new Promise((r) => setTimeout(r, 1500));
+
+	try {
+		process.kill(-pid, 'SIGKILL');
+	} catch (e) {
+		try {
+			process.kill(pid, 'SIGKILL');
+		} catch {
+			// noop
+		}
+	}
+}
+
+export async function killActiveCommand(): Promise<void> {
+	const child = activeChild;
+	if (!child?.pid) {
+		return;
+	}
+
+	const pid = child.pid;
+	activeChild = null;
+
+	try {
+		await killPidTree(pid);
+	} catch {
+		// noop
+	}
+}
 
 /**
  * Utility to generate the --repo flag and argument for restic
@@ -92,7 +173,94 @@ const makeRepoFlag = (provider: Providers, localBackupRepoID: string, site) => {
  * @param cmd
  * @param env
  */
-async function execPromise (cmd: string, site: Site, env: { [key: string]: string } = {}): Promise<string> {
+async function execPromise (
+	cmd: string,
+	site: Site,
+	env: { [key: string]: string } = {},
+	opts: ExecPromiseOptions = {},
+): Promise<string> {
+	const shouldUseSpawn = !!(opts.signal || opts.abortable);
+
+	if (shouldUseSpawn) {
+		return new Promise((resolve, reject) => {
+			const child = spawn(cmd, {
+				shell: true,
+				detached: process.platform !== 'win32',
+				windowsHide: true,
+				env: {
+					...process.env,
+					...env,
+					PATH: `${bins.binDir}${path.delimiter}${process.env.PATH}`,
+				},
+				cwd: formatHomePath(site.path),
+				signal: opts.signal,
+			} as any);
+
+			if (opts.abortable) {
+				activeChild = child;
+			}
+
+			let stdout = '';
+			let stderr = '';
+			let stdoutBytes = 0;
+			let stderrBytes = 0;
+			const maxBuffer = 1024 * 1024 * 4;
+
+			child.stdout?.on('data', (chunk) => {
+				const str = chunk.toString();
+				stdout += str;
+				stdoutBytes += Buffer.byteLength(str);
+				if (stdoutBytes + stderrBytes > maxBuffer) {
+					void killPidTree(child.pid);
+					reject(new Error('Command output exceeded maxBuffer'));
+				}
+			});
+
+			child.stderr?.on('data', (chunk) => {
+				const str = chunk.toString();
+				stderr += str;
+				stderrBytes += Buffer.byteLength(str);
+				if (stdoutBytes + stderrBytes > maxBuffer) {
+					void killPidTree(child.pid);
+					reject(new Error('Command output exceeded maxBuffer'));
+				}
+			});
+
+			child.on('error', (error) => {
+				if (activeChild === child) {
+					activeChild = null;
+				}
+				// Normalize abort errors
+				if (isAbortError(error)) {
+					(error as any).name = 'AbortError';
+				}
+				reject(error);
+			});
+
+			child.on('close', (code, signal) => {
+				if (activeChild === child) {
+					activeChild = null;
+				}
+
+				if (code === 0) {
+					return resolve(stdout);
+				}
+
+				// If aborted, surface as AbortError
+				if (opts.signal?.aborted || signal) {
+					const abortErr = new Error('Command aborted');
+					(abortErr as any).name = 'AbortError';
+					return reject(abortErr);
+				}
+
+				const err = new Error(`Command failed with exit code ${code}: ${stderr || stdout}`);
+				(err as any).stdout = stdout;
+				(err as any).stderr = stderr;
+				reject(err);
+			});
+		});
+	}
+
 	return new Promise((resolve, reject) => {
 		exec(
 			cmd,
@@ -149,8 +317,15 @@ async function execPromise (cmd: string, site: Site, env: { [key: string]: strin
  * @param cmd
  * @param provider
  */
-async function execPromiseWithRcloneContext (opts: { cmd: string; site: Site; provider: Providers; encryptionPassword: string; }): Promise<string> {
-	const { cmd, site, provider, encryptionPassword } = opts;
+async function execPromiseWithRcloneContext (opts: {
+	cmd: string;
+	site: Site;
+	provider: Providers;
+	encryptionPassword: string;
+	signal?: AbortSignal;
+	abortable?: boolean;
+}): Promise<string> {
+	const { cmd, site, provider, encryptionPassword, signal, abortable } = opts;
 	const { type, clientID, token, appKey } = await getBackupCredentials(providerToHubProvider(provider));
 
 	const upperCaseProvider = provider.toUpperCase();
@@ -172,7 +347,7 @@ async function execPromiseWithRcloneContext (opts: { cmd: string; site: Site; pr
 		 * since this only lives inside the scope of the spawned shell which should gaurd against the password getting dumped to a log file
 		 */
 		['RESTIC_PASSWORD']: encryptionPassword,
-	});
+	}, { signal, abortable });
 }
 
 /**
@@ -273,4 +448,207 @@ export async function restoreBackup (options: RestoreFromBackupOptions) {
 		provider,
 		encryptionPassword,
 	});
+}
+
+/**
+ * Check if a restic repository exists on the remote provider
+ *
+ * @param options Repository check options
+ * @returns true if repo exists, false if it doesn't
+ */
+export async function checkRepoExists (options: {
+	provider: Providers;
+	encryptionPassword: string;
+	localBackupRepoID: string;
+	site: Site;
+	signal?: AbortSignal;
+}): Promise<boolean> {
+	const { provider, encryptionPassword, localBackupRepoID, site, signal } = options;
+
+	try {
+		// Try to list snapshots - if this succeeds, repo exists
+		await execPromiseWithRcloneContext({
+			cmd: `"${bins.restic}" ${makeRepoFlag(provider, localBackupRepoID, site)} snapshots --json --quiet`,
+			site,
+			provider,
+			encryptionPassword,
+			signal,
+			abortable: true,
+		});
+		return true;
+	} catch (err) {
+		if (isAbortError(err)) {
+			throw err;
+		}
+		// Repo doesn't exist or is inaccessible
+		logger.warn(`Repo ${localBackupRepoID} on ${provider} does not exist or is inaccessible: ${err}`);
+		return false;
+	}
+}
+
+/**
+ * Add a new password key to an existing restic repository
+ * This allows the repo to be accessed with either the old password or the new one
+ * This function is idempotent - it checks if the new password already works before adding a key
+ *
+ * @param options Rekey options
+ */
+export enum RekeyStatus {
+	Success = 'success',
+	RepoNotFound = 'repoNotFound',
+}
+
+export async function rekeyRepo (options: {
+	provider: Providers;
+	oldPassword: string;
+	newPassword: string;
+	localBackupRepoID: string;
+	site: Site;
+	signal?: AbortSignal;
+}): Promise<RekeyStatus> {
+	const {
+		provider,
+		oldPassword,
+		newPassword,
+		localBackupRepoID,
+		site,
+		signal,
+	} = options;
+	const hubProvider = providerToHubProvider(provider);
+
+	// Create a temporary file for the new password
+	const tmpPasswordFile = path.join(formatHomePath(site.path), `.tmp-new-password-${Date.now()}.txt`);
+
+	try {
+		const { type, clientID, token, appKey } = await getBackupCredentials(hubProvider);
+
+		// Validate credentials before attempting to use them
+		if (!token || token.trim() === '') {
+			throw new Error(`Invalid or expired ${provider} OAuth token. Please reconnect ${provider} in Local settings.`);
+		}
+
+		const upperCaseProvider = provider.toUpperCase();
+
+		// First check if the new password already works (idempotent check)
+		try {
+			await execPromise(
+				`"${bins.restic}" ${makeRepoFlag(provider, localBackupRepoID, site)} snapshots --json --quiet`,
+				site,
+				{
+					[`RCLONE_${upperCaseProvider}_TYPE`]: type,
+					[`RCLONE_${upperCaseProvider}_CLIENT_ID`]: clientID,
+					[`RCLONE_${upperCaseProvider}_TOKEN`]: token,
+					[`RCLONE_${upperCaseProvider}_APP_KEY`]: appKey,
+					['RESTIC_PASSWORD']: newPassword,
+				},
+				{ signal, abortable: true },
+			);
+
+			// If we got here, the new password already works - no need to add another key
+			logger.info(`Repo ${localBackupRepoID} already has the new password, skipping rekey`);
+			return RekeyStatus.Success;
+		} catch (err) {
+			// Check if this is a token/auth error
+			const errorStr = String(err);
+			if (errorStr.includes('empty token') || errorStr.includes('oauth client') || errorStr.includes('401')) {
+				throw new Error(`${provider} authentication expired. Please reconnect ${provider} in Local settings and try migration again.`);
+			}
+			// New password doesn't work yet, continue with adding the key
+			logger.info(`New password doesn't work yet for repo ${localBackupRepoID}, adding key`);
+		}
+
+		// Write the new password to a temporary file
+		fs.writeFileSync(tmpPasswordFile, newPassword);
+
+		// Use the old password via RESTIC_PASSWORD, and provide the new password via file
+		await execPromise(
+			`"${bins.restic}" ${makeRepoFlag(provider, localBackupRepoID, site)} key add --new-password-file "${tmpPasswordFile}"`,
+			site,
+			{
+				[`RCLONE_${upperCaseProvider}_TYPE`]: type,
+				[`RCLONE_${upperCaseProvider}_CLIENT_ID`]: clientID,
+				[`RCLONE_${upperCaseProvider}_TOKEN`]: token,
+				[`RCLONE_${upperCaseProvider}_APP_KEY`]: appKey,
+				['RESTIC_PASSWORD']: oldPassword,
+			},
+			{ signal, abortable: true },
+		);
+
+		logger.info(`Successfully added new key to repo ${localBackupRepoID}`);
+		return RekeyStatus.Success;
+	} catch (err) {
+		// Detect a "repo not found" scenario and return a non-fatal status
+		const errStr = String(err);
+		if (errStr.includes('does not exist') || errStr.includes('repository not found') || errStr.includes('Is there a repository at')) {
+			logger.warn(`Repo ${localBackupRepoID} appears missing during rekey on ${provider}`);
+			return RekeyStatus.RepoNotFound;
+		}
+		throw new Error(`Failed to rekey repo ${localBackupRepoID} on ${provider}: ${err}`);
+	} finally {
+		// Always clean up the temporary password file
+		if (fs.existsSync(tmpPasswordFile)) {
+			fs.removeSync(tmpPasswordFile);
+		}
+	}
+}
+
+/**
+ * Write a metadata JSON file to the cloud provider using rclone
+ *
+ * @param options Metadata write options
+ */
+export async function writeMetadataFile (options: {
+	provider: Providers;
+	localBackupRepoID: string;
+	snapshotHash: string;
+	metadata: string;
+	site: Site;
+	signal?: AbortSignal;
+}): Promise<void> {
+	const { provider, localBackupRepoID, snapshotHash, metadata, site, signal } = options;
+	const hubProvider = providerToHubProvider(provider);
+
+	// Determine the metadata path based on provider
+	// For Dropbox: metadata/{repo-id}/snapshot-{hash}.json
+	// For Drive: LocalBackups/metadata/{repo-id}/snapshot-{hash}.json
+	let metadataPath: string;
+	if (provider === Providers.Drive) {
+		metadataPath = `LocalBackups/metadata/${localBackupRepoID}/snapshot-${snapshotHash}.json`;
+	} else {
+		// Dropbox stores at root level
+		metadataPath = `metadata/${localBackupRepoID}/snapshot-${snapshotHash}.json`;
+	}
+
+	const { type, clientID, token, appKey } = await getBackupCredentials(hubProvider);
+
+	// Validate credentials
+	if (!token || token.trim() === '') {
+		throw new Error(`Invalid or expired ${provider} OAuth token. Please reconnect ${provider} in Local settings.`);
+	}
+
+	const upperCaseProvider = provider.toUpperCase();
+
+	// Create a temporary file with the metadata
+	const tmpFile = path.join(formatHomePath(site.path), `.tmp-metadata-${snapshotHash}.json`);
+	try {
+		fs.writeFileSync(tmpFile, metadata);
+
+		// Use rclone to copy the file to the provider
+		await execPromise(
+			`"${bins.rclone}" copyto "${tmpFile}" ":${provider}:${metadataPath}"`,
+			site,
+			{
+				[`RCLONE_${upperCaseProvider}_TYPE`]: type,
+				[`RCLONE_${upperCaseProvider}_CLIENT_ID`]: clientID,
+				[`RCLONE_${upperCaseProvider}_TOKEN`]: token,
+				[`RCLONE_${upperCaseProvider}_APP_KEY`]: appKey,
+			},
+			{ signal, abortable: true },
+		);
+	} finally {
+		// Clean up temp file
+		if (fs.existsSync(tmpFile)) {
+			fs.removeSync(tmpFile);
+		}
+	}
 }
