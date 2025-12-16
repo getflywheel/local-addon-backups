@@ -506,7 +506,14 @@ export async function rekeyRepo (options: {
 	site: Site;
 	signal?: AbortSignal;
 }): Promise<RekeyStatus> {
-	const { provider, oldPassword, newPassword, localBackupRepoID, site, signal } = options;
+	const {
+		provider,
+		oldPassword,
+		newPassword,
+		localBackupRepoID,
+		site,
+		signal,
+	} = options;
 	const hubProvider = providerToHubProvider(provider);
 
 	// Create a temporary file for the new password
@@ -518,19 +525,6 @@ export async function rekeyRepo (options: {
 		// Validate credentials before attempting to use them
 		if (!token || token.trim() === '') {
 			throw new Error(`Invalid or expired ${provider} OAuth token. Please reconnect ${provider} in Local settings.`);
-		}
-
-		// Before attempting any operations, confirm the repo actually exists
-		const exists = await checkRepoExists({
-			provider,
-			encryptionPassword: oldPassword,
-			localBackupRepoID,
-			site,
-			signal,
-		});
-		if (!exists) {
-			logger.warn(`Repo ${localBackupRepoID} not found on ${provider} during rekey`);
-			return RekeyStatus.RepoNotFound;
 		}
 
 		const upperCaseProvider = provider.toUpperCase();
