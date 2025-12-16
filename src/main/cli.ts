@@ -207,14 +207,31 @@ async function execPromise (
 			let stdoutBytes = 0;
 			let stderrBytes = 0;
 			const maxBuffer = 1024 * 1024 * 4;
+			let settled = false;
+			let overflowHandled = false;
+
+			const safeResolve = (value: string) => {
+				if (settled) return;
+				settled = true;
+				resolve(value);
+			};
+
+			const safeReject = (error: unknown) => {
+				if (settled) return;
+				settled = true;
+				reject(error);
+			};
 
 			child.stdout?.on('data', (chunk) => {
 				const str = chunk.toString();
 				stdout += str;
 				stdoutBytes += Buffer.byteLength(str);
 				if (stdoutBytes + stderrBytes > maxBuffer) {
-					void killPidTree(child.pid ?? undefined);
-					reject(new Error('Command output exceeded maxBuffer'));
+					if (!overflowHandled) {
+						overflowHandled = true;
+						void killPidTree(child.pid ?? undefined);
+						safeReject(new Error('Command output exceeded maxBuffer'));
+					}
 				}
 			});
 
@@ -223,8 +240,11 @@ async function execPromise (
 				stderr += str;
 				stderrBytes += Buffer.byteLength(str);
 				if (stdoutBytes + stderrBytes > maxBuffer) {
-					void killPidTree(child.pid ?? undefined);
-					reject(new Error('Command output exceeded maxBuffer'));
+					if (!overflowHandled) {
+						overflowHandled = true;
+						void killPidTree(child.pid ?? undefined);
+						safeReject(new Error('Command output exceeded maxBuffer'));
+					}
 				}
 			});
 
@@ -236,7 +256,7 @@ async function execPromise (
 				if (isAbortError(error)) {
 					(error as any).name = 'AbortError';
 				}
-				reject(error);
+				safeReject(error);
 			});
 
 			child.on('close', (code, signal) => {
@@ -245,20 +265,20 @@ async function execPromise (
 				}
 
 				if (code === 0) {
-					return resolve(stdout);
+					return safeResolve(stdout);
 				}
 
 				// If aborted, surface as AbortError
 				if (opts.signal?.aborted || signal) {
 					const abortErr = new Error('Command aborted');
 					(abortErr as any).name = 'AbortError';
-					return reject(abortErr);
+					return safeReject(abortErr);
 				}
 
 				const err = new Error(`Command failed with exit code ${code}: ${stderr || stdout}`);
 				(err as any).stdout = stdout;
 				(err as any).stderr = stderr;
-				reject(err);
+				safeReject(err);
 			});
 		});
 	}

@@ -459,10 +459,11 @@ export async function migrateBackups(): Promise<MigrationResult> {
 			logger.info(`Processing repo ${repo.hash} with ${snapshots.length} snapshots`);
 
 			let tmpDirToCleanup: string | null = null;
+			const processedSnapshotsAtRepoStart = state.processedSnapshots;
 			try {
 				// Create a dummy site for CLI operations
 				const dummySite = createDummySite(repo.hash);
-				tmpDirToCleanup = (dummySite as any)?.path || null;
+				tmpDirToCleanup = dummySite.path;
 				const rcloneProvider = hubProviderToProvider(provider.id);
 				const providerName = getProviderDisplayName(provider.id);
 				const currentRepoNumber = state.processedRepos + 1;
@@ -482,7 +483,11 @@ export async function migrateBackups(): Promise<MigrationResult> {
 					logger.warn(`Repo ${repo.hash} does not exist on ${provider.id}, skipping`);
 					state.skippedRepos++;
 					state.processedRepos++;
-					state.processedSnapshots += snapshots.length;
+					// Ensure snapshots for this repo are accounted for in progress, without double-counting.
+					state.processedSnapshots = Math.max(
+						state.processedSnapshots,
+						processedSnapshotsAtRepoStart + snapshots.length,
+					);
 					state.errors.push({
 						repo: repo.hash,
 						error: 'Repository not found on remote provider',
@@ -561,6 +566,12 @@ export async function migrateBackups(): Promise<MigrationResult> {
 						logger.warn(`Repo ${repo.hash} not found during rekey; skipping`);
 						state.skippedRepos++;
 						state.processedRepos++;
+						// Snapshots may have already been processed during metadata writing; ensure they're
+						// accounted for (without double-counting) for progress calculations.
+						state.processedSnapshots = Math.max(
+							state.processedSnapshots,
+							processedSnapshotsAtRepoStart + snapshots.length,
+						);
 						state.errors.push({
 							repo: repo.hash,
 							error: 'Repository not found on remote provider',
