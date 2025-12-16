@@ -1,0 +1,22 @@
+@import '~@getflywheel/local-components/src/styles/_partials/index';
+
+.MigrationBanner_container {
+	@include theme-background-gray15-else-graydark50;
+	@include theme-color-graydark50-else-gray25;
+	border-radius: 8px;
+	font-size: 14px;
+	margin: 15px;
+	padding: 20px 20px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 35px;
+
+	p {
+		flex: 1;
+		font-size: 14px;
+		font-weight: 400;
+		margin: 0;
+	}
+}
+
