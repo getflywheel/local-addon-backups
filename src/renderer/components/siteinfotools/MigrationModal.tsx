@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Title, PrimaryButton, ProgressBar } from '@getflywheel/local-components';
+import { FlyModal, Title, PrimaryButton, ProgressBar } from '@getflywheel/local-components';
 import styles from '../modals/BackupContents.scss';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import { IPCASYNC_EVENTS } from '../../../constants';
@@ -26,6 +26,11 @@ export const MigrationModal: React.FC = () => {
 		return major >= 10;
 	})();
 	const canMigrate = qaOverride || isLocal10Plus;
+
+	const closeModalAndGoToConnect = () => {
+		FlyModal.onRequestClose();
+		LocalRenderer.sendIPCEvent('goToRoute', '/main/connect');
+	};
 
 	useEffect(() => {
 		// Listen for progress updates
@@ -174,7 +179,7 @@ export const MigrationModal: React.FC = () => {
 												href="#"
 												onClick={(e) => {
 													e.preventDefault();
-													LocalRenderer.sendIPCEvent('goToRoute', '/main/connect');
+													closeModalAndGoToConnect();
 												}}
 											>
 												Connect sidebar
@@ -228,7 +233,7 @@ export const MigrationModal: React.FC = () => {
 						{isComplete && result?.success && (
 							<PrimaryButton
 								style={{ marginTop: 0 }}
-								onClick={() => LocalRenderer.sendIPCEvent('goToRoute', '/main/connect')}
+								onClick={closeModalAndGoToConnect}
 							>
 								See All Backups
 							</PrimaryButton>
