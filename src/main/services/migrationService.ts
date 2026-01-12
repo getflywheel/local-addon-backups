@@ -11,7 +11,7 @@ import {
 	getBackupSnapshotsByRepo,
 	getBackupCredentials,
 } from '../hubQueries';
-import { checkRepoExists, killActiveCommand, rekeyRepo, writeMetadataFile, RekeyStatus } from '../cli';
+import { checkRepoExists, isAbortError, killActiveCommand, rekeyRepo, writeMetadataFile, RekeyStatus } from '../cli';
 import { hubProviderToProvider } from '../utils';
 import { MigrationStates } from '../../types';
 import type {
@@ -42,15 +42,6 @@ let migrationInProgress = false;
 
 export function isMigrationInProgress(): boolean {
 	return migrationInProgress;
-}
-
-function isAbortError(err: unknown): boolean {
-	const anyErr = err as any;
-	return (
-		anyErr?.name === 'AbortError' ||
-		anyErr?.code === 'ABORT_ERR' ||
-		String(anyErr?.message || '').toLowerCase().includes('aborted')
-	);
 }
 
 function throwIfCancelled(signal?: AbortSignal) {

@@ -52,7 +52,11 @@ type ExecPromiseOptions = {
 // multiple CLI commands run concurrently (e.g., during migration)
 const activeChildren = new Set<ReturnType<typeof spawn>>();
 
-function isAbortError(err: unknown): boolean {
+/**
+ * Check if an error is an abort error
+ * Exported for use in migration service and other modules that need to detect cancellation
+ */
+export function isAbortError(err: unknown): boolean {
 	const anyErr = err as any;
 	return (
 		anyErr?.name === 'AbortError' ||
