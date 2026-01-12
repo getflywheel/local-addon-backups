@@ -48,7 +48,9 @@ type ExecPromiseOptions = {
 	abortable?: boolean;
 };
 
-let activeChild: ReturnType<typeof spawn> | null = null;
+// Track all active abortable child processes to prevent race conditions when
+// multiple CLI commands run concurrently (e.g., during migration)
+const activeChildren = new Set<ReturnType<typeof spawn>>();
 
 function isAbortError(err: unknown): boolean {
 	const anyErr = err as any;
@@ -110,19 +112,28 @@ async function killPidTree(pid?: number): Promise<void> {
 }
 
 export async function killActiveCommand(): Promise<void> {
-	const child = activeChild;
-	if (!child?.pid) {
+	// Snapshot the current active processes and clear the set immediately
+	// to prevent new processes from being added during kill operations
+	const childrenToKill = Array.from(activeChildren);
+	activeChildren.clear();
+
+	if (childrenToKill.length === 0) {
 		return;
 	}
 
-	const pid = child.pid;
-	activeChild = null;
-
-	try {
-		await killPidTree(pid);
-	} catch {
-		// noop
-	}
+	// Kill all active processes in parallel
+	await Promise.all(
+		childrenToKill.map(async (child) => {
+			if (!child?.pid) {
+				return;
+			}
+			try {
+				await killPidTree(child.pid);
+			} catch {
+				// noop - best effort kill
+			}
+		})
+	);
 }
 
 /**
@@ -199,7 +210,7 @@ async function execPromise (
 			} as any);
 
 			if (opts.abortable) {
-				activeChild = child;
+				activeChildren.add(child);
 			}
 
 			let stdout = '';
@@ -249,9 +260,7 @@ async function execPromise (
 			});
 
 			child.on('error', (error) => {
-				if (activeChild === child) {
-					activeChild = null;
-				}
+				activeChildren.delete(child);
 				// Normalize abort errors
 				if (isAbortError(error)) {
 					(error as any).name = 'AbortError';
@@ -260,9 +269,7 @@ async function execPromise (
 			});
 
 			child.on('close', (code, signal) => {
-				if (activeChild === child) {
-					activeChild = null;
-				}
+				activeChildren.delete(child);
 
 				if (code === 0) {
 					return safeResolve(stdout);
