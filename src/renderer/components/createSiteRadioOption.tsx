@@ -10,7 +10,7 @@ const CreateSiteRadioOption = () => {
 	const isLoggedOut = $hub.user === null;
 
 	return {
-		label: 'Create from a Cloud Backup',
+		label: 'Create from Cloud Backups add-on',
 		key: 'create-site-option-from-backup',
 		disabled: isLoggedOut,
 
@@ -44,7 +44,7 @@ const CreateSiteRadioOption = () => {
 
 		content: (
 			<>
-				<Text>Pull a saved site down to Local from Google Drive or Dropbox.</Text>
+				<Text>Use the legacy Cloud Backups add-on</Text>
 				<TextButtonExternal
 					container={{ marginTop: '7' }}
 					onClick={(evt: Event) => {
