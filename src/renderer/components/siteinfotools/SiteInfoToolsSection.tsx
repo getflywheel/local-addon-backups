@@ -57,9 +57,9 @@ const SiteInfoToolsSection = observer(({ site }: Props) => {
                 setMigrationStatus('completed');
             }
         };
-        ipcRenderer.on('migration:complete', onMigrationComplete);
+        ipcRenderer.on(IPCASYNC_EVENTS.MIGRATE_BACKUPS_COMPLETE, onMigrationComplete);
         return () => {
-            ipcRenderer.removeListener('migration:complete', onMigrationComplete);
+            ipcRenderer.removeListener(IPCASYNC_EVENTS.MIGRATE_BACKUPS_COMPLETE, onMigrationComplete);
         };
     }, []);
 

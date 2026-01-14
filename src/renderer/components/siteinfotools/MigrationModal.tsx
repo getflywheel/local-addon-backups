@@ -72,20 +72,20 @@ export const MigrationModal: React.FC = () => {
 			setProgress((prev) => (prev === 0 ? 0 : prev));
 		};
 
-		ipcRenderer.on('migration:progress', progressHandler);
-		ipcRenderer.on('migration:complete', completeHandler);
-		ipcRenderer.on('migration:error', errorHandler);
-		ipcRenderer.on('migration:cancelled', cancelledHandler);
+		ipcRenderer.on(IPCASYNC_EVENTS.MIGRATE_BACKUPS_PROGRESS, progressHandler);
+		ipcRenderer.on(IPCASYNC_EVENTS.MIGRATE_BACKUPS_COMPLETE, completeHandler);
+		ipcRenderer.on(IPCASYNC_EVENTS.MIGRATE_BACKUPS_ERROR, errorHandler);
+		ipcRenderer.on(IPCASYNC_EVENTS.MIGRATE_BACKUPS_CANCELLED, cancelledHandler);
 
 		// Cleanup listeners on unmount
 		return () => {
 			// If the modal is dismissed (X/Esc), cancel best-effort.
 			// This is idempotent in main, and avoids races where local state hasn't updated yet.
 			void ipcAsync(IPCASYNC_EVENTS.MIGRATE_BACKUPS_CANCEL);
-			ipcRenderer.removeListener('migration:progress', progressHandler);
-			ipcRenderer.removeListener('migration:complete', completeHandler);
-			ipcRenderer.removeListener('migration:error', errorHandler);
-			ipcRenderer.removeListener('migration:cancelled', cancelledHandler);
+			ipcRenderer.removeListener(IPCASYNC_EVENTS.MIGRATE_BACKUPS_PROGRESS, progressHandler);
+			ipcRenderer.removeListener(IPCASYNC_EVENTS.MIGRATE_BACKUPS_COMPLETE, completeHandler);
+			ipcRenderer.removeListener(IPCASYNC_EVENTS.MIGRATE_BACKUPS_ERROR, errorHandler);
+			ipcRenderer.removeListener(IPCASYNC_EVENTS.MIGRATE_BACKUPS_CANCELLED, cancelledHandler);
 		};
 	}, []);
 
