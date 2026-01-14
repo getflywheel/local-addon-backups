@@ -25,7 +25,7 @@ import type {
 	BackupMetadata,
 	GenericObject,
 } from '../../types';
-import { DEFAULT_BACKUP_PASSWORD, MIGRATION_STATE_FILE } from '../../constants';
+import { DEFAULT_BACKUP_PASSWORD, MIGRATION_STATE_FILE, IPCASYNC_EVENTS } from '../../constants';
 
 const serviceContainer = getServiceContainer().cradle;
 const {
@@ -199,7 +199,7 @@ function sendProgressUpdate(state: MigrationState, customMessage?: string) {
 		errors: state.errors.map((e) => e.error),
 	};
 
-	LocalMain.sendIPCEvent('migration:progress', progress);
+	LocalMain.sendIPCEvent(IPCASYNC_EVENTS.MIGRATE_BACKUPS_PROGRESS, progress);
 	logger.info(`Migration progress: ${Math.round(progress.progress * 100)}% - ${progress.message}`);
 }
 
@@ -625,7 +625,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 		};
 
 		logger.info('Migration completed successfully', result);
-		LocalMain.sendIPCEvent('migration:complete', result);
+		LocalMain.sendIPCEvent(IPCASYNC_EVENTS.MIGRATE_BACKUPS_COMPLETE, result);
 
 		return result;
 
@@ -644,7 +644,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 				errors: state.errors,
 				cancelled: true,
 			};
-			LocalMain.sendIPCEvent('migration:cancelled', result);
+			LocalMain.sendIPCEvent(IPCASYNC_EVENTS.MIGRATE_BACKUPS_CANCELLED, result);
 			return result;
 		}
 
@@ -665,7 +665,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 			],
 		};
 
-		LocalMain.sendIPCEvent('migration:error', result);
+		LocalMain.sendIPCEvent(IPCASYNC_EVENTS.MIGRATE_BACKUPS_ERROR, result);
 		throw err;
 	} finally {
 		migrationInProgress = false;
