@@ -1,0 +1,27 @@
+@import '~@getflywheel/local-components/src/styles/_partials/index';
+
+.AlignLeft {
+	text-align: left !important;
+	@include theme-color-gray-else-gray25;
+}
+
+.AlignCenter {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ModalButtons {
+	display: flex;
+	justify-content: space-between;
+}
+
+.MigrationContent {
+	text-align: center;
+	font-family: Museo Sans Rounded;
+	font-weight: 300;
+	font-size: 14px;
+	line-height: 20px;
+	letter-spacing: 0.5%;
+	@include theme-color-gray-else-gray25;
+}
