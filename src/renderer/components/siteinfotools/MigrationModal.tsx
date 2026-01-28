@@ -6,6 +6,7 @@ import { IPCASYNC_EVENTS } from '../../../constants';
 import type { MigrationProgress, MigrationResult } from '../../../types';
 import * as LocalRenderer from '@getflywheel/local/renderer';
 import { launchBrowser } from '../../helpers/launchBrowser';
+import { MigrationBanner } from './MigrationResultBanners';
 
 const { ipcRenderer } = window.require('electron');
 
@@ -127,13 +128,16 @@ export const MigrationModal: React.FC = () => {
 
 			{!canMigrate && (
 				<>
+					<MigrationBanner
+						variant="warning"
+						text={
+							<>
+								This migration requires Local 10 or higher. Please install the latest Local release to
+								continue.
+							</>
+						}
+					/>
 					<hr />
-					<div className={styles.AlignLeft}>
-						<p style={{ marginBottom: 8 }}>
-							This migration requires Local&nbsp;10 or higher. Please install the latest Local release to
-							continue.
-						</p>
-					</div>
 					<div className={styles.ModalButtons} style={{ justifyContent: 'center' }}>
 						<PrimaryButton
 							style={{ marginTop: 0 }}
@@ -169,41 +173,31 @@ export const MigrationModal: React.FC = () => {
 						<>
 							<div className={styles.AlignLeft}>
 								{result.success ? (
-									<div>
-										<p style={{ color: '#00a32a', marginBottom: 8 }}>
-											<strong>✓ Migration completed successfully!</strong>
-										</p>
-										<p style={{ margin: '0 0 12px 0' }}>
-											Visit the{' '}
-											<a
-												href="#"
-												onClick={(e) => {
-													e.preventDefault();
-													closeModalAndGoToConnect();
-												}}
-											>
-												Connect sidebar
-											</a>{' '}
-											to log in and see all migrated backups from your connected providers.
-											<strong>You can now remove the Cloud Backups add-on.</strong>
-										</p>
-										<ul style={{ marginLeft: 20, marginTop: 8 }}>
-											<li>
-												Migrated {result.migratedRepos}{' '}
-												{result.migratedRepos === 1 ? 'site' : 'sites'}
-											</li>
-											<li>
-												Migrated {result.migratedSnapshots}{' '}
-												{result.migratedSnapshots === 1 ? 'backup' : 'backups'}
-											</li>
-											{result.skippedRepos > 0 && (
-												<li>
-													Skipped {result.skippedRepos}{' '}
-													{result.skippedRepos === 1 ? 'site' : 'sites'}
-												</li>
-											)}
-										</ul>
-									</div>
+									<>
+										<MigrationBanner
+											variant="success"
+											text={<strong>Migration complete</strong>}
+											subText={
+												<>
+													{`${result.migratedRepos} ${result.migratedRepos === 1 ? 'site' : 'sites'}`}{' '}
+													and{' '}
+													{`${result.migratedSnapshots} ${result.migratedSnapshots === 1 ? 'backup' : 'backups'}`}{' '}
+													have been migrated from Cloud Backups to Local Backups.
+												</>
+											}
+										/>
+
+										{result.skippedRepos > 0 && (
+											<MigrationBanner
+												variant="neutral"
+												subText={
+													<>
+														{`${result.skippedRepos} ${result.skippedRepos === 1 ? 'site was' : 'sites were'} skipped because no associated backups were found.`}
+													</>
+												}
+											/>
+										)}
+									</>
 								) : (
 									<div>
 										<p style={{ color: '#d0021b', marginBottom: 8 }}>✗ Migration failed</p>
@@ -231,10 +225,7 @@ export const MigrationModal: React.FC = () => {
 						)}
 
 						{isComplete && result?.success && (
-							<PrimaryButton
-								style={{ marginTop: 0 }}
-								onClick={closeModalAndGoToConnect}
-							>
+							<PrimaryButton style={{ marginTop: 0 }} onClick={closeModalAndGoToConnect}>
 								See All Backups
 							</PrimaryButton>
 						)}
