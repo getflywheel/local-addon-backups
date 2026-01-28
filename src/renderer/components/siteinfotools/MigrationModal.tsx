@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { FlyModal, Title, PrimaryButton, ProgressBar } from '@getflywheel/local-components';
-import styles from '../modals/BackupContents.scss';
+import styles from './MigrationModal.scss';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import { IPCASYNC_EVENTS } from '../../../constants';
 import type { MigrationProgress, MigrationResult } from '../../../types';
 import * as LocalRenderer from '@getflywheel/local/renderer';
-import { launchBrowser } from '../../helpers/launchBrowser';
 import { MigrationBanner } from './MigrationResultBanners';
 
 const { ipcRenderer } = window.require('electron');
@@ -28,10 +27,10 @@ export const MigrationModal: React.FC = () => {
 	})();
 	const canMigrate = qaOverride || isLocal10Plus;
 
-	const closeModalAndGoToConnect = () => {
+	const closeAndRemoveBackupsAddon = () => {
 		FlyModal.onRequestClose();
-		LocalRenderer.sendIPCEvent('goToRoute', '/main/connect');
-	};
+		// TODO: Send IPC to remove the Cloud Backups add-on
+	}
 
 	useEffect(() => {
 		// Listen for progress updates
@@ -120,12 +119,19 @@ export const MigrationModal: React.FC = () => {
 			<Title size="l" container={{ margin: 'm 0' }}>
 				Migrate Cloud Backups
 			</Title>
-			<p style={{ marginTop: 7 }}>Move your existing Cloud Backups to the new Backups tab in Local&nbsp;10.</p>
-			<p>
-				This will take a few minutes to complete. Local will copy backup data to your cloud storage and update
-				backup keys.
-			</p>
 
+			{!isComplete && !result && (
+				<>
+					<p style={{ marginTop: 7 }} className={styles.AlignLeft}>
+						To access existing backups going forward, they'll need to be migrated to the new Backups feature in
+						Local 10.
+					</p>
+					<p className={styles.AlignLeft}>
+						Local will copy the backup data to your cloud storage and update the backup keys automatically. This
+						will take a few minutes to complete.
+					</p>
+				</>
+			)}
 			{!canMigrate && (
 				<>
 					<MigrationBanner
@@ -139,18 +145,36 @@ export const MigrationModal: React.FC = () => {
 					/>
 					<hr />
 					<div className={styles.ModalButtons} style={{ justifyContent: 'center' }}>
-						<PrimaryButton
-							style={{ marginTop: 0 }}
-							onClick={() => launchBrowser('https://localwp.com/releases/')}
-						>
-							Download Local 10+
-						</PrimaryButton>
+						{!isMigrating && !isComplete && (
+							<PrimaryButton disabled={!canMigrate} style={{ marginTop: 0 }} onClick={startMigration}>
+								Start Migration
+							</PrimaryButton>
+						)}
+
+
+						{isMigrating && !isComplete &&(
+							<PrimaryButton style={{ marginTop: 0 }} disabled={true}>
+								Migrating...
+							</PrimaryButton>
+						)}
+
+						{isComplete && result?.success && (
+							<PrimaryButton style={{ marginTop: 0 }} onClick={closeAndRemoveBackupsAddon}>
+								Remove Cloud Backups add-on
+							</PrimaryButton>
+						)}
+
+						{isComplete && (hasError || result?.cancelled) && (
+							<PrimaryButton style={{ marginTop: 0 }} onClick={startMigration}>
+								Retry Migration
+							</PrimaryButton>
+						)}
 					</div>
 				</>
 			)}
 
 			{canMigrate && (
-				<>
+				<div>
 					<hr />
 
 					{isMigrating && (
@@ -197,9 +221,13 @@ export const MigrationModal: React.FC = () => {
 												}
 											/>
 										)}
+
+										<div className={styles.MigrationContent} style={{ marginTop: 16 }}>
+											To complete the transition to Local Backups, remove the Cloud Backups add-on.
+										</div>
 									</>
 								) : (
-									<div>
+									<div className={styles.AlignCenter} style={{ justifyContent: 'center' }}>
 										<p style={{ color: '#d0021b', marginBottom: 8 }}>✗ Migration failed</p>
 									</div>
 								)}
@@ -218,15 +246,15 @@ export const MigrationModal: React.FC = () => {
 							</PrimaryButton>
 						)}
 
-						{isMigrating && !isComplete && (
+						{isMigrating && !isComplete &&(
 							<PrimaryButton style={{ marginTop: 0 }} disabled={true}>
 								Migrating...
 							</PrimaryButton>
 						)}
 
 						{isComplete && result?.success && (
-							<PrimaryButton style={{ marginTop: 0 }} onClick={closeModalAndGoToConnect}>
-								See All Backups
+							<PrimaryButton style={{ marginTop: 0 }} onClick={closeAndRemoveBackupsAddon}>
+								Remove Cloud Backups add-on
 							</PrimaryButton>
 						)}
 
@@ -236,7 +264,7 @@ export const MigrationModal: React.FC = () => {
 							</PrimaryButton>
 						)}
 					</div>
-				</>
+				</div>
 			)}
 		</div>
 	);
