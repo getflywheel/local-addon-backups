@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import * as Local from '@getflywheel/local';
 import { FlyModal, Title, PrimaryButton, ProgressBar } from '@getflywheel/local-components';
 import styles from './MigrationModal.scss';
 import { ipcAsync } from '@getflywheel/local/renderer';
 import { IPCASYNC_EVENTS } from '../../../constants';
 import type { MigrationProgress, MigrationResult } from '../../../types';
-import * as LocalRenderer from '@getflywheel/local/renderer';
 import { MigrationBanner } from './MigrationResultBanners';
 
 const { ipcRenderer } = window.require('electron');
@@ -29,7 +29,7 @@ export const MigrationModal: React.FC = () => {
 
 	const closeAndRemoveBackupsAddon = () => {
 		FlyModal.onRequestClose();
-		// TODO: Send IPC to remove the Cloud Backups add-on
+		void ipcAsync(IPCASYNC_EVENTS.UNINSTALL_ADDON, 'local-addon-backups');
 	}
 
 	useEffect(() => {
@@ -150,7 +150,6 @@ export const MigrationModal: React.FC = () => {
 								Start Migration
 							</PrimaryButton>
 						)}
-
 
 						{isMigrating && !isComplete &&(
 							<PrimaryButton style={{ marginTop: 0 }} disabled={true}>
