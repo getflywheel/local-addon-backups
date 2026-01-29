@@ -1105,10 +1105,10 @@
   resolved "https://registry.yarnpkg.com/@getflywheel/eslint-config-local/-/eslint-config-local-1.0.4.tgz#2fab6bb77b63ec123e831534f50e1d3c7c135571"
   integrity sha512-GvnhhT3XaNipDdVvHifWbKjoFpLAbezkKsYBGfDF4uG/9gWo5UX9YLANPlzSLRyvgBrX0+27S5Cu8YE/yM7kPg==
 
-"@getflywheel/local-components@^17.8.0":
-  version "17.8.0"
-  resolved "https://registry.yarnpkg.com/@getflywheel/local-components/-/local-components-17.8.0.tgz#ceb0219aedf183f14f5f84825111e3c3af044a7f"
-  integrity sha512-8BJvS3hNm3TSoF08KCqCvsBvy/5iORGOeM5kV25eAHcPlx1tc++KmtE+HuBvJ1iYVM3mdl3scCb37bEhCKpA1g==
+"@getflywheel/local-components@^17.8.1":
+  version "17.8.1"
+  resolved "https://registry.yarnpkg.com/@getflywheel/local-components/-/local-components-17.8.1.tgz#e5050702f6fe3824c62b17078ce88d56fcca6168"
+  integrity sha512-A8NlNwyA+euU0D2dW5Cacw2X+UoID4/ozf2S8TbCfNfc4aD61DAKyW2kwsQjt6NO78VNuww+Wg8CAe4OhrR7+A==
   dependencies:
     "@popperjs/core" "^2.9.2"
     classnames "^2.2.6"
