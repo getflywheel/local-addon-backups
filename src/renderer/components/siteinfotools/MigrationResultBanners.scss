@@ -1,0 +1,73 @@
+@import '~@getflywheel/local-components/src/styles/_partials/index';
+
+.MigrationBanner {
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
+	border-radius: 8px;
+	padding: 20px;
+	margin-top: 12px;
+	width: 100%;
+	max-width: 100%;
+	min-height: 80px;
+	opacity: 1;
+	transform: rotate(0deg);
+	box-sizing: border-box;
+	overflow-x: hidden;
+}
+
+.MigrationBanner_icon {
+	flex: 0 0 auto;
+	font-size: 20px;
+	line-height: 20px;
+	margin-top: 2px;
+	align-self: flex-start;
+}
+
+.MigrationBanner_content {
+	display: flex;
+	flex-direction: column;
+	text-align: left;
+}
+
+.MigrationBanner_text {
+	font-family: 'Museo Sans Rounded', sans-serif;
+	font-weight: 400;
+	font-style: normal;
+	font-size: 14px;
+	leading-trim: none;
+	line-height: 20px;
+	letter-spacing: 0.5%;
+}
+
+.MigrationBanner_subText {
+	margin-top: 4px;
+	font-family: 'Museo Sans Rounded', sans-serif;
+	font-weight: 400;
+	font-style: normal;
+	font-size: 14px;
+	leading-trim: none;
+	line-height: 20px;
+	letter-spacing: 0.5%;
+}
+
+/* Variants */
+.success {
+	background: #294b3a; /* provided success color */
+	color: #ffffff;
+}
+
+.warning {
+	background: #ffe4cf; /* provided warning color */
+	color: #2b2b2b;
+}
+
+.error {
+	background: #5a1a1a; /* deep red-brown */
+	color: #ffffff;
+}
+
+.neutral {
+	background: #5f4531; /* provided info color used for neutral */
+	color: #ffffff;
+}

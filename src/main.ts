@@ -25,6 +25,7 @@ const {
 	localLogger,
 	changeSiteDomain,
 	siteDatabase,
+	addonLoader,
 } = serviceContainer;
 
 const logger = localLogger.child({
@@ -246,6 +247,23 @@ export default function (): void {
 		{
 			channel: IPCASYNC_EVENTS.OPEN_FILE_AT_PATH,
 			callback: async (path: string) => await shell.openPath(path),
+		},
+		{
+			channel: IPCASYNC_EVENTS.UNINSTALL_ADDON,
+			callback: async (addonSlug: string) => {
+				try {
+					const addon = addonLoader.loadedAddons.find(a => a.slug === addonSlug);
+					logger.info(`Uninstalling addon: ${addonSlug}`);
+					if (!addon) {
+						throw new Error(`Addon ${addonSlug} not found`);
+					}
+					LocalMain.sendIPCEvent('addonInstallerService:uninstall', addon);
+					return createIpcAsyncResult({ success: true }, null);
+				} catch (error) {
+					logger.error(`Error - IPCASYNC_EVENTS.UNINSTALL_ADDON: ${error.toString()}`);
+					return createIpcAsyncError(error, null);
+				}
+			},
 		},
 		{
 			channel: IPCASYNC_EVENTS.MIGRATE_BACKUPS_START,
