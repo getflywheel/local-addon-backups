@@ -26,6 +26,7 @@ export const IPCASYNC_EVENTS = {
 	MIGRATE_BACKUPS_COMPLETE: 'backups:migrate-complete',
 	MIGRATE_BACKUPS_ERROR: 'backups:migrate-error',
 	MIGRATE_BACKUPS_CANCELLED: 'backups:migrate-cancelled',
+	UNINSTALL_ADDON: 'backups:uninstall-addon',
 };
 
 export const MULTI_MACHINE_BACKUP_ERRORS = {
