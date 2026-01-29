@@ -25,3 +25,7 @@
 	letter-spacing: 0.5%;
 	@include theme-color-gray-else-gray25;
 }
+
+.ProgressBar {
+	@include __theme-background(null, #5d5e5e);
+}
