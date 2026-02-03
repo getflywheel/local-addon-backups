@@ -10,6 +10,7 @@ import {
 	getBackupSitesByRepoID,
 	getBackupSnapshotsByRepo,
 	getBackupCredentials,
+	markBackupSiteMigrated,
 } from '../hubQueries';
 import { checkRepoExists, isAbortError, killActiveCommand, rekeyRepo, writeMetadataFile, RekeyStatus } from '../cli';
 import { hubProviderToProvider } from '../utils';
@@ -28,9 +29,7 @@ import type {
 import { DEFAULT_BACKUP_PASSWORD, MIGRATION_STATE_FILE, IPCASYNC_EVENTS } from '../../constants';
 
 const serviceContainer = getServiceContainer().cradle;
-const {
-	localLogger,
-} = serviceContainer;
+const { localLogger } = serviceContainer;
 
 const logger = localLogger.child({
 	thread: 'main',
@@ -154,9 +153,10 @@ function buildMetadata(
 	if (snapshot.createdAt) {
 		try {
 			// createdAt might be a Unix timestamp (number) or already a Date/string
-			const date = typeof snapshot.createdAt === 'number'
-				? new Date(snapshot.createdAt * 1000)
-				: new Date(snapshot.createdAt);
+			const date =
+				typeof snapshot.createdAt === 'number'
+					? new Date(snapshot.createdAt * 1000)
+					: new Date(snapshot.createdAt);
 
 			// Check if date is valid
 			if (!isNaN(date.getTime())) {
@@ -208,11 +208,10 @@ function sendProgressUpdate(state: MigrationState, customMessage?: string) {
  */
 function getStateMessage(state: MigrationStates, migrationState?: MigrationState): string {
 	const hasRepoContext = !!(migrationState && migrationState.totalRepos > 0 && migrationState.currentProviderName);
-	const repoIndex = migrationState?.currentRepoIndex || ((migrationState?.processedRepos || 0) + 1);
+	const repoIndex = migrationState?.currentRepoIndex || (migrationState?.processedRepos || 0) + 1;
 	const providerName = migrationState?.currentProviderName || '';
-	const makeUnified = (step: string) => hasRepoContext
-		? `Repo ${repoIndex} of ${migrationState!.totalRepos} • ${providerName} • ${step}`
-		: step;
+	const makeUnified = (step: string) =>
+		hasRepoContext ? `Repo ${repoIndex} of ${migrationState!.totalRepos} • ${providerName} • ${step}` : step;
 
 	switch (state) {
 		case MigrationStates.fetchingProviders:
@@ -280,7 +279,9 @@ function createDummySite(repoId: string): Site {
 	fs.ensureDirSync(baseTmpDir);
 
 	// Keep the prefix filesystem-friendly (mkdtemp requires a prefix, it will append random chars)
-	const safeRepoId = String(repoId).replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 32);
+	const safeRepoId = String(repoId)
+		.replace(/[^a-zA-Z0-9._-]/g, '_')
+		.slice(0, 32);
 	const tmpDir = fs.mkdtempSync(path.join(baseTmpDir, `repo-${safeRepoId}-`));
 
 	return {
@@ -318,6 +319,8 @@ export async function migrateBackups(): Promise<MigrationResult> {
 		fetchedRepos: 0,
 	};
 
+	const migratedSiteIds = new Set<number>();
+
 	try {
 		// Step 1: Fetch all providers
 		throwIfCancelled(signal);
@@ -339,7 +342,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 
 		const allRepos: RepoWithMetadata[] = [];
 		// First pass: determine total number of repos across all providers to stabilize fetch-phase progress
-		const providerReposList: Array<{ provider: HubProviderRecord, repos: BackupRepo[] }> = [];
+		const providerReposList: Array<{ provider: HubProviderRecord; repos: BackupRepo[] }> = [];
 		let totalReposToFetch = 0;
 
 		// First determine stable total
@@ -406,7 +409,10 @@ export async function migrateBackups(): Promise<MigrationResult> {
 						if (result.snapshots && result.snapshots.length > 0) {
 							allSnapshots.push(...result.snapshots);
 							// Show snapshot count as we fetch
-							sendProgressUpdate(state, `Fetching backup data for ${providerName} (${allSnapshots.length} snapshots found)...`);
+							sendProgressUpdate(
+								state,
+								`Fetching backup data for ${providerName} (${allSnapshots.length} snapshots found)...`,
+							);
 						}
 						hasMore = result.pagination.currentPage < result.pagination.lastPage;
 						currentPage++;
@@ -422,6 +428,7 @@ export async function migrateBackups(): Promise<MigrationResult> {
 							snapshots: allSnapshots,
 						});
 						state.totalSnapshots += allSnapshots.length;
+						migratedSiteIds.add(site.id);
 					}
 
 					// Increment fetched repos counter for progress tracking
@@ -483,7 +490,10 @@ export async function migrateBackups(): Promise<MigrationResult> {
 						repo: repo.hash,
 						error: 'Repository not found on remote provider',
 					});
-					sendProgressUpdate(state, `Repo ${currentRepoNumber} of ${state.totalRepos} • ${providerName} • Skipped (not found)`);
+					sendProgressUpdate(
+						state,
+						`Repo ${currentRepoNumber} of ${state.totalRepos} • ${providerName} • Skipped (not found)`,
+					);
 					continue;
 				}
 
@@ -506,7 +516,10 @@ export async function migrateBackups(): Promise<MigrationResult> {
 
 				// Write metadata for each snapshot
 				state.currentState = MigrationStates.writingMetadata;
-				sendProgressUpdate(state, `Repo ${currentRepoNumber} of ${state.totalRepos} • ${providerName} • Writing metadata`);
+				sendProgressUpdate(
+					state,
+					`Repo ${currentRepoNumber} of ${state.totalRepos} • ${providerName} • Writing metadata`,
+				);
 
 				for (const snapshot of snapshots) {
 					throwIfCancelled(signal);
@@ -525,7 +538,10 @@ export async function migrateBackups(): Promise<MigrationResult> {
 
 						state.processedSnapshots++;
 						state.migratedSnapshots++;
-						sendProgressUpdate(state, `Repo ${currentRepoNumber} of ${state.totalRepos} • ${providerName} • Writing metadata`);
+						sendProgressUpdate(
+							state,
+							`Repo ${currentRepoNumber} of ${state.totalRepos} • ${providerName} • Writing metadata`,
+						);
 						logger.info(`Wrote metadata for snapshot ${snapshot.hash}`);
 					} catch (err) {
 						logger.error(`Failed to write metadata for snapshot ${snapshot.hash}: ${err}`);
@@ -535,13 +551,19 @@ export async function migrateBackups(): Promise<MigrationResult> {
 							error: `Failed to write metadata: ${err.message}`,
 						});
 						state.processedSnapshots++;
-						sendProgressUpdate(state, `Repo ${currentRepoNumber} of ${state.totalRepos} • ${providerName} • Writing metadata`);
+						sendProgressUpdate(
+							state,
+							`Repo ${currentRepoNumber} of ${state.totalRepos} • ${providerName} • Writing metadata`,
+						);
 					}
 				}
 
 				// Rekey the repo
 				state.currentState = MigrationStates.rekeyingRepo;
-				sendProgressUpdate(state, `Repo ${currentRepoNumber} of ${state.totalRepos} • ${providerName} • Rekeying repository`);
+				sendProgressUpdate(
+					state,
+					`Repo ${currentRepoNumber} of ${state.totalRepos} • ${providerName} • Rekeying repository`,
+				);
 
 				try {
 					throwIfCancelled(signal);
@@ -567,7 +589,10 @@ export async function migrateBackups(): Promise<MigrationResult> {
 							repo: repo.hash,
 							error: 'Repository not found on remote provider',
 						});
-						sendProgressUpdate(state, `Repo ${currentRepoNumber} of ${state.totalRepos} • ${providerName} • Skipped (not found)`);
+						sendProgressUpdate(
+							state,
+							`Repo ${currentRepoNumber} of ${state.totalRepos} • ${providerName} • Skipped (not found)`,
+						);
 						continue;
 					}
 					logger.info(`Rekeyed repo ${repo.hash}`);
@@ -577,8 +602,10 @@ export async function migrateBackups(): Promise<MigrationResult> {
 
 				state.migratedRepos++;
 				state.processedRepos++;
-				sendProgressUpdate(state, `Repo ${currentRepoNumber} of ${state.totalRepos} • ${providerName} • Completed`);
-
+				sendProgressUpdate(
+					state,
+					`Repo ${currentRepoNumber} of ${state.totalRepos} • ${providerName} • Completed`,
+				);
 			} catch (err) {
 				logger.error(`Failed to process repo ${repo.hash}: ${err}`);
 				state.errors.push({
@@ -586,7 +613,10 @@ export async function migrateBackups(): Promise<MigrationResult> {
 					error: err.message,
 				});
 				state.processedRepos++;
-				sendProgressUpdate(state, `Repo ${state.processedRepos} of ${state.totalRepos} • ${state.currentProviderName || 'Cloud Provider'} • Error`);
+				sendProgressUpdate(
+					state,
+					`Repo ${state.processedRepos} of ${state.totalRepos} • ${state.currentProviderName || 'Cloud Provider'} • Error`,
+				);
 
 				// If rekeying failed, this is critical - stop migration
 				if (err.message.includes('Failed to rekey')) {
@@ -612,6 +642,19 @@ export async function migrateBackups(): Promise<MigrationResult> {
 
 		await saveMigrationState();
 
+		if (migratedSiteIds.size > 0) {
+			for (const siteId of migratedSiteIds) {
+				try {
+					await markBackupSiteMigrated(siteId);
+				} catch (err) {
+					logger.warn(`Failed to mark backup site ${siteId} migrated: ${err}`);
+					state.errors.push({
+						error: `Failed to mark backup site ${siteId} migrated: ${err.message}`,
+					});
+				}
+			}
+		}
+
 		// Step 11: Complete
 		state.currentState = MigrationStates.finished;
 		sendProgressUpdate(state);
@@ -628,7 +671,6 @@ export async function migrateBackups(): Promise<MigrationResult> {
 		LocalMain.sendIPCEvent(IPCASYNC_EVENTS.MIGRATE_BACKUPS_COMPLETE, result);
 
 		return result;
-
 	} catch (err) {
 		if (isAbortError(err)) {
 			// Cancelled: do not save completion state
@@ -707,4 +749,3 @@ export async function hasMigrationCompleted(): Promise<boolean> {
 		return false;
 	}
 }
-

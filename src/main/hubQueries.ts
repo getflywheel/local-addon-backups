@@ -98,6 +98,23 @@ export async function createBackupSite (site: Site): Promise<BackupSite> {
 	return data?.createBackupSite;
 }
 
+export async function markBackupSiteMigrated(backupSiteID: number): Promise<boolean> {
+	const { data } = await localHubClient.mutate({
+		mutation: gql`
+			mutation markBackupSiteMigrated($backupSiteID: Int!) {
+				markBackupSiteMigrated(id: $backupSiteID) {
+					success
+				}
+			}
+		`,
+		variables: {
+			backupSiteID,
+		},
+	});
+
+	return data?.markBackupSiteMigrated.success;
+}
+
 export async function createBackupRepo (queryArgs: { backupSiteID: number; localBackupRepoID: string; provider: HubOAuthProviders; }): Promise<BackupRepo> {
 	const { backupSiteID, localBackupRepoID, provider } = queryArgs;
 	const { data } = await localHubClient.mutate({
