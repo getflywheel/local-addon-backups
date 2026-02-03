@@ -217,7 +217,7 @@ export const MigrationModal: React.FC = () => {
 													<>
 														{`${result.skippedRepos} ${result.skippedRepos === 1 ? 'site was' : 'sites were'} skipped because no associated backups were found.`}
 													</>
-												}
+												}	
 											/>
 										)}
 
