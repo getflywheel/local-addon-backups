@@ -11,6 +11,7 @@ import type {
 	SiteMetaData,
 	SnapshotStatus,
 	BackupSnapshotsResult,
+	HubUserMigrationStatus,
 } from '../types';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -97,6 +98,7 @@ export async function createBackupSite (site: Site): Promise<BackupSite> {
 
 	return data?.createBackupSite;
 }
+
 
 export async function createBackupRepo (queryArgs: { backupSiteID: number; localBackupRepoID: string; provider: HubOAuthProviders; }): Promise<BackupRepo> {
 	const { backupSiteID, localBackupRepoID, provider } = queryArgs;
@@ -221,6 +223,21 @@ export async function getEnabledBackupProviders (): Promise<HubProviderRecord[]>
 	});
 
 	return data?.backupProviders;
+}
+
+export async function markUserMigratedToBackups (): Promise<HubUserMigrationStatus> {
+	const { data } = await localHubClient.mutate({
+		mutation: gql`
+			mutation markUserMigratedToBackups {
+				markUserMigratedToBackups {
+					id
+					hasMigratedBackups
+				}
+			}
+		`,
+	});
+
+	return data?.markUserMigratedToBackups;
 }
 
 export async function createBackupSnapshot (repoID: number, metaData: SiteMetaData): Promise<BackupSnapshot> {
