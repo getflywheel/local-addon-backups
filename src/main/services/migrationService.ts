@@ -10,6 +10,7 @@ import {
 	getBackupSitesByRepoID,
 	getBackupSnapshotsByRepo,
 	getBackupCredentials,
+	markUserMigratedToBackups,
 } from '../hubQueries';
 import { checkRepoExists, isAbortError, killActiveCommand, rekeyRepo, writeMetadataFile, RekeyStatus } from '../cli';
 import { hubProviderToProvider } from '../utils';
@@ -611,6 +612,14 @@ export async function migrateBackups(): Promise<MigrationResult> {
 		sendProgressUpdate(state);
 
 		await saveMigrationState();
+
+		// Mark user as migrated in Hub
+		try {
+			const migrationStatus = await markUserMigratedToBackups();
+			logger.info(`Marked user ${migrationStatus?.id} as migrated in Hub`);
+		} catch (err) {
+			logger.warn(`Failed to mark user as migrated in Hub: ${err}`);
+		}
 
 		// Step 11: Complete
 		state.currentState = MigrationStates.finished;

@@ -197,3 +197,8 @@ export interface BackupMetadata {
 	};
 	createdBy?: string;
 }
+
+export interface HubUserMigrationStatus {
+	id: string;
+	hasMigratedBackups: boolean;
+}
