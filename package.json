@@ -1,7 +1,7 @@
 {
 	"name": "@getflywheel/local-addon-backups",
 	"productName": "Cloud Backups",
-	"version": "2.2.0",
+	"version": "2.3.0",
 	"author": "Local Team",
 	"keywords": [
 		"local-addon"
@@ -9,7 +9,7 @@
 	"bgColor": "#f0ce15",
 	"icon": "icon.svg",
 	"slug": "local-addon-backups",
-	"description": "The future of Cloud Backups in Local is here!",
+	"description": "[Deprecated] Cloud Backups are now built into Local. Use this add-on only to migrate existing backups to the native Backups tab.",
 	"renderer": "lib/renderer.js",
 	"main": "lib/main.js",
 	"repository": {

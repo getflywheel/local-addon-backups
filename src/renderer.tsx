@@ -1,18 +1,17 @@
 import React from 'react';
 import { Provider } from 'react-redux';
 import { ApolloProvider } from '@apollo/client';
+import { Stepper, Step } from '@getflywheel/local-components';
+import * as LocalRenderer from '@getflywheel/local/renderer';
 import { RestoreStates, BackupStates } from './types';
+import { LOCAL_ROUTES } from './constants';
 import { store, actions } from './renderer/store/store';
 import SiteInfoToolsSection from './renderer/components/siteinfotools/SiteInfoToolsSection';
-import { setupListeners } from './renderer/helpers/setupListeners';
-import { client } from './renderer/localClient/localGraphQLClient';
 import { SelectSiteBackup } from './renderer/components/multimachinebackups/SelectSiteBackup';
 import { SelectSnapshot } from './renderer/components/multimachinebackups/SelectSnapshot';
-import * as LocalRenderer from '@getflywheel/local/renderer';
-import { Stepper, Step } from '@getflywheel/local-components';
-import { LOCAL_ROUTES } from './constants';
 import PromoBanner from './renderer/components/PromoBanner';
-import createSiteRadioOption from './renderer/components/createSiteRadioOption';
+import { setupListeners } from './renderer/helpers/setupListeners';
+import { client } from './renderer/localClient/localGraphQLClient';
 import { configure } from 'mobx';
 
 configure({
@@ -22,19 +21,17 @@ configure({
 
 setupListeners();
 
-const withApolloProvider = (Component) => (props) =>
-	(
-		<ApolloProvider client={client}>
-			<Component {...props} />
-		</ApolloProvider>
-	);
+const withApolloProvider = (Component) => (props) => (
+	<ApolloProvider client={client}>
+		<Component {...props} />
+	</ApolloProvider>
+);
 
-const withStoreProvider = (Component) => (props) =>
-	(
-		<Provider store={store}>
-			<Component {...props} />
-		</Provider>
-	);
+const withStoreProvider = (Component) => (props) => (
+	<Provider store={store}>
+		<Component {...props} />
+	</Provider>
+);
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function (context): void {
@@ -67,20 +64,6 @@ export default function (context): void {
 		});
 
 		return cloudBackupStatuses;
-	});
-
-	/**
-	 * Add CloudBackups as an option when creating a new site
-	 *
-	 * The option object's key is used as the RadioBlock value and
-	 * needs to be the route that will be navigated to by the "Continue"
-	 * button.
-	 */
-	hooks.addFilter('CreateSite:RadioOptions', (options) => {
-		return {
-			...options,
-			'add-site/select-site-backup': createSiteRadioOption(),
-		};
 	});
 
 	/*
